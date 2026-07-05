@@ -131,8 +131,9 @@ families (\S\ref{sec:results}). Our contributions:
 them \emph{verbatim} beats every published lossy-construction system by
 $+10$--$35\pp$ cross-system, and matched-evidence ablations make the payload's
 role causal: re-encoding the \emph{same} selected evidence as summaries or
-facts costs $8$--$14\pp$ in a stripped oracle setting and $5.1\pp$ inside the
-deployed pipeline.
+facts costs $8$--$14\pp$ in a stripped oracle setting and $5$--$6\pp$ inside the
+deployed pipeline, while a deterministic swap to the \emph{original lines} of
+the same steps costs only $2.6\pp$---the cost is paraphrase, not compression.
 \item \textbf{A memory$\times$reader confound audit} (\S\ref{sec:analysis}): a
 same-batch factorial separates memory-side from reader-side gains---routing
 refinements are second-order ($+1.4\pp$ semantic / $+1.7\pp$ structural on AMA;
@@ -768,10 +769,15 @@ setting the reader sees only the single cited step---no overview, no recent turn
 step-citing questions only.) A \emph{same-pipeline} version closes that gap in scale: keeping the full
 deployed context and replacing only the router-selected verbatim appendix with LLM summaries of the same
 steps (same QA, overview, router, reader, and judge; the swap fires on $96\%$ of questions) costs
-$-5.1\pp$ ($0.578$ vs $0.629$, same-day). Notably, the summarized appendix scores slightly \emph{below}
-serving no appendix at all (gist-only $0.587$): a lossy re-encoding of the selected evidence adds
-nothing over the one-line gists already in the overview. In this pipeline the choice is verbatim,
-or nothing.
+$-5.1\pp$ ($0.578$ vs $0.629$, same-day). Table~\ref{tab:family} completes the family under
+same-batch anchors: swapping the appendix to Mem0-style \emph{extracted atomic facts} costs
+$-5.9\pp$, and both generative re-encodings score at or \emph{below} serving no appendix at all
+(gist-only $-4.3\pp$)---a lossy re-encoding of the selected evidence adds nothing over the one-line
+gists already in the overview. The control that separates \emph{compression} from \emph{paraphrase}
+is a deterministic swap to the query-relevant \emph{original lines} of the same steps (no LLM, no
+rewording): it costs only $-2.6\pp$, roughly a third of the generative cost. The poison is
+paraphrase, not compression; in this pipeline the choice is verbatim---whole spans or extracted
+original lines---or nothing.
 
 \begin{figure}[t]
 \centering
@@ -800,6 +806,30 @@ $+14\pp$ on exact-recall. (On the degenerate type D, omitted, all three sit at $
 Lossy re-encoding of matched evidence \emph{alone} costs $8$--$14\pp$---isolating the substrate.}
 \label{fig:payload}
 \end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Same-pipeline payload/layout attribution: each arm differs from the deployed
+system \emph{only} in what fills the evidence appendix (or, for the first row, replaces the
+assembled context). 1{,}248-QA half, structured reader, 22k budget throughout. $\Delta$ is
+against each arm's \emph{same-batch} structured anchor (anchors drift $0.6290\to0.6418$
+across days, $\sim$the known 1--2$\pp$ batch noise).}
+\label{tab:family}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcc}
+\toprule
+Context / appendix content & Acc & $\Delta$ (same-batch) \\
+\midrule
+Full trajectory, recency-truncated (no memory) & $0.5577$ & $-8.4\pp$ \\
+Appendix $\to$ LLM summaries (same steps) & $0.5777$ & $-5.1\pp$ \\
+Appendix $\to$ extracted atomic facts & $0.5825$ & $-5.9\pp$ \\
+No appendix (recency$+$gist overview only) & $0.5865$ & $-4.3\pp$ \\
+Appendix $\to$ query-relevant \emph{original lines} (no LLM) & $0.6154$ & $-2.6\pp$ \\
+Appendix $=$ selected steps verbatim (deployed) & $0.6290$\,/\,$0.6418$ & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{Versus standard vector-RAG.}
 The embedding router \emph{is} a standard vector-RAG baseline---it embeds each
@@ -892,8 +922,11 @@ window-forced cap: sweeping the assembled-context budget at fixed routing and
 reader gives $0.550$ (6k tokens) $\to$ $0.624$ (14k) $\to$ $0.644$ (22k) on a
 1{,}248-QA half (same batch; same-day replicate noise $0.5\pp$). ``Context rot''
 does not bite \emph{selected} context at these scales---it bites unselected
-history (the $0.52$ no-memory row of Table~\ref{tab:ama}, and \textsc{OpenWorld},
-where recency-truncated full context scores $0.474$ vs routed $0.629$)---so the
+history (the $0.52$ no-memory row of Table~\ref{tab:ama}; \textsc{OpenWorld},
+where recency-truncated full context scores $0.474$ vs routed $0.629$; and the
+same-batch control of Table~\ref{tab:family}, where the raw trajectory
+recency-truncated to the \emph{same} 22k budget costs $-8.4\pp$, a larger loss
+than any payload degradation)---so the
 rule is: select first, then fill the window with what was selected. The
 recency$+$gist overview earns its tokens (cutting to 6k costs $-27\pp$ on
 \textsc{Embodied} and $-23\pp$ on \textsc{Web}); the one exception is

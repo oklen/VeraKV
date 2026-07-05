@@ -63,12 +63,13 @@ wave whose merged files are on the experiment host; they ship in the next artifa
 
 | Tag | What | Split | Acc | Δ (same-batch anchor) |
 |---|---|---|---|---|
-| EXTLW | appendix → query-relevant ORIGINAL lines (deterministic, verbatim) | h0 | 0.6154 | −1.4 vs RESTR — paraphrase, not compression, is the poison |
-| FACTSW | appendix → extracted atomic facts (Mem0-style) | h0 | 0.5825 | −4.7 vs RESTR (≤ gist-only) |
-| FULLTR | full trajectory, recency-truncated @22k (arm=full) | h0 | 0.5577 | −7.1 vs RESTR; below lexical-router 0.6154 |
+| EXTLW | appendix → query-relevant ORIGINAL lines (deterministic, verbatim) | h0 | 0.6154 | −2.6 vs RESTR2 — paraphrase, not compression, is the poison |
+| FACTSW | appendix → extracted atomic facts (Mem0-style) | h0 | 0.5825 | −5.9 vs RESTR2 (≤ gist-only) |
+| FULLTR | full trajectory, recency-truncated @22k (arm=full) | h0 | 0.5577 | −8.4 vs RESTR2 |
 | LOOPSW | iterative ReAct lookup loop REPLACING the answer pass | SW-432 | 0.3773 | −9.0 vs CSW3 |
 | LOOPS2 | same loop as EVIDENCE-GATHERER, structured answer pass kept | SW-432 | 0.4676 | ±0.0 vs CSW3 (0.4676) — iteration adds nothing |
 | CSW3 | plain structured control (same batch as the loop runs) | SW-432 | 0.4676 | — |
+| RESTR2 | flagship structured anchor for this wave (RESTR drifted 0.6290→0.6418, ~known cross-day noise) | h0 | 0.6418 | anchor |
 
 ## Reproducibility notes
 
