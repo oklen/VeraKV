@@ -937,7 +937,22 @@ $\le$26k tokens; same 8B backbone, same stripped microbenchmark reader): the
 mask-oracle gate holds at $24/24$, and the two paths remain accuracy-tied with
 KV marginally ahead under both the same-model judge ($0.175$ vs $0.165$,
 $+1.0\pp$) and an independent Qwen3-32B re-grade ($+0.7\pp$), at $81\%$
-first-token agreement. Absolute levels are low by construction---this
+first-token agreement. The same holds when the KV arm serves the
+\emph{deployed} layout rather than the compact one: the recency$+$gist
+overview is prefilled once per episode as a post-trajectory block (fixed
+positions, so its KV is itself per-episode cacheable), the router-selected
+spans are gathered from the trajectory cache, and only the question is fresh
+per query. On a 576-QA re-run ($\le$24k, four domains) the mask-oracle gate is
+again $24/24$ and the arms are tied within noise ($0.222$ vs $0.240$,
+$-1.7\pp$ with near-disjoint answer strings, $\pm5\pp$ binomial band;
+first-token agreement $90\%$)---the two arms necessarily differ in block
+\emph{order} (the text pipeline puts the overview first; position-preserving
+gather keeps evidence at trajectory positions, overview after), so this is
+parity between the deployed text pipeline and its cache-native serving
+equivalent, not a byte-identical prompt. Notably the overview lifts
+\emph{both} arms by $\sim\!5$ points over the compact microbenchmark---the
+serving primitive covers the layout the headline numbers actually use, and is
+not tied to the stripped assembly. Absolute levels are low by construction---this
 microbenchmark reader is not the deployed pipeline---so the claim is arm
 \emph{parity}, not absolute accuracy; \textsc{OpenWorld} and most
 \textsc{Software} episodes exceed the size filter and are under-represented.
@@ -974,7 +989,8 @@ It is a statement about \emph{fidelity} to the full-prefill computation, not a
 measured accuracy advantage (the two paths are tied within noise end-to-end; our
 headline benchmark numbers come from the deployed \emph{text} pipeline, with KV
 sub-selection validated as its serving-layer equivalent at $n{=}144$, on a
-$576$-QA stratified extension, and via the logit-level gates above). And it cuts against a naive privacy reading: because
+$576$-QA stratified extension, on the deployed overview$+$appendix layout
+itself, and via the logit-level gates above). And it cuts against a naive privacy reading: because
 selected KV is contextualized by \emph{unselected} history, dropping a cold turn
 removes its text from the reader's context but not necessarily its influence from
 downstream cached KV (quantified in \S\ref{sec:limits}: a planted-secret probe

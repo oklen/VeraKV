@@ -73,6 +73,14 @@ mask-oracle gate 24/24; kv 0.175 vs text 0.165 (+1.0pp, same-model judge);
 +0.7pp under an independent Qwen3-32B re-grade; first-token agreement 81%.
 `w4_ans_s*.jsonl` = per-QA answers for both arms; `w4_judged.jsonl` adds 32B grades.
 
+**Deployed-layout variant (results/kv_equiv_deployed/):** the KV arm serves the
+deployed overview+appendix layout (overview prefilled once per episode as a
+post-trajectory block at fixed positions; selected spans gathered; only the
+question fresh). 576 QA, ≤24k, four domains: mask-oracle gate 24/24, arms tied
+within noise (kv 0.222 vs tx 0.240, ±5pp band, 90% first-token agreement); the
+overview lifts both arms ~5 points over the compact microbenchmark.
+`kv_equiv500.py --layout deployed` reproduces it.
+
 ## Privacy / deletion probe (results/w5_privacy.json, paper §Limitations)
 
 Planted-secret probe (`kvmemory/kv_privacy.py`; Qwen3-8B, greedy, 40 trials per
