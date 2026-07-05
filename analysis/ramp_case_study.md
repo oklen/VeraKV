@@ -8,8 +8,21 @@ detour steps — the group membership WAS the answer, and it was wrong). Timelin
 changed* (Cases 3, 14: compiler-computed 2048 board diffs are reasoning, done badly). Missingness
 asserts *what doesn't exist* (Cases 4, 18: appendix-scoped absence stated as data-wide fact while
 the overview still listed those steps as gists). Occurrence lists assert *these are all the
-events* (Case 1: glassbottle 4's decisive step-6 take silently dropped; the reader then invented
-a history).
+events* (Case 1: glassbottle 4's decisive step-6 take silently dropped — and worse, see the
+audit below).
+
+**Ground-truth audit of Case 1 (verified against the raw 150-step trajectory):** the packet's two
+load-bearing citations are FABRICATED. `<step 3> "move glassbottle 3 to sinkbasin 1"` — real step
+3 is `go to shelf 1`; that action occurs nowhere in the trajectory. `<step 78> "move glassbottle 4
+to shelf 1"` — real step 78 is `look`; glassbottle 4 is never moved anywhere after its step-6 take
+(inventory at step 27: "You are carrying: a glassbottle 4"). Mechanism identified: ALFWorld
+observations end with an *available-actions menu* (`move glassbottle 4 to shelf 1` is offered
+whenever the agent carries it near a shelf) — the compiler promoted menu *options* to executed
+*events*, with step numbers and quote marks. The compiler prompt's hard verbatim rules did not
+prevent this; a containment guard (every quoted string must appear verbatim in the source spans)
+would have. PKTD's three answer errors trace 1:1 to fabrication #1 (+ inverted implication),
+fabrication #2, and the dropped step-6 event; the raw-arm reader, reading the primary spans,
+parsed menu-vs-event correctly.
 
 **Wins and losses come from the SAME mechanisms.** Field-narrowing broke Case 2 (reader lost the
 DDL/null evidence it previously used) and *won* Case 9 (hiding the step-7 trap steered the reader
