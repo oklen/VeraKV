@@ -59,6 +59,17 @@ wave whose merged files are on the experiment host; they ship in the next artifa
 | SHUF | every pin shifted ±3 steps | 0.6298 | ±0.0 |
 | SHUFFAR | every pin → far-random wrong step | 0.6114 | −1.8 |
 
+## Wave-6 (payload family completion + full-context control + SOFTWARE loop)
+
+| Tag | What | Split | Acc | Δ (same-batch anchor) |
+|---|---|---|---|---|
+| EXTLW | appendix → query-relevant ORIGINAL lines (deterministic, verbatim) | h0 | 0.6154 | −1.4 vs RESTR — paraphrase, not compression, is the poison |
+| FACTSW | appendix → extracted atomic facts (Mem0-style) | h0 | 0.5825 | −4.7 vs RESTR (≤ gist-only) |
+| FULLTR | full trajectory, recency-truncated @22k (arm=full) | h0 | 0.5577 | −7.1 vs RESTR; below lexical-router 0.6154 |
+| LOOPSW | iterative ReAct lookup loop REPLACING the answer pass | SW-432 | 0.3773 | −9.0 vs CSW3 |
+| LOOPS2 | same loop as EVIDENCE-GATHERER, structured answer pass kept | SW-432 | 0.4676 | ±0.0 vs CSW3 (0.4676) — iteration adds nothing |
+| CSW3 | plain structured control (same batch as the loop runs) | SW-432 | 0.4676 | — |
+
 ## Reproducibility notes
 
 - Same-day replicate noise ≈ 0.5pp (B22 vs FSANC); cross-day ≈ 2pp; SOFTWARE batch noise ±4pp (CSW 0.4375 vs CSW2 0.4630 vs FLSA-batch 0.4769, same config) — compare within batch only.

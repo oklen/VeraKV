@@ -25,6 +25,8 @@ def _cap(c):
 
 # ----- entry point -----
 def agentic_answer(client, question, context, max_tokens, extract_final_answer, method=None, memory=None):
+    if MODE == "packet":
+        return _packet_answer(client, question, context, max_tokens, extract_final_answer, method, memory)
     if MODE == "facts":
         return _facts_answer(client, question, context, max_tokens, extract_final_answer, method, memory)
     if MODE == "extlines":
@@ -259,6 +261,70 @@ def _lossy_answer(client, question, context, max_tokens, xfa, method, memory):
     return {"final_answer": xfa(txt, mcq_mode=False), "reasoning_trace": ""}
 
 
+# ===================== mode: packet (RAMP MVP: reorganize the appendix into a reasoning-affordant view) =====================
+# Tests whether the structured-prompt gain can be moved into MEMORY PRESENTATION: the compiler reorganizes
+# the SAME selected verbatim evidence into need-groups / occurrence lists / timelines (NO conclusions, NO
+# instructions to the reader), and the answer call uses the DEFAULT harness prompt. Guard: if the compile
+# fails or drops the appendix, fall back to the raw context.
+PACKET_INSTR = (
+    "You are a memory-view compiler. Reorganize the evidence steps below into a reasoning-ready view for "
+    "the question. Hard rules:\n"
+    "1. Do NOT answer the question. Do NOT state conclusions, inferences, or recommendations.\n"
+    "2. Preserve decisive content VERBATIM: copy values, commands, file paths, matrices, error messages, "
+    "names, counts, and step indices exactly as written. Never paraphrase them.\n"
+    "3. Organize, don't create: group the evidence by the sub-need of the question it serves; within a "
+    "group keep temporal order; every content line cites its step number and quotes verbatim.\n"
+    "4. If the question asks how many / which steps / list occurrences: add an [Occurrences] section that "
+    "enumerates EVERY matching event, one line per step, with the verbatim trigger line.\n"
+    "5. If the question involves state changing over time: add a [Timeline] section, one line per "
+    "(entity, step) with the verbatim value or change.\n"
+    "6. If spans conflict, list both under [Conflicting evidence] with step numbers. If something the "
+    "question needs is not in the evidence, say so under [Missing evidence].\n"
+    "Output ONLY the view, in this format:\n"
+    "[Evidence needs]\n- ...\n[Evidence groups]\nGroup A (need): <step N> \"verbatim\" ...\n"
+    "[Occurrences] (if applicable)\n[Timeline] (if applicable)\n[Conflicting evidence] (if any)\n"
+    "[Missing evidence] (if any)"
+)
+
+def _packet_answer(client, question, context, max_tokens, xfa, method, memory):
+    base = _structured_instr()   # PROMPT=plain -> harness default instruction
+    newctx = context; swapped = 0
+    if LOSSY_MARK in context:
+        static, dyn = context.split(LOSSY_MARK, 1)
+        try:
+            respS = client.query("## Question\n%s\n\n## Evidence steps\n%s\n\n## Instructions\n%s"
+                                 % (question, dyn, PACKET_INSTR),
+                                 temperature=0.0, max_tokens=min(max_tokens, 3072))
+            clean = (respS.split("</think>")[-1] if "</think>" in respS else respS).strip()
+            if clean and "[Evidence" in clean:
+                newctx = (static + "\n\nReasoning view of the most relevant earlier steps "
+                          "(verbatim quotes, organized by evidence need):\n" + clean[:14000])
+                swapped = 1
+        except Exception:
+            newctx = context
+    try:
+        resp = client.query(_harness_prompt(newctx, question, base), temperature=0.0, max_tokens=max_tokens)
+    except Exception:
+        try:
+            resp = client.query(_harness_prompt(_gcap(newctx), question, base),
+                                temperature=0.0, max_tokens=min(max_tokens, 4096))
+        except Exception:
+            resp = ""
+    m = re.search(r"Answer\[1\]:\s*(.+?)$", resp, re.DOTALL)
+    txt = ("###Answer: %s" % m.group(1).strip()) if m else resp
+    if os.environ.get("AMA_AGENTIC_DBG"):
+        try:
+            open(LOGBASE + "_dbg.log", "a").write("packet=%d q=%s\n" % (swapped, question[:60]))
+            if os.environ.get("AMA_AGENTIC_DBG") == "2" and swapped:
+                import json as _j
+                open(LOGBASE + "_full.jsonl", "a").write(_j.dumps(
+                    {"q": question[:200], "packet": newctx.split("organized by evidence need):\n")[-1][:1600],
+                     "ans": txt[:300]}) + "\n")
+        except Exception:
+            pass
+    return {"final_answer": xfa(txt, mcq_mode=False), "reasoning_trace": ""}
+
+
 # ===================== mode: facts (same-pipeline payload swap: appendix -> extracted atomic facts) =====================
 # Completes the same-pipeline payload family (verbatim / summary / facts / extractive-lines / gist-only):
 # Mem0-style write-time fact extraction applied to the SAME router-selected steps, same 14k-char cap as lossy.
@@ -403,7 +469,7 @@ def _loop_answer(client, question, context, max_tokens, xfa, method, memory):
             transcript += "\n\n## Tool observations (round %d)\n%s" % (rounds, "\n\n".join(outs)[:6000])
             transcript = transcript[-20000:]
     base = _structured_instr()
-    if final:
+    if final and not os.environ.get("AMA_LOOP_COMPOSE"):
         txt = "###Answer: %s" % final
     else:
         evid = context + (("\n\n## Investigation transcript (deterministic lookups over the full stored trajectory)"

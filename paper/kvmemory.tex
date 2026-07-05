@@ -138,7 +138,7 @@ same-batch factorial separates memory-side from reader-side gains---routing
 refinements are second-order ($+1.4\pp$ semantic / $+1.7\pp$ structural on AMA;
 regime-dependent: $+4.3\pp$ on LongMemEval, $+12.6\pp$ on LOCOMO) while a
 one-sentence reader instruction is worth $+5.1$--$5.8\pp$ at either
-router---plus an eight-mechanism reader-side stress test showing the memory
+router---plus a ten-mechanism reader-side stress test showing the memory
 side \emph{saturates} once routing reaches $\sim\!100\%$ recall. Memory
 comparisons that do not control the reader largely measure reader differences.
 \item \textbf{Results on official harnesses} (\S\ref{sec:ama},
@@ -453,10 +453,17 @@ accuracy unchanged ($+0.7\pp$, same-batch; \S\ref{sec:analysis}). Third,
 \emph{format}: forcing the reader to answer by \emph{copying} exact strings
 verbatim (a quote-first instruction) makes things far worse ($-10.0\pp$,
 $0.363$ vs $0.463$, same batch)---suppressing the reader's own reasoning costs
-much more than paraphrase penalties ever did. So the gap is not retrieval, not
-access, and not answer formatting. What remains is AMA-Agent's \emph{iterative}
-answer-production loop---retrieve, execute code over the full trajectory,
-verify, compose from tool outputs: a \emph{process}, not a format. The
+much more than paraphrase penalties ever did. Fourth, \emph{process}: we gave
+our single-pass reader that loop---up to four ReAct rounds of deterministic
+lookups over the lossless store with a running investigation transcript (no
+code execution). Letting the loop \emph{replace} the answering pass costs
+$-9.0\pp$ (same batch); restricting it to \emph{evidence-gathering}, with the
+answer still produced by the structured single pass, changes nothing
+($0.4676$ vs control $0.4676$, $\pm0.0\pp$). So the gap is not retrieval, not
+access, not answer formatting, and not prompted iteration either. What remains
+unique to AMA-Agent's answer production is \emph{executing code over the full
+trajectory}---computing counts, diffs, and aggregations rather than reading
+them---plus its construction-time causal index. The
 reasoning-heavy residue is the same failure mode we quantify on LongMemEval
 (\S\ref{sec:lme}), where $91\%$ of the router's misses are reasoning failures
 with the gold evidence already in context. We treat this as a complementary
@@ -808,7 +815,7 @@ the win, and \kvm{} adds tiering, structural pinning, and KV reuse on top.
 
 \paragraph{Reader-side machinery saturates once routing is strong.}
 If a one-sentence reader instruction is worth $+5.5\pp$, is the single-pass
-reader leaving more on the table? We stress-tested this with eight reader-side
+reader leaving more on the table? We stress-tested this with ten reader-side
 mechanisms over a \emph{fixed} memory (same-batch controls;
 Table~\ref{tab:reader}). On the flagship memory: letting the model compress the
 selected evidence before answering; a sufficiency gate fused into the answer
@@ -850,9 +857,10 @@ the answering pass.
 \caption{Reader-side mechanisms over a \emph{fixed} flagship memory (AMA-Bench,
 same-batch $\Delta$ vs the plain single-pass reader; the plan row reports both
 readers: default\,/\,structured). Same-day replicate noise is $\pm0.5\pp$; the
-tools row is probed on the \textsc{Software} domain, where access was
-hypothesized to matter and whose batch noise is $\pm4\pp$---so $+0.7$ reads as
-$\approx\!0$. Only re-retrieval under a weak router
+tools and loop rows are probed on the \textsc{Software} domain, where the
+mechanisms were hypothesized to matter and whose batch noise is
+$\pm4\pp$---so $+0.7$ reads as $\approx\!0$; both loop rows are same-batch
+against their own control. Only re-retrieval under a weak router
 helps---i.e.\ only when the mechanism supplies \emph{specific, query-addressable}
 evidence the selected context is missing; pre-computed reasoning and
 breadth-repair both fail.}
@@ -868,6 +876,8 @@ Sufficiency gate fused into the answer prompt & $-1.6\pp$ \\
 \quad(escape clause alone $-2.6\pp$; re-retrieval action alone $+0.4\pp$) & \\
 Sufficiency gate as a separate call & $\pm0.0\pp$ \\
 Deterministic lookup tools over the lossless store & $+0.7\pp$ \\
+Iterative lookup loop \emph{replacing} the answering pass & $-9.0\pp$ \\
+Iterative lookup loop as evidence-gatherer (answer pass kept) & $\pm0.0\pp$ \\
 Pre-computed reasoning plan (memory-side artifact) & $-5.6$ / $-2.7\pp$ \\
 Re-retrieval under budget starvation (6k cap, gate fires $19\%$) & $-0.4\pp$ \\
 \midrule
@@ -1155,11 +1165,15 @@ different answer-production paradigm owns one domain}. On AMA-Bench
 \textsc{Software}, selection achieves $100\%$ recall of the asked steps and
 deterministic tool access adds nothing (\S\ref{sec:ama}), yet AMA-Agent leads
 there by $+17\pp$ through an iterative loop that retrieves, executes code over
-the full trajectory, verifies, and composes from tool outputs. The value is the
-\emph{loop}, not its verbatim output style: a quote-first single-pass imitation
-of that style costs $-10\pp$ (\S\ref{sec:ama}). Our reader-side ablations
-(\S\ref{sec:analysis}) indicate this cannot be absorbed by bolting machinery
-onto a single-pass reader; it is a genuinely complementary design, not a
+the full trajectory, verifies, and composes from tool outputs. The value is not
+the iteration as such: a prompted lookup loop over our lossless store adds
+exactly nothing as an evidence-gatherer ($\pm0.0\pp$) and costs $-9\pp$ when
+it displaces the answering pass, and a quote-first single-pass imitation of the
+output style costs $-10\pp$ (\S\ref{sec:ama}). What our reader lacks is the
+\emph{computational} step---code executed over the raw trajectory to compute
+counts, diffs, and aggregations---plus AMA-Agent's construction-time causal
+index; our ablations indicate the rest cannot be absorbed by bolting machinery
+onto a single-pass reader. It is a genuinely complementary design, not a
 retrieval gap.
 
 Fourth, \emph{verbatim storage has governance costs}. Unlike lossy construction,
