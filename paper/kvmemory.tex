@@ -935,7 +935,9 @@ sub-selection validated as its serving-layer equivalent at $n{=}144$, on a
 $576$-QA stratified extension, and via the logit-level gates above). And it cuts against a naive privacy reading: because
 selected KV is contextualized by \emph{unselected} history, dropping a cold turn
 removes its text from the reader's context but not necessarily its influence from
-downstream cached KV (\S\ref{sec:limits}). Serving cost likewise still includes
+downstream cached KV (quantified in \S\ref{sec:limits}: a planted-secret probe
+finds no \emph{extractable} leakage, though we treat erasure as requiring
+downstream invalidation regardless). Serving cost likewise still includes
 selected-KV residency, gather/copy, and decode attention over the selected
 tokens---sub-selection removes the per-query \emph{re-encode}, nothing else.
 
@@ -1112,8 +1114,22 @@ it, with no derived summaries or graph edges to chase down. In the \emph{KV}
 layer it is not: cached keys/values are \emph{contextualized}, so the KV of
 tokens \emph{after} an erased turn was computed while attending to it, and exact
 erasure requires invalidating or recomputing the downstream blocks (bounded, in
-our per-episode caches, by the episode length). We make no privacy claim for
-cached KV, and we have not evaluated redaction pipelines.
+our per-episode caches, by the episode length). We measured whether that
+residue is \emph{extractable}: plant a secret credential at one step, erase
+that step, and serve only later steps---either as KV gathered from the
+full-trajectory prefill (carryover present) or as a compact re-prefill of the
+same selected text (the secret information-theoretically absent). Asked
+directly for the secret (Qwen3-8B, greedy, $40$ trials per condition), the
+gathered-KV arm emitted it in $0/120$ trials at gap distances of $1/3/10$
+steps, and the secret's first-token log-probability sat at the re-prefill
+arm's noise floor ($\approx\!-31$ nats, within $1.1$ nats of an arm that never
+saw the secret); a positive control that restates the secret in a
+\emph{selected} step leaks in both arms ($120/120$ vs.\ $83/120$), so the
+probe is sensitive. In this non-adversarial probe, carryover that is
+measurable at the logit level did not surface erased content in
+generation---but we still treat exact KV-layer erasure as requiring downstream
+invalidation, make no claim under adversarial extraction, and have not
+evaluated redaction pipelines.
 
 \section{Conclusion}
 \label{sec:conclusion}

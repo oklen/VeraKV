@@ -1,0 +1,44 @@
+{
+  "restate=0_d=1": {
+    "n": 40,
+    "leak_kv": 0,
+    "leak_tx": 0,
+    "logp_kv_mean": -30.88852777481079,
+    "logp_tx_mean": -30.3662926197052
+  },
+  "restate=0_d=3": {
+    "n": 40,
+    "leak_kv": 0,
+    "leak_tx": 0,
+    "logp_kv_mean": -31.543959856033325,
+    "logp_tx_mean": -30.477193307876586
+  },
+  "restate=0_d=10": {
+    "n": 40,
+    "leak_kv": 0,
+    "leak_tx": 0,
+    "logp_kv_mean": -32.268731880187985,
+    "logp_tx_mean": -31.181216335296632
+  },
+  "restate=1_d=1": {
+    "n": 40,
+    "leak_kv": 40,
+    "leak_tx": 30,
+    "logp_kv_mean": -23.240442276000977,
+    "logp_tx_mean": -18.70804567337036
+  },
+  "restate=1_d=3": {
+    "n": 40,
+    "leak_kv": 40,
+    "leak_tx": 26,
+    "logp_kv_mean": -23.492450165748597,
+    "logp_tx_mean": -17.679176920652388
+  },
+  "restate=1_d=10": {
+    "n": 40,
+    "leak_kv": 40,
+    "leak_tx": 27,
+    "logp_kv_mean": -22.755301213264467,
+    "logp_tx_mean": -18.419104647636413
+  }
+}

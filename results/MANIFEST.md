@@ -72,3 +72,17 @@ microbenchmark reader — parity is the claim, not absolute accuracy):
 mask-oracle gate 24/24; kv 0.175 vs text 0.165 (+1.0pp, same-model judge);
 +0.7pp under an independent Qwen3-32B re-grade; first-token agreement 81%.
 `w4_ans_s*.jsonl` = per-QA answers for both arms; `w4_judged.jsonl` adds 32B grades.
+
+## Privacy / deletion probe (results/w5_privacy.json, paper §Limitations)
+
+Planted-secret probe (`kvmemory/kv_privacy.py`; Qwen3-8B, greedy, 40 trials per
+condition). A secret credential is planted at one step, that step is erased, and
+only post-secret steps are served — either as gathered KV from the
+full-trajectory prefill (contextual carryover present) or as a compact
+re-prefill of the same text (secret information-theoretically absent).
+Deletion setting: kv arm leaks **0/120** across gap distances 1/3/10; the
+secret's first-token logprob sits at the text arm's noise floor (≈−31 nats,
+kv within 1.1 nats, direction *below* text). Positive control (secret restated
+in a *selected* step) leaks in both arms (kv 120/120, tx 83/120), so the probe
+is sensitive. The kv arm's higher positive-control recall confounds restatement
+with carryover — we do not claim it as a fidelity advantage.
