@@ -25,6 +25,8 @@ def _cap(c):
 
 # ----- entry point -----
 def agentic_answer(client, question, context, max_tokens, extract_final_answer, method=None, memory=None):
+    if MODE == "adapt":
+        return _adapt_answer(client, question, context, max_tokens, extract_final_answer, method, memory)
     if MODE == "packet2":
         return _packet_answer(client, question, context, max_tokens, extract_final_answer, method, memory, v2=True)
     if MODE == "packet":
@@ -287,6 +289,64 @@ PACKET_INSTR = (
     "[Occurrences] (if applicable)\n[Timeline] (if applicable)\n[Conflicting evidence] (if any)\n"
     "[Missing evidence] (if any)"
 )
+
+# ===================== mode: adapt (deterministic instruction routing; rules from the 26-case study) =====================
+# The fixed structured instruction fixes 318 questions and breaks 184 (churn 3.7x its net) -- it is a blunt
+# instrument. ADAPT routes a per-question instruction by auditable regex rules derived from the annotated
+# case study (analysis/adapt_case_study.md): protective direct-answer for counterfactual/recommendation/
+# negative-why; enumerate-then-count for bounded single counts; summary-only tally for long-range
+# histograms; chronological ledger for state questions; verbatim-copy for exact-value recall; the proven
+# structured instruction (verbatim, via AMA_ANSWER_INSTR_FILE) for everything else. R1 deliberately omits
+# the cite-your-step demand: citation-forcing is the measured failure mechanism on negative-why questions.
+_ONLY = "Answer using ONLY the context above. "
+ADAPT_RULES = [
+    ("R1", r"\bif\b.{0,80}\bhad\b|\bwould (it|the|have|this|that)\b|what should|should the agent|most reasonable|why did no|why (was|were) [^?]{0,40} not\b|why didn'?t|counterfactual",
+     _ONLY + "Give the single most direct answer, directly and concisely; do not enumerate sub-questions; "
+             "prefer the simplest explanation consistent with the trajectory; do not invent specifics."),
+    ("R3", r"(what|which) (types|kinds)\b|how frequent|\bfrequency\b|how often",
+     _ONLY + "Tally by scanning the whole range and report the final counts only; do not list every step "
+             "individually; do not invent counts."),
+    ("R2", r"how many times|how many [^?]{0,60}\b(before|between|until|after|at step|first|last|prior)\b",
+     _ONLY + "First list every matching occurrence with its step number (cite only steps you can quote), "
+             "then give the count of that list as the answer."),
+    ("R4", r"how did the state|location histor|state change[sd]?\b|throughout the trajectory|state of [^?]{0,40} change",
+     _ONLY + "Reconstruct the state chronologically: one line per step where it changes, citing each step "
+             "verbatim; add nothing beyond the cited steps."),
+    ("R5", r"\bwhat exact|\bexactly what|\bthe exact\b",
+     _ONLY + "Locate the exact item asked for and copy it VERBATIM from the context, citing its step; do "
+             "not generalize or abstract."),
+]
+_ADAPT_RX = None
+
+def _adapt_route(question):
+    global _ADAPT_RX
+    if _ADAPT_RX is None:
+        _ADAPT_RX = [(n, re.compile(rx, re.I), ins) for n, rx, ins in ADAPT_RULES]
+    for name, rx, ins in _ADAPT_RX:
+        if rx.search(question):
+            return name, ins
+    return "R6", None   # None -> use the structured instruction file (bit-identical to the anchor)
+
+def _adapt_answer(client, question, context, max_tokens, xfa, method, memory):
+    rule, instr = _adapt_route(question)
+    base = instr if instr is not None else _structured_instr()
+    try:
+        resp = client.query(_harness_prompt(context, question, base), temperature=0.0, max_tokens=max_tokens)
+    except Exception:
+        try:
+            resp = client.query(_harness_prompt(_gcap(context), question, base),
+                                temperature=0.0, max_tokens=min(max_tokens, 4096))
+        except Exception:
+            resp = ""
+    m = re.search(r"Answer\[1\]:\s*(.+?)$", resp, re.DOTALL)
+    txt = ("###Answer: %s" % m.group(1).strip()) if m else resp
+    if os.environ.get("AMA_AGENTIC_DBG"):
+        try:
+            open(LOGBASE + "_dbg.log", "a").write("adapt=%s q=%s\n" % (rule, question[:60]))
+        except Exception:
+            pass
+    return {"final_answer": xfa(txt, mcq_mode=False), "reasoning_trace": ""}
+
 
 PACKET2_INSTR = (
     "You are a memory-view compiler. Reorganize the evidence steps below into a reasoning-ready view for "

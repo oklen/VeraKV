@@ -86,6 +86,13 @@ previously-correct questions — its missing-evidence panels assert appendix-sco
 data-wide facts and the reader trusts them over the overview (plan-mode inheritance in a new
 guise). Presentation does not transfer; the instruction's value stays in the answering pass.
 
+**v2 (PKTD2): hardened compiler + deterministic verbatim-containment guard.** Guard rejected 69%
+of compilations (instructions alone do not enforce fidelity — fabricated/mis-attributed quotes
+persist under explicit verbatim rules). Surviving packets, net of same-batch re-roll churn
+(measured on the fallback subset, both arms raw): **+0.8pp on F+ / −5.3pp on S** — fidelity can
+be guarded, usefulness cannot be compiled. Case-1 fabrication mechanism (available-actions menu
+promoted to executed events) audited against the raw trajectory in `analysis/ramp_case_study.md`.
+
 ## Reproducibility notes
 
 - Same-day replicate noise ≈ 0.5pp (B22 vs FSANC); cross-day ≈ 2pp; SOFTWARE batch noise ±4pp (CSW 0.4375 vs CSW2 0.4630 vs FLSA-batch 0.4769, same config) — compare within batch only.
