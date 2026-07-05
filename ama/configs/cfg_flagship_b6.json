@@ -1,0 +1,1 @@
+{"arm":"kvmemory","hot_turns":4,"k_rehydrate":5,"router":"causal","causal_base":"hybrid","causal_name_steps":true,"max_ctx_tokens":6000}

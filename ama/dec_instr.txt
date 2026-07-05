@@ -1,0 +1,1 @@
+Answer using ONLY the context above. Break the request into sub-questions if needed, answer each citing exact evidence (values, step indices, outcomes) VERBATIM, then give the final answer.
