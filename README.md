@@ -1,4 +1,4 @@
-# KVMemory — verbatim-selection memory for long-horizon agents
+# VeraKV — verbatim-selection (KV) memory for long-horizon agents
 
 Companion code, configs, and raw prediction artifacts for the paper
 [`paper/kvmemory.pdf`](paper/kvmemory.pdf) (*KVMemory: gist routes, verbatim answers*).
