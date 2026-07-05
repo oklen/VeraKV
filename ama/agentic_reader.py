@@ -25,6 +25,8 @@ def _cap(c):
 
 # ----- entry point -----
 def agentic_answer(client, question, context, max_tokens, extract_final_answer, method=None, memory=None):
+    if MODE == "packet2":
+        return _packet_answer(client, question, context, max_tokens, extract_final_answer, method, memory, v2=True)
     if MODE == "packet":
         return _packet_answer(client, question, context, max_tokens, extract_final_answer, method, memory)
     if MODE == "facts":
@@ -286,16 +288,69 @@ PACKET_INSTR = (
     "[Missing evidence] (if any)"
 )
 
-def _packet_answer(client, question, context, max_tokens, xfa, method, memory):
+PACKET2_INSTR = (
+    "You are a memory-view compiler. Reorganize the evidence steps below into a reasoning-ready view for "
+    "the question. The steps below are a SELECTED SUBSET of a longer trajectory. Hard rules:\n"
+    "1. Do NOT answer the question and do NOT state conclusions, inferences, or recommendations.\n"
+    "2. Quote VERBATIM only: every content line cites its step number and copies text exactly as it "
+    "appears IN THAT STEP. Never paraphrase, never merge, never re-word values, commands, paths, errors, "
+    "names, counts, or indices.\n"
+    "3. Executed events are ONLY what a step's 'Action:' field states. Text listing available/possible "
+    "actions inside an observation is an OPTION, not an event; never cite an option as something that "
+    "happened.\n"
+    "4. Organize, don't create: group evidence by the sub-need of the question it serves; within a group "
+    "keep temporal order. If unsure where something belongs, put the WHOLE step under [Ungrouped steps, "
+    "kept verbatim]. Every step given to you must appear at least once (grouped or ungrouped).\n"
+    "5. If the question asks how many / which steps / list occurrences: add an [Occurrences] section "
+    "enumerating every matching event among the steps above, one line per step, verbatim trigger line.\n"
+    "6. If the question involves state changing over time: add a [Timeline] section, one line per "
+    "(entity, step) with the VERBATIM value only. Never compute changes, deltas, or differences.\n"
+    "7. NEVER state that something is absent, missing, or does not exist. These steps are a subset; "
+    "absence here proves nothing. If you cannot support a need, simply omit it.\n"
+    "Output ONLY the view:\n[Evidence needs]\n- ...\n[Evidence groups]\nGroup A (need): <step N> "
+    "\"verbatim\" ...\n[Occurrences] (if applicable)\n[Timeline] (if applicable)\n[Ungrouped steps, "
+    "kept verbatim] (if any)"
+)
+
+def _norm_ws(t):
+    return " ".join(t.replace("\\n", " ").split())
+
+def _packet_faithful(clean, dyn):
+    """Deterministic containment guard: every quoted string (>=12 chars) must appear verbatim in the
+    source appendix; if it cites <step N>, it must appear within THAT step's span. Any violation -> False."""
+    import re as _re
+    steps = {}
+    for b in _re.split(r"\n(?=<step \d+>)", dyn.strip()):
+        m = _re.match(r"<step (\d+)>", b)
+        if m:
+            steps[m.group(1)] = _norm_ws(b)
+    alln = _norm_ws(dyn)
+    bad = 0
+    for m in _re.finditer(r'(?:<step (\d+)>[^"\n]*)?"([^"]{12,}?)"', clean):
+        sid, q = m.group(1), _norm_ws(m.group(2))
+        if len(q) < 12:
+            continue
+        hay = steps.get(sid, alln) if sid else alln
+        if q not in hay:
+            if sid and q in alln:
+                bad += 1   # verbatim somewhere, but not in the cited step (cross-step borrowing)
+            else:
+                bad += 1   # pure fabrication or paraphrase
+    return bad == 0
+
+def _packet_answer(client, question, context, max_tokens, xfa, method, memory, v2=False):
     base = _structured_instr()   # PROMPT=plain -> harness default instruction
     newctx = context; swapped = 0
     if LOSSY_MARK in context:
         static, dyn = context.split(LOSSY_MARK, 1)
         try:
+            instr = PACKET2_INSTR if v2 else PACKET_INSTR
             respS = client.query("## Question\n%s\n\n## Evidence steps\n%s\n\n## Instructions\n%s"
-                                 % (question, dyn, PACKET_INSTR),
+                                 % (question, dyn, instr),
                                  temperature=0.0, max_tokens=min(max_tokens, 3072))
             clean = (respS.split("</think>")[-1] if "</think>" in respS else respS).strip()
+            if v2 and clean and not _packet_faithful(clean, dyn):
+                clean = ""   # containment guard tripped -> fall back to raw context
             if clean and "[Evidence" in clean:
                 newctx = (static + "\n\nReasoning view of the most relevant earlier steps "
                           "(verbatim quotes, organized by evidence need):\n" + clean[:14000])
@@ -314,7 +369,7 @@ def _packet_answer(client, question, context, max_tokens, xfa, method, memory):
     txt = ("###Answer: %s" % m.group(1).strip()) if m else resp
     if os.environ.get("AMA_AGENTIC_DBG"):
         try:
-            open(LOGBASE + "_dbg.log", "a").write("packet=%d q=%s\n" % (swapped, question[:60]))
+            open(LOGBASE + "_dbg.log", "a").write("packet%s=%d q=%s\n" % ("2" if v2 else "", swapped, question[:60]))
             if os.environ.get("AMA_AGENTIC_DBG") == "2" and swapped:
                 import json as _j
                 open(LOGBASE + "_full.jsonl", "a").write(_j.dumps(
