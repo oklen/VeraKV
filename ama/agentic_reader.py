@@ -25,6 +25,8 @@ def _cap(c):
 
 # ----- entry point -----
 def agentic_answer(client, question, context, max_tokens, extract_final_answer, method=None, memory=None):
+    if MODE == "handoff":
+        return _handoff_answer(client, question, context, max_tokens, extract_final_answer, method, memory)
     if MODE == "adapt":
         return _adapt_answer(client, question, context, max_tokens, extract_final_answer, method, memory)
     if MODE == "packet2":
@@ -289,6 +291,58 @@ PACKET_INSTR = (
     "[Occurrences] (if applicable)\n[Timeline] (if applicable)\n[Conflicting evidence] (if any)\n"
     "[Missing evidence] (if any)"
 )
+
+# ===================== mode: handoff (answer-accountable memory-side reasoning; goal experiment) =====================
+# Plan-poisoning case study diagnosis: memory-side reasoning fails NOT because reasoning cannot run
+# upstream, but because it is generated without answer-accountability (absence commitments freeze early;
+# modality misreads are never self-corrected against the question; sub-question framing displaces the
+# question's own rubric) and consumed with authority. Test: the memory service runs the FULL structured
+# answer-directed derivation itself at full budget; the artifact is handed to the DEFAULT reader as a
+# prior analysis to verify. AMA_HANDOFF_STRIP=1 deterministically removes the final-answer line from the
+# SAME upstream generation, separating "the answer transfers" from "the derivation transfers".
+HANDOFF_DEFAULT = "Provide a direct and concise answer."
+
+def _handoff_answer(client, question, context, max_tokens, xfa, method, memory):
+    strip = bool(os.environ.get("AMA_HANDOFF_STRIP"))
+    up_instr = _structured_instr()   # run with PROMPT=structured: the exact headline instruction
+    art = ""
+    try:
+        respU = client.query(_harness_prompt(context, question, up_instr), temperature=0.0, max_tokens=max_tokens)
+        art = (respU.split("</think>")[-1] if "</think>" in respU else respU).strip()
+        if strip and art:
+            mm = re.search(r"Answer\[1\]\s*:", art)
+            if mm:
+                art = art[:mm.start()].rstrip()
+            art = re.sub(r"(?is)\n[^\n]*final answer[^\n]*$", "", art).rstrip()
+    except Exception:
+        art = ""
+    if art:
+        newctx = (context + "\n\n## Prior analysis of this question (produced by the memory service; "
+                  "verify it against the evidence above before relying on it)\n" + art[:8000])
+    else:
+        newctx = context
+    try:
+        resp = client.query(_harness_prompt(newctx, question, HANDOFF_DEFAULT),
+                            temperature=0.0, max_tokens=min(max_tokens, 6144))
+    except Exception:
+        try:
+            resp = client.query(_harness_prompt(_gcap(newctx), question, HANDOFF_DEFAULT),
+                                temperature=0.0, max_tokens=min(max_tokens, 4096))
+        except Exception:
+            resp = ""
+    m = re.search(r"Answer\[1\]:\s*(.+?)$", resp, re.DOTALL)
+    txt = ("###Answer: %s" % m.group(1).strip()) if m else resp
+    if os.environ.get("AMA_AGENTIC_DBG"):
+        try:
+            open(LOGBASE + "_dbg.log", "a").write("handoff=%d strip=%d q=%s\n" % (int(bool(art)), int(strip), question[:60]))
+            if os.environ.get("AMA_AGENTIC_DBG") == "2" and art:
+                import json as _j
+                open(LOGBASE + "_full.jsonl", "a").write(_j.dumps(
+                    {"q": question[:200], "art": art[:1800], "ans": txt[:300]}) + "\n")
+        except Exception:
+            pass
+    return {"final_answer": xfa(txt, mcq_mode=False), "reasoning_trace": ""}
+
 
 # ===================== mode: adapt (deterministic instruction routing; rules from the 26-case study) =====================
 # The fixed structured instruction fixes 318 questions and breaks 184 (churn 3.7x its net) -- it is a blunt
