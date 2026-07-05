@@ -125,6 +125,19 @@ class KVMemoryMethod(BaseMethod):
         return mem
 
     def memory_retrieve(self, memory, question: str) -> str:
+        if self.cfg["arm"] == "full":
+            # full-context control: the raw trajectory, recency-truncated to the same token budget
+            # (drop OLDEST first) -- no routing, no gists, no appendix; same reader/prompt/judge.
+            body = "\n\n".join(f"<step {s.turn}>\n{s.text}" for s in memory.segments)
+            tok = _load_tokenizer(self.cfg.get("tokenizer", "/tmp/Qwen3-32B"))
+            max_tok = int(self.cfg.get("max_ctx_tokens", 22000))
+            cc = max_tok * 6
+            if len(body) > cc:
+                body = body[-cc:]
+            ids = tok(body, add_special_tokens=False).input_ids
+            if len(ids) > max_tok:
+                body = "...[older steps truncated]...\n" + tok.decode(ids[-max_tok:])
+            return body
         # routed-split layout: a recency overview (hot verbatim + old gists) + an appendix of the
         # router-picked old turns VERBATIM (the evidence). TOKEN-cap the WHOLE thing under the model
         # window: keep the evidence appendix (trim only its tail if it alone overflows), then fill the

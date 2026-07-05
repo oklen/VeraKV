@@ -1,0 +1,265 @@
+{
+ "system": "VeraKV",
+ "paper": "paper/kvmemory.pdf",
+ "raw_predictions": "results/mu_merged_<TAG>.json (per-question predictions + judge scores)",
+ "run_manifests": "results/mu_<TAG>_done (n / accuracy / bootstrap CI)",
+ "noise_calibration": {
+  "same_day_replicate_pp": 0.5,
+  "cross_day_pp": 2.0,
+  "software_batch_pp": 4.0
+ },
+ "kv_equivalence_576": {
+  "kv": 0.175,
+  "text": 0.165,
+  "judge": "Qwen3-8B same-model; +0.7pp under independent Qwen3-32B re-grade",
+  "gate": "mask-oracle 24/24",
+  "files": "results/kv_equiv_576/"
+ },
+ "privacy_probe": {
+  "file": "results/w5_privacy.json",
+  "deletion_leaks_kv": "0/120",
+  "positive_control": "kv 120/120 / tx 83/120"
+ },
+ "runs": [
+  {
+   "tag": "R0",
+   "memory": "lexical router",
+   "reader_prompt": "default",
+   "split": "full-2496",
+   "accuracy": 0.5601,
+   "role": "factorial cell",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "R1",
+   "memory": "lexical router",
+   "reader_prompt": "structured",
+   "split": "full-2496",
+   "accuracy": 0.6154,
+   "role": "factorial cell",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "R2",
+   "memory": "hybrid router",
+   "reader_prompt": "structured",
+   "split": "full-2496",
+   "accuracy": 0.6294,
+   "role": "router ladder",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "FPA+FPB",
+   "memory": "flagship (causal+hybrid+pin)",
+   "reader_prompt": "default",
+   "split": "full-2496",
+   "accuracy": 0.5954,
+   "role": "memory-only headline (factorial cell)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "FLSA+FLSB",
+   "memory": "flagship",
+   "reader_prompt": "structured",
+   "split": "full-2496",
+   "accuracy": 0.6478,
+   "role": "headline reproduction; basis of the leaderboard submission",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "submitted for official leaderboard verification (submissions/verakv_ama_submission.jsonl)"
+  },
+  {
+   "tag": "REDEF",
+   "memory": "flagship",
+   "reader_prompt": "default",
+   "split": "test_h0-1248",
+   "accuracy": 0.597,
+   "role": "same-day anchor",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "RESTR",
+   "memory": "flagship",
+   "reader_prompt": "structured",
+   "split": "test_h0-1248",
+   "accuracy": 0.629,
+   "role": "same-day anchor",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "FSANC",
+   "memory": "flagship",
+   "reader_prompt": "structured",
+   "split": "test_h0-1248",
+   "accuracy": 0.6394,
+   "role": "earlier-wave anchor (cross-day noise calibration)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "B6",
+   "memory": "flagship @6k budget",
+   "reader_prompt": "structured",
+   "split": "test_h0-1248",
+   "accuracy": 0.5497,
+   "role": "budget sweep",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "B6C",
+   "memory": "flagship @6k budget",
+   "reader_prompt": "structured",
+   "split": "test_h0-1248",
+   "accuracy": 0.5425,
+   "role": "budget sweep replicate",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "B14",
+   "memory": "flagship @14k budget",
+   "reader_prompt": "structured",
+   "split": "test_h0-1248",
+   "accuracy": 0.6242,
+   "role": "budget sweep",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "B22",
+   "memory": "flagship @22k budget",
+   "reader_prompt": "structured",
+   "split": "test_h0-1248",
+   "accuracy": 0.6442,
+   "role": "budget sweep",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "GIST",
+   "memory": "flagship, k_rehydrate=0 (overview only)",
+   "reader_prompt": "structured",
+   "split": "test_h0-1248",
+   "accuracy": 0.5865,
+   "role": "payload ablation: no verbatim appendix",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "LOSSY",
+   "memory": "flagship, appendix->LLM summaries",
+   "reader_prompt": "structured",
+   "split": "test_h0-1248",
+   "accuracy": 0.5777,
+   "role": "payload ablation: same-pipeline lossy swap",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "PLDEF",
+   "memory": "flagship + EvidencePlan scaffold",
+   "reader_prompt": "default",
+   "split": "test_h0-1248",
+   "accuracy": 0.5409,
+   "role": "reader-side: pre-computed reasoning anti-transfer",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "PLSTR",
+   "memory": "flagship + EvidencePlan scaffold",
+   "reader_prompt": "structured",
+   "split": "test_h0-1248",
+   "accuracy": 0.6018,
+   "role": "reader-side: plan under structured reader",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "DEC6",
+   "memory": "flagship @6k + separate sufficiency gate",
+   "reader_prompt": "structured",
+   "split": "test_h0-1248",
+   "accuracy": 0.5385,
+   "role": "reader-side: budget-starved re-retrieval",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "DEC14",
+   "memory": "flagship @14k + separate sufficiency gate",
+   "reader_prompt": "structured",
+   "split": "test_h0-1248",
+   "accuracy": 0.6338,
+   "role": "reader-side: re-retrieval @14k",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "TSW",
+   "memory": "flagship + deterministic lookup tools",
+   "reader_prompt": "structured",
+   "split": "SOFTWARE-432",
+   "accuracy": 0.4444,
+   "role": "SOFTWARE access probe",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "CSW",
+   "memory": "flagship (control for TSW)",
+   "reader_prompt": "structured",
+   "split": "SOFTWARE-432",
+   "accuracy": 0.4375,
+   "role": "SOFTWARE same-batch control",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "QSW",
+   "memory": "flagship + quote-first instruction",
+   "reader_prompt": "quote",
+   "split": "SOFTWARE-432",
+   "accuracy": 0.3634,
+   "role": "SOFTWARE format probe",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "CSW2",
+   "memory": "flagship (control for QSW)",
+   "reader_prompt": "structured",
+   "split": "SOFTWARE-432",
+   "accuracy": 0.463,
+   "role": "SOFTWARE same-batch control",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "SHUF",
+   "memory": "flagship, pins shifted +-3",
+   "reader_prompt": "structured",
+   "split": "test_h0-1248",
+   "accuracy": 0.6298,
+   "role": "pin corruption: near-miss",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "SHUFFAR",
+   "memory": "flagship, pins far-random",
+   "reader_prompt": "structured",
+   "split": "test_h0-1248",
+   "accuracy": 0.6114,
+   "role": "pin corruption: far-random",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  }
+ ]
+}

@@ -25,6 +25,12 @@ def _cap(c):
 
 # ----- entry point -----
 def agentic_answer(client, question, context, max_tokens, extract_final_answer, method=None, memory=None):
+    if MODE == "facts":
+        return _facts_answer(client, question, context, max_tokens, extract_final_answer, method, memory)
+    if MODE == "extlines":
+        return _extlines_answer(client, question, context, max_tokens, extract_final_answer, method, memory)
+    if MODE == "loop":
+        return _loop_answer(client, question, context, max_tokens, extract_final_answer, method, memory)
     if MODE == "lossy":
         return _lossy_answer(client, question, context, max_tokens, extract_final_answer, method, memory)
     if MODE == "plan":
@@ -251,6 +257,179 @@ def _lossy_answer(client, question, context, max_tokens, xfa, method, memory):
         except Exception:
             pass
     return {"final_answer": xfa(txt, mcq_mode=False), "reasoning_trace": ""}
+
+
+# ===================== mode: facts (same-pipeline payload swap: appendix -> extracted atomic facts) =====================
+# Completes the same-pipeline payload family (verbatim / summary / facts / extractive-lines / gist-only):
+# Mem0-style write-time fact extraction applied to the SAME router-selected steps, same 14k-char cap as lossy.
+FACTS_SUMM = ("Rewrite each step below as a list of ATOMIC FACTS -- short standalone statements, one fact "
+              "each (an action taken, a parameter, a produced value, an outcome). Keep the '<step N>' "
+              "headers, one block per step, in order, 2-5 facts per step. Do NOT answer any question. "
+              "Output only the fact lists.")
+
+def _facts_answer(client, question, context, max_tokens, xfa, method, memory):
+    base = _structured_instr()
+    newctx = context; swapped = 0
+    if LOSSY_MARK in context:
+        static, dyn = context.split(LOSSY_MARK, 1)
+        try:
+            respS = client.query("## Steps\n%s\n\n## Instructions\n%s" % (dyn, FACTS_SUMM),
+                                 temperature=0.0, max_tokens=min(max_tokens, 3072))
+            clean = (respS.split("</think>")[-1] if "</think>" in respS else respS).strip()
+            if clean:
+                newctx = static + "\n\nAtomic facts extracted from the most relevant earlier steps:\n" + clean[:14000]
+                swapped = 1
+        except Exception:
+            newctx = context
+    try:
+        resp = client.query(_harness_prompt(newctx, question, base), temperature=0.0, max_tokens=max_tokens)
+    except Exception:
+        try:
+            resp = client.query(_harness_prompt(_gcap(newctx), question, base),
+                                temperature=0.0, max_tokens=min(max_tokens, 4096))
+        except Exception:
+            resp = ""
+    m = re.search(r"Answer\[1\]:\s*(.+?)$", resp, re.DOTALL)
+    txt = ("###Answer: %s" % m.group(1).strip()) if m else resp
+    if os.environ.get("AMA_AGENTIC_DBG"):
+        try:
+            open(LOGBASE + "_dbg.log", "a").write("facts=%d q=%s\n" % (swapped, question[:60]))
+        except Exception:
+            pass
+    return {"final_answer": xfa(txt, mcq_mode=False), "reasoning_trace": ""}
+
+
+# ===================== mode: extlines (same-pipeline payload swap: appendix -> query-relevant ORIGINAL lines) =====================
+# Extractive-compression control: keep only the top query-relevant LINES of each selected step, verbatim
+# (deterministic, no LLM, no paraphrase; same 14k cap). If this holds up while summary/facts drop, the
+# poison is paraphrase, not compression; if it drops too, whole-span context matters.
+EXTLINES_K = int(os.environ.get("AMA_EXTLINES_K", "6"))
+
+def _ext_lines(question, dyn, per_step=EXTLINES_K):
+    qtok = set(t for t in re.findall(r"[a-z0-9_./-]+", question.lower()) if len(t) >= 3)
+    out = []
+    for b in re.split(r"\n(?=<step \d+>)", dyn.strip()):
+        lines = b.splitlines()
+        if not lines:
+            continue
+        head, body = lines[0], [l for l in lines[1:]]
+        scored = sorted(
+            ((len(qtok & set(re.findall(r"[a-z0-9_./-]+", l.lower()))), -i, i) for i, l in enumerate(body)),
+            reverse=True)
+        keep = set(i for _, _, i in scored[:per_step])
+        if body:
+            keep.add(0)   # always keep the Action line
+        kept = [body[i] for i in sorted(keep) if i < len(body)]
+        omitted = len(body) - len(kept)
+        blk = head + (("\n" + "\n".join(kept)) if kept else "")
+        if omitted > 0:
+            blk += "\n[... %d original lines omitted ...]" % omitted
+        out.append(blk)
+    return "\n\n".join(out)[:14000]
+
+def _extlines_answer(client, question, context, max_tokens, xfa, method, memory):
+    base = _structured_instr()
+    newctx = context; swapped = 0
+    if LOSSY_MARK in context:
+        static, dyn = context.split(LOSSY_MARK, 1)
+        ext = _ext_lines(question, dyn)
+        if ext:
+            newctx = (static + "\n\nQuery-relevant original lines of the most relevant earlier steps "
+                      "(verbatim; other lines omitted):\n" + ext)
+            swapped = 1
+    try:
+        resp = client.query(_harness_prompt(newctx, question, base), temperature=0.0, max_tokens=max_tokens)
+    except Exception:
+        try:
+            resp = client.query(_harness_prompt(_gcap(newctx), question, base),
+                                temperature=0.0, max_tokens=min(max_tokens, 4096))
+        except Exception:
+            resp = ""
+    m = re.search(r"Answer\[1\]:\s*(.+?)$", resp, re.DOTALL)
+    txt = ("###Answer: %s" % m.group(1).strip()) if m else resp
+    if os.environ.get("AMA_AGENTIC_DBG"):
+        try:
+            open(LOGBASE + "_dbg.log", "a").write("extlines=%d q=%s\n" % (swapped, question[:60]))
+        except Exception:
+            pass
+    return {"final_answer": xfa(txt, mcq_mode=False), "reasoning_trace": ""}
+
+
+# ===================== mode: loop (iterative answer production over the verbatim store) =====================
+# The SOFTWARE dissection localizes the AMA-Agent gap to its ITERATIVE answer loop (retrieve -> inspect ->
+# verify -> compose): a process, not a format. This mode gives our single-pass reader that process: up to
+# LOOP_ROUNDS ReAct rounds of deterministic lookups (get_steps / find_steps) over the lossless store, with a
+# running investigation transcript, then a verified answer. No code execution (disclosed as a boundary).
+LOOP_ROUNDS = int(os.environ.get("AMA_LOOP_ROUNDS", "4"))
+LOOP_INSTR = (
+    "Answer by ITERATIVE INVESTIGATION. You have two deterministic tools over the FULL stored trajectory "
+    "(every step, verbatim -- beyond the excerpt above):\n"
+    "  get_steps(i, j, ...)   -> exact Action/Observation of steps i, j, ... verbatim\n"
+    "  find_steps(\"pattern\", mode=\"keyword\"|\"regex\"|\"action\") -> scan ALL steps, return matching step numbers\n"
+    "Each round, output:\n"
+    "  THOUGHT: what you know so far, what is still missing or unverified\n"
+    "then EITHER up to 4 tool lines like:\n"
+    "  TOOL: get_steps(38, 40)\n"
+    "  TOOL: find_steps(\"runtests.py\", mode=\"keyword\")\n"
+    "OR, once every value/step-index in your answer has been verified against exact step contents:\n"
+    "  FINAL: <the answer, concise and exact>\n"
+    "Verify before answering: locate with find_steps, read with get_steps, cross-check counts and values."
+)
+
+def _loop_answer(client, question, context, max_tokens, xfa, method, memory):
+    transcript = ""; ncalls = 0; rounds = 0; final = None
+    hdr = "%s\n\n## Question\nQuestion 1: %s\n\n## Instructions\n%s" % (context, question, LOOP_INSTR)
+    if memory is not None and getattr(memory, "segments", None):
+        for rnd in range(LOOP_ROUNDS):
+            rounds = rnd + 1
+            try:
+                resp = client.query(hdr + transcript + "\n\n## Round %d\n" % rounds,
+                                    temperature=0.0, max_tokens=1536)
+            except Exception:
+                break
+            clean = resp.split("</think>")[-1] if "</think>" in resp else resp
+            mF = re.search(r"FINAL:\s*(.+?)\s*$", clean, re.DOTALL)
+            calls = _parse_tool_lines(clean)
+            transcript += "\n\n## Round %d (yours)\n%s" % (rounds, clean.strip()[:2200])
+            if mF and not calls:
+                final = mF.group(1).strip()
+                break
+            if not calls:
+                break
+            outs = []
+            for name, args in calls[:4]:
+                ncalls += 1
+                outs.append(_tool_get(memory, args) if name == "get_steps" else _tool_find(memory, args))
+            transcript += "\n\n## Tool observations (round %d)\n%s" % (rounds, "\n\n".join(outs)[:6000])
+            transcript = transcript[-20000:]
+    base = _structured_instr()
+    if final:
+        txt = "###Answer: %s" % final
+    else:
+        evid = context + (("\n\n## Investigation transcript (deterministic lookups over the full stored trajectory)"
+                           + transcript) if transcript else "")
+        try:
+            resp = client.query(_harness_prompt(evid, question, base), temperature=0.0, max_tokens=min(max_tokens, 4096))
+        except Exception:
+            try:
+                resp = client.query(_harness_prompt(_gcap(evid), question, base),
+                                    temperature=0.0, max_tokens=min(max_tokens, 4096))
+            except Exception:
+                resp = ""
+        m = re.search(r"Answer\[1\]:\s*(.+?)$", resp, re.DOTALL)
+        txt = ("###Answer: %s" % m.group(1).strip()) if m else resp
+    if os.environ.get("AMA_AGENTIC_DBG"):
+        try:
+            open(LOGBASE + "_dbg.log", "a").write("loop r=%d calls=%d fin=%d q=%s\n"
+                                                  % (rounds, ncalls, int(final is not None), question[:60]))
+            if os.environ.get("AMA_AGENTIC_DBG") == "2":
+                import json as _j
+                open(LOGBASE + "_full.jsonl", "a").write(_j.dumps(
+                    {"q": question[:200], "rounds": rounds, "calls": ncalls,
+                     "tr": transcript[-1500:], "ans": txt[:300]}) + "\n")
+        except Exception:
+            pass
+    return {"final_answer": xfa(txt, mcq_mode=False), "reasoning_trace": transcript[:4000]}
 
 
 # ===================== mode: plan (EvidencePlan — move the structured-reasoning gain into the memory service) =====================
