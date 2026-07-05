@@ -20,7 +20,7 @@
 \captionsetup{font=small,labelfont=bf}
 
 \newcommand{\pp}{\,\mathrm{pp}}
-\newcommand{\kvm}{\textsc{kvmemory}}
+\newcommand{\kvm}{VeraKV}
 
 \title{Select, Don't Construct:\\
 Verbatim KV-Memory for Long-Horizon Agents}
@@ -47,13 +47,13 @@ readable framework (recency-tiered verbatim store, pluggable router, verbatim
 rehydration) for self-hosted inference.
 
 Our central finding is that \emph{payload fidelity}---not memory construction,
-and not router sophistication---is the dominant variable. On \textbf{AMA-Bench}
-(official Qwen3-32B harness, full 2{,}496 QA), under the harness's
-\emph{default} answer prompt, the memory stack alone reaches $0.5954$: above
-the purpose-built AMA-Agent ($+2.3\pp$), with every prior memory system
+and not router sophistication---is the dominant \emph{memory-side} variable. On
+\textbf{AMA-Bench} (official Qwen3-32B harness, full 2{,}496 QA), under the
+harness's \emph{default} answer prompt, the memory stack alone reaches $0.5954$:
+above the purpose-built AMA-Agent ($+2.3\pp$), with every prior memory system
 $+10$--$35\pp$ behind; a disclosed, separately ablated structured answer
 instruction brings the end-to-end system to \textbf{0.6466} in our run
-(leaderboard submission pending). A same-batch memory$\times$reader factorial
+(submitted for official leaderboard verification). A same-batch memory$\times$reader factorial
 and matched payload ablations locate the gains: lossily re-encoding the
 \emph{same} selected evidence costs $5$--$14\pp$; router sophistication is
 second-order ($+1.4\pp$ semantic, $+1.7\pp$ structural) and regime-dependent
@@ -73,8 +73,9 @@ still attends over the selected KV).
 The recipe wins when history overflows the window or distractors drown the
 reader; full context can win when it fits, and construction-time extraction can
 win for a weak reader on tiny isolated facts. We map these boundaries and
-release configurations, predictions, and judge outputs as a reproducible
-baseline that centers payload fidelity over memory construction.
+release code, configurations, prompts, raw predictions, and judge outputs
+(\url{https://github.com/oklen/VeraKV}) as a reproducible baseline that centers
+payload fidelity over memory construction.
 \end{abstract}
 
 \section{Introduction}
@@ -123,7 +124,7 @@ families (\S\ref{sec:results}). Our contributions:
 them \emph{verbatim} beats every published lossy-construction system by
 $+10$--$35\pp$ cross-system, and matched-evidence ablations make the payload's
 role causal: re-encoding the \emph{same} selected evidence as summaries or
-facts costs $8$--$14\pp$ in a stripped oracle setting and $-5.1\pp$ inside the
+facts costs $8$--$14\pp$ in a stripped oracle setting and $5.1\pp$ inside the
 deployed pipeline.
 \item \textbf{A memory$\times$reader confound audit} (\S\ref{sec:analysis}): a
 same-batch factorial separates memory-side from reader-side gains---routing
@@ -136,8 +137,8 @@ comparisons that do not control the reader largely measure reader differences.
 \item \textbf{Results on official harnesses} (\S\ref{sec:ama},
 \S\ref{sec:locomo}, \S\ref{sec:lme}): $0.5954$ under the AMA-Bench default
 reader and \textbf{0.6466} end-to-end on our run of the official harness over
-the full 2{,}496 QA (above the prior leaderboard best $0.6246$; submission
-pending); competitive LOCOMO ($0.704$ vs Mem0 $0.671$\,/\,Zep $0.660$ under the
+the full 2{,}496 QA (above the prior leaderboard best $0.6246$; submitted for
+official verification); competitive LOCOMO ($0.704$ vs Mem0 $0.671$\,/\,Zep $0.660$ under the
 public protocol, positioned as an out-of-domain check); LongMemEval-S within a
 stated regime boundary.
 \item \textbf{A serving mechanism: literal KV sub-selection} (\S\ref{sec:eff}):
@@ -266,7 +267,7 @@ would require re-rotating the stored keys) and decode the question on top,
 are thus served from the cache, never re-encoded. Because RoPE is relative,
 keeping spans at their original positions is exact for the retained-and-earlier
 tokens: this sub-selected prefill agrees with a full-prefill-then-mask-dropped
-oracle on the first decoded token in all our checks (\S\ref{sec:eff}). The
+oracle on the first decoded token in our checks (\S\ref{sec:eff}). The
 per-query \emph{prefill} is therefore $O(\text{question})$ rather than
 $O(\text{selected evidence})$---the selected spans are not re-encoded, though the
 decode still attends over their KV---so the more a multi-hop query pulls, the
@@ -333,7 +334,7 @@ layout also benefits hosted prompt-caching.
 \centering
 \caption{\kvm{} default configuration (the fork surface; every row is swappable).}
 \label{tab:config}
-\small
+\footnotesize
 \begin{tabular}{ll}
 \toprule
 Component & Default setting \\
@@ -341,12 +342,12 @@ Component & Default setting \\
 Hot tier & $h{=}4$ most recent turns, verbatim \\
 Cold gist & extractive head: \texttt{action[:120]} $+$ \texttt{obs[:160]} chars (no LLM) \\
 Lexical router & token overlap over \texttt{[a-z0-9]+} tokens (BM25-like), zero-dependency \\
-Embedding router & Qwen3-Embedding-0.6B, last-token pool $+$ L2, cosine top-$k$, lexical pre-filter \\
+Embedding router & Qwen3-Embedding-0.6B, last-token pool, cosine top-$k$, lexical pre-filter \\
 Hybrid router & RRF of \{lexical, embedding\}, $c{=}60$, $4k$ candidates per sub-router \\
 Step-pin & regex \texttt{(turn|step)s?\,$N$(--$M$)?}; pin named turns verbatim \\
 Rehydration $k$ & top-$5$ selected turns (budget-bounded) \\
 Context budget & 22k tokens (32k window $-$ 10k thinking reserve); left-truncate old first \\
-Answer prompt & structured: sub-question $\rightarrow$ cite exact evidence $\rightarrow$ compose \\
+Answer prompt & structured: sub-questions $\rightarrow$ cite evidence $\rightarrow$ compose (App.~\ref{app:instr}) \\
 Reader / judge & Qwen3-32B (official AMA-Bench Track B) \\
 \bottomrule
 \end{tabular}
@@ -392,12 +393,15 @@ episode-cluster resampling, whose lower bound sits marginally below AMA-Agent's
 $0.5722$---we therefore claim ``above'', not ``significantly above''). Our headline
 run additionally swaps the reader's one-sentence answer instruction for a
 structured one (``break the request into sub-questions, answer each citing exact
-evidence verbatim, then give the final answer''), which we disclose and ablate as
-a \emph{reader-side} variable, orthogonal to the memory (\S\ref{sec:analysis}):
+evidence verbatim, then give the final answer''; all three instructions we run
+are reproduced verbatim in Appendix~\ref{app:instr}), which we disclose and
+ablate as a \emph{reader-side} variable, orthogonal to the memory
+(\S\ref{sec:analysis}):
 with it, \kvm{} reaches \textbf{0.6466} on our run of the official harness,
 above AMA-Agent ($+7.4\pp$) and the prior (unreleased) leaderboard best,
-HybridFocus $0.6246$ (leaderboard submission pending; we release configs, raw
-predictions, and judge outputs). AMA-Bench ships only a test split, so we
+HybridFocus $0.6246$ (submitted for official leaderboard verification; we
+release configs, raw predictions, judge outputs, and the submission file
+itself). AMA-Bench ships only a test split, so we
 disclose that all tuning necessarily happened on it---for every system on the
 leaderboard alike; our defense against overfitting is consistency across three
 benchmark families and released artifacts, not a held-out split that does not
@@ -437,17 +441,21 @@ paradigm, not a deficiency the memory can absorb (\S\ref{sec:limits}).
 \centering
 \caption{AMA-Bench, average accuracy over the full 2{,}496 QA (Qwen3-32B backbone
 and judge, official harness). Baseline rows are the published AMA-Bench numbers;
-\kvm{} rows are our runs on the same harness.}
+\kvm{} rows are our runs on the same harness, labeled with the answer prompt they
+use (default vs the disclosed structured instruction, \S\ref{sec:analysis}) so
+memory-side and reader-side effects stay separable in the table itself; the
+$0.6466$ run is submitted for official leaderboard verification.}
 \label{tab:ama}
 \small
 \begin{tabular}{lc}
 \toprule
 Method & Avg.\ accuracy \\
 \midrule
-\textbf{\kvm{} (step-pinning router)} & \textbf{0.6466}\;\small(our run; pending official verification) \\
+\textbf{\kvm{} (hybrid$+$pin memory, structured reader)} & \textbf{0.6466} \\
 HybridFocus (prior leaderboard best, unreleased) & 0.6246 \\
+\kvm{} (hybrid$+$pin memory, \emph{default} reader) & 0.5954 \\
 AMA-Agent (purpose-built) & 0.5722 \\
-\kvm{} (lexical router, zero-dependency) & 0.5621 \\
+\kvm{} (lexical router, default reader) & 0.5621 \\
 \midrule
 MemoRAG~\citep{memorag} & 0.4606 \\
 HippoRAG2~\citep{hipporag} & 0.4480 \\
@@ -468,6 +476,7 @@ Long-context Qwen3-32B (no memory) & 0.52 \\
 AMA-Agent. \kvm{} wins five of six domains.}
 \label{tab:ama-domain}
 \small
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{lcccccc}
 \toprule
 & TEXT2SQL & SOFTWARE & WEB & GAME & EMBODIED & OPENWORLD \\
@@ -497,7 +506,7 @@ because it knows whether evidence exists.
 We position LOCOMO as an \emph{out-of-domain sanity check}, not a headline
 claim: the benchmark has known protocol variants (QA subsets, judge choices),
 and newer file- and tool-based systems report stronger numbers under their own
-setups (e.g.\ a filesystem-backed agent at $0.740$~\citep{lettafiles} and
+setups (e.g.\ filesystem-backed agents at $0.740$~\citep{lettafiles} and
 $0.744$~\citep{pamlocomo}). The useful signal for our thesis is narrower and
 survives those caveats: under one fixed protocol, compact verbatim selection is
 competitive with dedicated dialogue-memory systems, and under a consistent
@@ -770,27 +779,28 @@ the win, and \kvm{} adds tiering, structural pinning, and KV reuse on top.
 
 \paragraph{Reader-side machinery saturates once routing is strong.}
 If a one-sentence reader instruction is worth $+5.5\pp$, is the single-pass
-reader leaving more on the table? We stress-tested this with six reader-side
-mechanisms over a \emph{fixed} flagship memory (same-batch controls;
-Table~\ref{tab:reader}): letting the model compress the selected evidence before
-answering; a sufficiency gate fused into the answer prompt that can trigger
-re-retrieval; the same gate as a separate call; a query-conditioned entity-state
-timeline prepended as a scaffold; and deterministic lookup tools (exact
-get-by-index, exhaustive search) over the lossless store. None helps; several
-hurt. The one positive is re-retrieval under a \emph{weak} (lexical) router
-($+1.3\pp$), and the attribution is exact: the fused gate's $-1.6\pp$ decomposes
-into $-2.6\pp$ from the escape clause perturbing the answer prompt and $+0.4\pp$
-from the re-retrieval action itself. The pattern is uniform: a reader-side
+reader leaving more on the table? We stress-tested this with eight reader-side
+mechanisms over a \emph{fixed} memory (same-batch controls;
+Table~\ref{tab:reader}). On the flagship memory: letting the model compress the
+selected evidence before answering; a sufficiency gate fused into the answer
+prompt that can trigger re-retrieval; the same gate as a separate call; a
+query-conditioned entity-state timeline prepended as a scaffold; and
+deterministic lookup tools (exact get-by-index, exhaustive search) over the
+lossless store. None of these helps; several hurt. The one positive in the
+table is re-retrieval under a \emph{weak} (lexical) router ($+1.3\pp$), and the
+attribution is exact: the fused gate's $-1.6\pp$ splits into $-2.6\pp$ from the
+escape clause perturbing the answer prompt and $+0.4\pp$ from the re-retrieval
+action itself. The pattern is uniform: a reader-side
 mechanism pays only when it injects information the selected context is actually
 \emph{missing}. Once routing reaches $\sim\!100\%$ evidence recall, the memory
 side is saturated---residual errors are backbone reading and reasoning failures,
 which none of this machinery (including verbatim tool access) repairs.
 
-Two further probes sharpen the law. First, \emph{pre-computed reasoning does not
-transfer}. If a one-sentence instruction that elicits decomposition is worth
-$+5\pp$, can the memory service cache that reasoning instead---produce an
-evidence plan (sub-questions, cited values, local conclusions) and hand it to a
-plain reader? No: prepending such a plan costs $-5.6\pp$ under the default
+Two further probes (the table's last rows) sharpen the law. First,
+\emph{pre-computed reasoning does not transfer}. If a one-sentence instruction
+that elicits sub-question reasoning is worth $+5\pp$, can the memory service
+cache that reasoning instead---produce an evidence plan (sub-questions, cited
+values, local conclusions) and hand it to a plain reader? No: prepending such a plan costs $-5.6\pp$ under the default
 reader and $-2.7\pp$ under the structured one (same-batch)---\emph{worse than no
 scaffold at all}, and the more reasoning a scaffold carries, the more it hurts
 (plan $-5.6$ vs state timeline $-1.6$; compression's $-3.0$ is a different
@@ -810,7 +820,10 @@ the answering pass.
 \centering
 \caption{Reader-side mechanisms over a \emph{fixed} flagship memory (AMA-Bench,
 same-batch $\Delta$ vs the plain single-pass reader; the plan row reports both
-readers: default\,/\,structured). Only re-retrieval under a weak router
+readers: default\,/\,structured). Same-day replicate noise is $\pm0.5\pp$; the
+tools row is probed on the \textsc{Software} domain, where access was
+hypothesized to matter and whose batch noise is $\pm4\pp$---so $+0.7$ reads as
+$\approx\!0$. Only re-retrieval under a weak router
 helps---i.e.\ only when the mechanism supplies \emph{specific, query-addressable}
 evidence the selected context is missing; pre-computed reasoning and
 breadth-repair both fail.}
@@ -977,16 +990,16 @@ question and stays flat ($\sim\!40$\,ms); the widening gap is the per-query spee
 
 \begin{table}[t]
 \centering
-\caption{KV sub-selection decouples the per-query \emph{prefill} from the
-selected-evidence size: the sub-selected decode re-prefills only the question (flat
-TTFT), while the text path re-prefills the evidence every query. Dense Qwen3-8B;
-first-token argmax matches the full-prefill oracle at every row, and end-to-end
-answers match the text path on this controlled synthetic set.}
+\caption{KV sub-selection (``ours'') decouples the per-query \emph{prefill} from
+the selected-evidence size: the sub-selected decode re-prefills only the question
+(flat TTFT), while the text path re-prefills the evidence every query. Dense
+Qwen3-8B; first-token argmax matches the full-prefill oracle at every row, and
+end-to-end answers match the text path on this controlled synthetic set.}
 \label{tab:eff}
 \small
 \begin{tabular}{lccc c}
 \toprule
-Selected / context (tok) & re-prefill tok/q & sub-select tok/q & TTFT (re-prefill $\to$ sub-select) & speedup \\
+Selected / context (tok) & text tok/q & ours tok/q & TTFT (text $\to$ ours) & speedup \\
 \midrule
 0.6k / 3.2k  & 575  & 20 & $66\,\text{ms} \to 41\,\text{ms}$  & $1.6\times$ \\
 1.9k / 4.3k  & 1916 & 20 & $189\,\text{ms} \to 40\,\text{ms}$ & $4.7\times$ \\
@@ -1042,7 +1055,7 @@ LOCOMO numbers~\citep{lettafiles,pamlocomo}, and AMA-Agent's tool loop over the
 full trajectory JSON is the same idea on agent traces. These systems are
 \emph{consistent} with our thesis---they, too, refuse to compress the
 payload---and we do not claim priority on ``keep the raw text.'' Our
-contribution relative to them is the controlled decomposition (payload-fidelity
+contribution relative to them is the controlled attribution (payload-fidelity
 causality, the memory$\times$reader confound, structural addressing as a
 separate channel) and the serving primitive (position-preserving KV
 sub-selection), which text-file replay does not provide.
@@ -1142,7 +1155,7 @@ spans a query needs. When the history fits and the reader can exploit it, full
 context can win; when the reader is weak and the facts are tiny, construction
 can win; we state both boundaries rather than universalize the slogan. Within
 its regime, a small framework built on this principle leads our runs of
-AMA-Bench (official verification pending), is competitive with dedicated
+AMA-Bench (submitted for official verification), is competitive with dedicated
 dialogue-memory systems on LOCOMO, and generalizes to LongMemEval-S---with the
 win driven by payload fidelity rather than router sophistication, reader-side
 effects measured and reported separately, and the cost amortized by KV reuse.
@@ -1150,7 +1163,56 @@ The recipe is simple enough to fork, and we offer it, with configurations and
 predictions released, as a reproducible baseline that centers payload fidelity
 over memory construction.
 
+\section*{Reproducibility statement}
+All code, configurations, the exact answer instructions
+(Appendix~\ref{app:instr}), raw per-question predictions with judge scores for
+every AMA-Bench run reported here (26 tagged runs, indexed by a results
+manifest), the KV-equivalence and planted-secret probes with their outputs, the
+analysis scripts that reproduce the bootstrap/cluster CIs and the step-pin
+splits, and our leaderboard submission file are released at
+\url{https://github.com/oklen/VeraKV}. AMA-Bench numbers come from the official
+\texttt{run.py} harness with the memory plugged in through its method
+interface; the structured answer instruction is a config-gated one-line swap,
+disclosed and ablated in \S\ref{sec:analysis}.
+
 \bibliographystyle{iclr2026_conference}
 \bibliography{kvmemory_refs}
+
+\appendix
+\section{The three answer instructions, verbatim}
+\label{app:instr}
+
+The reader-side variable of \S\ref{sec:analysis} is a single swapped sentence.
+For auditability we reproduce all three instructions exactly as run.
+
+\paragraph{Default (harness).}
+\begin{quote}\small
+Provide a direct and concise answer.
+\end{quote}
+
+\paragraph{Structured (ours; $+5.1$--$5.8\pp$ at either router).}
+\begin{quote}\small
+Answer using ONLY the context above. Break the request into sub-questions if
+needed, answer each citing exact evidence (values, step indices, outcomes)
+VERBATIM, then give the final answer.
+\end{quote}
+
+\paragraph{Quote-first (probe; $-10.0\pp$ on \textsc{Software}, same batch).}
+\begin{quote}\small
+Answer using ONLY the context above. Locate the exact evidence first, then
+answer by COPYING the exact strings from the context VERBATIM---commands, file
+paths, code, values, error messages, step indices. Do not paraphrase or
+re-describe them. The final answer should be the exact string(s) plus the
+minimum wording needed to address the question.
+\end{quote}
+
+The comparison is itself a control: the structured and quote-first
+instructions share the grounding preamble (``using ONLY the context above'')
+and the same emphasis on verbatim evidence, and differ in what they ask the
+reader's \emph{reasoning} to do---work through sub-questions versus copy
+strings. The former gains $+5$--$6\pp$ overall, the latter loses $10\pp$ on its
+probe domain: the structured instruction's value is the elicited sub-question
+reasoning in the answering pass, not the grounding phrase or the verbatim
+emphasis it shares with a losing variant.
 
 \end{document}
