@@ -888,8 +888,14 @@ per-question flips are dominated by borderline items) and \emph{breaks}
 $13.4\pp$ of previously-correct questions, partly through a mechanism we
 observed directly: the compiler's missing-evidence annotations assert
 appendix-scoped absences as data-wide facts, and the reader trusts the panel
-over the overview it still has. Organization without conclusions inherits the
-plan's failure mode through its epistemic annotations. Second, re-retrieval cannot repair \emph{breadth} starvation:
+over the overview it still has. In hindsight the boundary could not have held:
+grouping asserts which steps are relevant, a timeline asserts what changed, a
+missingness note asserts what does not exist---every panel of a compiled view
+is an implicit conclusion. A view compiler is a query-time lossy
+\emph{constructor}, and the paper's core claim applies to it recursively; the
+paired case study (released) shows wins and losses flow through the same
+mechanisms, netting zero where there is something to gain and $-13\pp$ where
+there is not. Second, re-retrieval cannot repair \emph{breadth} starvation:
 at a 6k budget (a known $-9.5\pp$ gap), a separate sufficiency gate fires on
 $19\%$ of questions yet recovers nothing ($-0.4\pp$)---the budget cut removes
 the overview, and fetching more individual steps does not restore breadth. The
