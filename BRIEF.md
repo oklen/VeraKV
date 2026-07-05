@@ -33,16 +33,19 @@ that don't control the reader largely measure reader differences. We report both
 disclose the instruction verbatim, and characterize its churn honestly (it fixes 318 questions
 and breaks 184; part of the gain is judge-facing style, measured by case analysis).
 
-**A predictive law, stress-tested 11 ways.** Ten reader-side mechanisms over a fixed memory
+**A predictive law, stress-tested 14 ways.** Twelve reader-side mechanisms over a fixed memory
 (evidence compression, state scaffolds, sufficiency gates, deterministic lookup tools, iterative
-ReAct loops, pre-computed reasoning plans, re-retrieval under three budgets) yield one law: *a
+ReAct loops, pre-computed reasoning plans, type-routed specialized instructions, re-retrieval
+under three budgets) yield one law: *a
 mechanism helps only when it injects specific, query-addressable information the context is
 missing; reasoning must happen in the answering pass.* Pre-computed reasoning is
 anti-transferable (−5.6pp); a prompted iterative loop adds exactly nothing as an evidence-gatherer
 (±0.0 same-batch) and costs −9pp when it displaces the answering pass; and a reasoning-affordant
 re-presentation of the same verbatim evidence (need-grouped quotes, timelines, occurrence panels —
 no conclusions) recovers none of the instruction's per-question fixes (+0.3pp vs a 32% spontaneous-
-recovery control) while breaking 13% of previously-correct questions. The one domain we lose
+recovery control) while breaking 13% of previously-correct questions; even carving the
+instruction itself into question-type-specialized fragments loses (−3.0pp; routed classes −7 to
+−23) — the eliciting instruction survives as an indivisible whole. The one domain we lose
 (SOFTWARE, −17 vs AMA-Agent) is dissected to a five-layer elimination — not retrieval (100%
 recall), not access, not format, not iteration — isolating the residual to *code execution over
 the raw trajectory* + construction-time indexing: a complementary paradigm, stated as a boundary.

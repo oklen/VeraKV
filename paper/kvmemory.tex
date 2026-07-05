@@ -139,7 +139,7 @@ same-batch factorial separates memory-side from reader-side gains---routing
 refinements are second-order ($+1.4\pp$ semantic / $+1.7\pp$ structural on AMA;
 regime-dependent: $+4.3\pp$ on LongMemEval, $+12.6\pp$ on LOCOMO) while a
 one-sentence reader instruction is worth $+5.1$--$5.8\pp$ at either
-router---plus a ten-mechanism reader-side stress test showing the memory
+router---plus a twelve-mechanism reader-side stress test showing the memory
 side \emph{saturates} once routing reaches $\sim\!100\%$ recall. Memory
 comparisons that do not control the reader largely measure reader differences.
 \item \textbf{Results on official harnesses} (\S\ref{sec:ama},
@@ -845,7 +845,7 @@ the win, and \kvm{} adds tiering, structural pinning, and KV reuse on top.
 
 \paragraph{Reader-side machinery saturates once routing is strong.}
 If a one-sentence reader instruction is worth $+5.5\pp$, is the single-pass
-reader leaving more on the table? We stress-tested this with ten reader-side
+reader leaving more on the table? We stress-tested this with twelve reader-side
 mechanisms over a \emph{fixed} memory (same-batch controls;
 Table~\ref{tab:reader}). On the flagship memory: letting the model compress the
 selected evidence before answering; a sufficiency gate fused into the answer
@@ -910,11 +910,23 @@ mechanisms, netting zero where there is something to gain and $-13\pp$ where
 there is not. Second, re-retrieval cannot repair \emph{breadth} starvation:
 at a 6k budget (a known $-9.5\pp$ gap), a separate sufficiency gate fires on
 $19\%$ of questions yet recovers nothing ($-0.4\pp$)---the budget cut removes
-the overview, and fetching more individual steps does not restore breadth. The
-law in final form: a mechanism pays only when it supplies \emph{specific,
-query-addressable} information the context is missing; reasoning must happen
-in the answering pass, and neither its content (pre-computed plans) nor its
-scaffolding (re-presented evidence views) transfers into memory.
+the overview, and fetching more individual steps does not restore breadth. Nor does the instruction \emph{decompose}: deterministic
+question-type routing to specialized fragments of it (enumerate-then-count,
+ledger-only state reconstruction, verbatim-copy, protective direct answering
+for counterfactuals---rules derived from an annotated 26-case study of what
+the instruction fixes and breaks) scores $-3.0\pp$ overall, with the routed
+classes losing $-7$ to $-23\pp$ while the untouched-default subset replicates
+its anchor to $-0.3\pp$. Every fragment ablates the full
+derive$\to$cite$\to$compose loop, and every ablation loses---the failure
+cases the rules were built from are the tails, and routing the body away from
+a mechanism whose within-class average is positive trades the body for the
+tails. (We did not test additive per-class hints appended to the intact
+instruction.) The law in final form: a mechanism pays only when it supplies
+\emph{specific, query-addressable} information the context is missing;
+reasoning must happen in the answering pass, and the eliciting instruction
+survives as an indivisible whole---its content cannot be pre-computed, its
+presentation cannot be compiled, its process cannot be displaced, and its
+parts cannot be specialized by question type.
 
 \begin{table}[t]
 \centering
@@ -942,6 +954,7 @@ Sufficiency gate as a separate call & $\pm0.0\pp$ \\
 Deterministic lookup tools over the lossless store & $+0.7\pp$ \\
 Iterative lookup loop \emph{replacing} the answering pass & $-9.0\pp$ \\
 Iterative lookup loop as evidence-gatherer (answer pass kept) & $\pm0.0\pp$ \\
+Type-routed specialized instructions (rules from a 26-case study) & $-3.0\pp$ \\
 Pre-computed reasoning plan (memory-side artifact) & $-5.6$ / $-2.7\pp$ \\
 Re-retrieval under budget starvation (6k cap, gate fires $19\%$) & $-0.4\pp$ \\
 \midrule

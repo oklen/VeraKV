@@ -69,6 +69,7 @@ wave whose merged files are on the experiment host; they ship in the next artifa
 | LOOPSW | iterative ReAct lookup loop REPLACING the answer pass | SW-432 | 0.3773 | −9.0 vs CSW3 |
 | LOOPS2 | same loop as EVIDENCE-GATHERER, structured answer pass kept | SW-432 | 0.4676 | ±0.0 vs CSW3 (0.4676) — iteration adds nothing |
 | CSW3 | plain structured control (same batch as the loop runs) | SW-432 | 0.4676 | — |
+| ADAPT | type-routed specialized instructions (rules from 26-case study; analysis/adapt_case_study.md) | h0 | 0.6122 | −3.0 vs RESTR2; per-rule: R6(identical default, n=913) −0.3 replicates anchor, routed classes R1 −6.8 / R2 −3.4 / R3 +12.5(n=16) / R4 −23.3 / R5 −8.0 — every fragment ablates the derive→cite→compose loop and loses |
 | RESTR2 | flagship structured anchor for this wave (RESTR drifted 0.6290→0.6418, ~known cross-day noise) | h0 | 0.6418 | anchor |
 
 ## RAMP MVP (flip-set probe: can memory PRESENTATION absorb the prompt gain?)
