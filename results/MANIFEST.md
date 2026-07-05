@@ -82,6 +82,9 @@ both-right stability sample; both arms same batch, DEFAULT reader (`analysis/fli
 | PKTD | appendix → reasoning-affordant view (need groups / occurrences / timelines, no conclusions) | 0.326 | 0.786 |
 | RFLIP | raw appendix control (spontaneous regression-to-mean) | 0.323 | 0.920 |
 
+| PKT2H0 | v2 packet + guard, FULL h0 deployment | h0 | 0.5617 | −0.2 vs REDEF2 (same batch) = exactly null; serve rate 31% |
+| REDEF2 | raw + default same-batch anchor (REDEF drifted 0.597→0.564: default reader cross-day noise > structured's) | h0 | 0.5641 | anchor |
+
 Verdict: the view recovers nothing (+0.3pp over 32% spontaneous) and breaks 13.4pp of
 previously-correct questions — its missing-evidence panels assert appendix-scoped absences as
 data-wide facts and the reader trusts them over the overview (plan-mode inheritance in a new

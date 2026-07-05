@@ -25,6 +25,8 @@ def _cap(c):
 
 # ----- entry point -----
 def agentic_answer(client, question, context, max_tokens, extract_final_answer, method=None, memory=None):
+    if MODE == "plan2":
+        return _plan_answer(client, question, context, max_tokens, extract_final_answer, method, memory, v2=True)
     if MODE == "handoff":
         return _handoff_answer(client, question, context, max_tokens, extract_final_answer, method, memory)
     if MODE == "adapt":
@@ -683,13 +685,44 @@ PLAN_INSTR = (
     "Composition: <how the local conclusions combine; what the final answer must mention>"
 )
 
-def _plan_answer(client, question, context, max_tokens, xfa, method, memory):
+PLAN2_INSTR = (
+    "You are the memory service's evidence planner. Do NOT produce the final answer. "
+    "Break the question into the sub-questions it requires; for each, quote exact evidence "
+    "(values, step indices, outcomes, verbatim strings) and state a one-line local conclusion; "
+    "then state how the pieces compose. Hard rules learned from audited failures:\n"
+    "(a) MIRROR THE QUESTION'S OWN STRUCTURE AND MODALITY. If it asks for preconditions of success, "
+    "plan preconditions -- not what failed. If it asks 'which turn first X', the plan's job is to FIND "
+    "that turn, not to survey X.\n"
+    "(b) NEVER conclude something is absent. If you have not found it, write 'not located in the "
+    "selected evidence (may exist elsewhere)' and name what to look for -- absence claims poison the "
+    "answer downstream.\n"
+    "(c) Collect ONLY facts the question needs; do not add side-observations, they mis-weight the "
+    "composition.\n"
+    "(d) For counts, list every occurrence with its step number BEFORE stating the number.\n"
+    "Worked contrast:\n"
+    "Question: 'Before step 9 could compile successfully, what preconditions had to be true?'\n"
+    "WRONG framing: 'Sub-question 1: What failed at step 9?' (plans the failure, not the asked "
+    "preconditions)\n"
+    "RIGHT framing: 'Sub-question 1: What does the step-9 query require to be true about the "
+    "referenced columns? Evidence: <step 9> \"...\" Local conclusion: precondition P1 = the column "
+    "exists in every joined table.'\n"
+    "Question: 'In which turn did the agent first extract detail D?'\n"
+    "WRONG: 'Local conclusion: no step mentions D.' RIGHT: 'Not located in the selected evidence "
+    "(may exist elsewhere); candidate turns discussing the source of D: <step 4> \"...\", <step 9> "
+    "\"...\" -- the earliest that contains D verbatim is the answer.'\n"
+    "Use exactly this output format:\n"
+    "Sub-question 1: ...\n  Evidence: <step N> \"...\"\n  Local conclusion: ...\n"
+    "Sub-question 2: ...\n  Evidence: ...\n  Local conclusion: ...\n"
+    "Composition: <how the local conclusions answer THE QUESTION AS ASKED>"
+)
+
+def _plan_answer(client, question, context, max_tokens, xfa, method, memory, v2=False):
     base = _structured_instr()   # with PROMPT=plain this is the harness default instruction
     plan = ""
     try:
         respP = client.query("%s\n\n## Question\nQuestion 1: %s\n\n## Instructions\n%s"
-                             % (context, question, PLAN_INSTR),
-                             temperature=0.0, max_tokens=min(max_tokens, 2048))
+                             % (context, question, (PLAN2_INSTR if v2 else PLAN_INSTR)),
+                             temperature=0.0, max_tokens=(max_tokens if v2 else min(max_tokens, 2048)))
         clean = respP.split("</think>")[-1] if "</think>" in respP else respP
         plan = clean.strip()[:8000]
     except Exception:
