@@ -71,6 +71,21 @@ wave whose merged files are on the experiment host; they ship in the next artifa
 | CSW3 | plain structured control (same batch as the loop runs) | SW-432 | 0.4676 | — |
 | RESTR2 | flagship structured anchor for this wave (RESTR drifted 0.6290→0.6418, ~known cross-day noise) | h0 | 0.6418 | anchor |
 
+## RAMP MVP (flip-set probe: can memory PRESENTATION absorb the prompt gain?)
+
+Flip set = 316 F+ questions (default-wrong & structured-right on the full runs) + 299
+both-right stability sample; both arms same batch, DEFAULT reader (`analysis/flip_mvp.py`).
+
+| Tag | Arm | F+ recovery | S retention |
+|---|---|---|---|
+| PKTD | appendix → reasoning-affordant view (need groups / occurrences / timelines, no conclusions) | 0.326 | 0.786 |
+| RFLIP | raw appendix control (spontaneous regression-to-mean) | 0.323 | 0.920 |
+
+Verdict: the view recovers nothing (+0.3pp over 32% spontaneous) and breaks 13.4pp of
+previously-correct questions — its missing-evidence panels assert appendix-scoped absences as
+data-wide facts and the reader trusts them over the overview (plan-mode inheritance in a new
+guise). Presentation does not transfer; the instruction's value stays in the answering pass.
+
 ## Reproducibility notes
 
 - Same-day replicate noise ≈ 0.5pp (B22 vs FSANC); cross-day ≈ 2pp; SOFTWARE batch noise ±4pp (CSW 0.4375 vs CSW2 0.4630 vs FLSA-batch 0.4769, same config) — compare within batch only.

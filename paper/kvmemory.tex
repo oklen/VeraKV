@@ -862,7 +862,7 @@ mechanism pays only when it injects information the selected context is actually
 side is saturated---residual errors are backbone reading and reasoning failures,
 which none of this machinery (including verbatim tool access) repairs.
 
-Two further probes (the table's last rows) sharpen the law. First,
+Three further probes sharpen the law. First,
 \emph{pre-computed reasoning does not transfer}. If a one-sentence instruction
 that elicits sub-question reasoning is worth $+5\pp$, can the memory service
 cache that reasoning instead---produce an evidence plan (sub-questions, cited
@@ -874,13 +874,29 @@ failure---it removes context outright). The reader inherits the plan's errors
 and skips its own derivation:
 the instruction's value is \emph{eliciting the reader's own reasoning in the
 answering pass}, not the reasoning content---which is why it cannot be moved
-into the memory. Second, re-retrieval cannot repair \emph{breadth} starvation:
+into the memory. Third, neither can the reasoning's \emph{presentation}. We
+compiled the same selected verbatim evidence into a reasoning-affordant
+view---need-grouped quotes, occurrence lists, timelines, conflict and
+missing-evidence panels, with conclusions and instructions expressly
+forbidden---and handed it to the \emph{default} reader, targeting exactly the
+questions the structured instruction fixes (default-wrong, structured-right;
+$n{=}316$) with a same-batch raw-context control and a $299$-question
+both-right stability sample. The view recovers nothing the instruction
+recovers ($32.6\%$ vs the control's $32.3\%$ spontaneous recovery---a
+same-config re-run alone re-fixes a third of the ``fixed'' set, so
+per-question flips are dominated by borderline items) and \emph{breaks}
+$13.4\pp$ of previously-correct questions, partly through a mechanism we
+observed directly: the compiler's missing-evidence annotations assert
+appendix-scoped absences as data-wide facts, and the reader trusts the panel
+over the overview it still has. Organization without conclusions inherits the
+plan's failure mode through its epistemic annotations. Second, re-retrieval cannot repair \emph{breadth} starvation:
 at a 6k budget (a known $-9.5\pp$ gap), a separate sufficiency gate fires on
 $19\%$ of questions yet recovers nothing ($-0.4\pp$)---the budget cut removes
 the overview, and fetching more individual steps does not restore breadth. The
-law in final form: a reader-side mechanism pays only when the missing
-information is \emph{specific and query-addressable}; reasoning must happen in
-the answering pass.
+law in final form: a mechanism pays only when it supplies \emph{specific,
+query-addressable} information the context is missing; reasoning must happen
+in the answering pass, and neither its content (pre-computed plans) nor its
+scaffolding (re-presented evidence views) transfers into memory.
 
 \begin{table}[t]
 \centering
