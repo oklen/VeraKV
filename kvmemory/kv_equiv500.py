@@ -42,6 +42,11 @@ def main():
     ap.add_argument("--nshards", type=int, default=1)
     ap.add_argument("--out", default="/home/tiger/w4_eq.json")
     ap.add_argument("--ans_out", default="/home/tiger/w4_ans.jsonl")
+    ap.add_argument("--layout", choices=["compact", "deployed"], default="compact",
+                    help="compact = [selected||q]; deployed = overview(hot verbatim+old gists) present in "
+                         "BOTH arms: kv gathers {selected spans + overview segment} (overview prefilled once "
+                         "after the trajectory, fixed positions => per-episode cacheable), tx re-prefills the "
+                         "deployed order [overview||selected||q]")
     args = ap.parse_args()
 
     llm = HFBackend()
@@ -74,9 +79,23 @@ def main():
         n_seg = len(segment_texts)
         header = (head + "You are reviewing a completed agent trajectory. Use it to answer the "
                   f"question precisely.\n\nTask: {ep.task}\n\nTrajectory:\n")
-        full_cache, spans, total = llm.prefill_full(segment_texts, header)
-        header_len = spans[0][0]
         hot_idx = set(range(max(0, n_seg - args.hot), n_seg))
+        overview = None
+        if args.layout == "deployed":
+            ov_lines = []
+            for i, sseg in enumerate(ep.segments):
+                if i in hot_idx:
+                    ov_lines.append(f"<step {sseg.turn}>\n{sseg.text}")
+                else:
+                    gist = " ".join(sseg.text.split())[:220]
+                    ov_lines.append(f"<step {sseg.turn}> [summary] {gist}")
+            overview = ("\n\nRecency overview of the whole trajectory (recent steps verbatim, "
+                        "older steps one-line summaries):\n" + "\n\n".join(ov_lines) + "\n")
+            prefill_texts = segment_texts + [overview]
+        else:
+            prefill_texts = segment_texts
+        full_cache, spans, total = llm.prefill_full(prefill_texts, header)
+        header_len = spans[0][0]
         old = [s for i, s in enumerate(ep.segments) if i not in hot_idx]
         id2idx = {s.seg_id: i for i, s in enumerate(ep.segments)}
         do_gate = args.shard == 0 and ei < args.gate_ep
@@ -86,20 +105,26 @@ def main():
             gold = qa.get("answer", "") or ""
             qtype = qa.get("type", "?")
             picked = router.select(q, old, args.k)
-            kept = sorted(hot_idx | {id2idx[p] for p in picked if p in id2idx})
             qtext = f"\n\nQuestion: {q}\nAnswer concisely and specifically:" + tail
+            if args.layout == "deployed":
+                sel_old = sorted({id2idx[p] for p in picked if p in id2idx} - hot_idx)
+                kept = sel_old + [n_seg]          # selected old spans + the overview segment
+                text = (header + overview + "\n\nFull text of the most relevant earlier steps:\n"
+                        + "".join(segment_texts[i] for i in sel_old) + qtext)
+            else:
+                kept = sorted(hot_idx | {id2idx[p] for p in picked if p in id2idx})
+                text = header + "".join(segment_texts[i] for i in kept) + qtext
 
             sub_cache, kpos = llm.subselect_cache(full_cache, spans, header_len, kept)
             ans_kv, _, _ = llm._greedy_pos(sub_cache, kpos, llm._ids(qtext), args.ans_tokens)
-            text = header + "".join(segment_texts[i] for i in kept) + qtext
             ans_tx, _, _ = llm._greedy(DynamicCache(), 0, llm._ids(text), args.ans_tokens)
             kg = judge(llm, head, tail, q, gold, ans_kv)
             tg = judge(llm, head, tail, q, gold, ans_tx)
             lk = llm.first_logits_subselect(full_cache, spans, header_len, kept, qtext)
-            lt = first_logits_on_ids(llm, build_full_ids(llm, header, segment_texts, kept, qtext))
+            lt = first_logits_on_ids(llm, build_full_ids(llm, header, prefill_texts, kept, qtext))
             a_ok = int(lk.argmax()) == int(lt.argmax())
             if do_gate:
-                masked = first_logits_masked_full(llm, header, segment_texts, kept, qtext)
+                masked = first_logits_masked_full(llm, header, prefill_texts, kept, qtext)
                 gateb_agree += int(lk.argmax()) == int(masked.argmax())
                 gateb_n += 1
 

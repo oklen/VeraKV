@@ -41,34 +41,41 @@ interaction histories that overflow any context window. Many deployed memory
 systems answer this by \emph{constructing} a lossy store---extracting atomic
 facts, building knowledge graphs, or summarizing---and retrieving from it; on
 dense, objective agent trajectories this destroys exactly the evidence a
-question needs. \kvm{} takes the opposite route: keep the raw turns, route each
-query to the spans it needs, and rehydrate them \emph{verbatim}---a small,
-readable framework (recency-tiered verbatim store, pluggable router, verbatim
-rehydration) for self-hosted inference.
+question needs. \kvm{} takes the opposite route: \emph{construct indices, not
+answer payloads}. It keeps the raw turns, builds only a cheap extractive index
+and overview over them, routes each query to the spans it needs, and rehydrates
+those spans \emph{verbatim}---a small, readable framework (recency-tiered
+verbatim store, pluggable router, verbatim rehydration) for self-hosted
+inference.
 
 Our central finding is that \emph{payload fidelity}---not memory construction,
 and not router sophistication---is the dominant \emph{memory-side} variable. On
 \textbf{AMA-Bench} (official Qwen3-32B harness, full 2{,}496 QA), under the
-harness's \emph{default} answer prompt, the memory stack alone reaches $0.5954$:
-above the purpose-built AMA-Agent ($+2.3\pp$), with every prior memory system
-$+10$--$35\pp$ behind; a disclosed, separately ablated structured answer
-instruction brings the end-to-end system to \textbf{0.6466} in our run
-(submitted for official leaderboard verification). A same-batch memory$\times$reader factorial
-and matched payload ablations locate the gains: lossily re-encoding the
-\emph{same} selected evidence costs $5$--$14\pp$; router sophistication is
-second-order ($+1.4\pp$ semantic, $+1.7\pp$ structural) and regime-dependent
-($+12.6\pp$ on diffuse dialogue); and the largest single knob is the
-\emph{reader} instruction ($+5.1$--$5.8\pp$ at either router)---so memory
-comparisons that do not control the reader largely measure reader differences.
-The finding replicates on \textbf{LOCOMO} and \textbf{LongMemEval-S} within a
-stated regime boundary.
+harness's \emph{default} answer prompt, the memory stack alone reaches
+$\mathbf{0.5954}$: above the purpose-built AMA-Agent ($+2.3\pp$), with every
+prior memory system $+10$--$35\pp$ behind. This is the memory-side result. A
+disclosed, separately ablated structured answer instruction---a reader-side
+variable, not a memory effect---brings the end-to-end recipe to $0.6466$ in our
+run (submitted for official leaderboard verification). A same-batch
+memory$\times$reader factorial and matched payload ablations locate the gains:
+lossily re-encoding the \emph{same} selected evidence costs $5$--$14\pp$;
+router sophistication is second-order ($+1.4\pp$ semantic, $+1.7\pp$
+structural) and regime-dependent ($+12.6\pp$ on diffuse dialogue); and the
+largest single knob is the \emph{reader} instruction ($+5.1$--$5.8\pp$ at
+either router)---so memory comparisons that do not control the reader largely
+measure reader differences. The same fidelity-over-lossy-payload pattern holds
+on \textbf{LOCOMO} and \textbf{LongMemEval-S}, where we map when selection
+beats full context (history overflows; distractors dominate) and when it does
+not.
 
 Because the store is verbatim KV, selection is also a \emph{serving} primitive:
 prefill the trajectory once, gather the selected spans' cached KV at their
 original positions, and re-prefill only the question---faithful to a
 full-prefill-then-mask oracle in our tests, and $1.6$--$10.9\times$ faster to
-first token as the selected evidence grows (a prototype microbenchmark; decode
-still attends over the selected KV).
+first token as the selected evidence grows. We scope this precisely: the
+accuracy results above use the text-assembly pipeline; KV sub-selection is its
+serving-layer equivalent, validated for parity on real trajectories (a
+prototype microbenchmark; decode still attends over the selected KV).
 
 The recipe wins when history overflows the window or distractors drown the
 reader; full context can win when it fits, and construction-time extraction can
@@ -135,10 +142,12 @@ router---plus an eight-mechanism reader-side stress test showing the memory
 side \emph{saturates} once routing reaches $\sim\!100\%$ recall. Memory
 comparisons that do not control the reader largely measure reader differences.
 \item \textbf{Results on official harnesses} (\S\ref{sec:ama},
-\S\ref{sec:locomo}, \S\ref{sec:lme}): $0.5954$ under the AMA-Bench default
-reader and \textbf{0.6466} end-to-end on our run of the official harness over
-the full 2{,}496 QA (above the prior leaderboard best $0.6246$; submitted for
-official verification); competitive LOCOMO ($0.704$ vs Mem0 $0.671$\,/\,Zep $0.660$ under the
+\S\ref{sec:locomo}, \S\ref{sec:lme}): $\mathbf{0.5954}$ under the AMA-Bench
+\emph{default} reader---the memory-side result, above the purpose-built
+AMA-Agent---and $0.6466$ end-to-end with the separately ablated reader
+instruction, on our run of the official harness over the full 2{,}496 QA
+(above the prior leaderboard best $0.6246$; submitted for official
+verification); competitive LOCOMO ($0.704$ vs Mem0 $0.671$\,/\,Zep $0.660$ under the
 public protocol, positioned as an out-of-domain check); LongMemEval-S within a
 stated regime boundary.
 \item \textbf{A serving mechanism: literal KV sub-selection} (\S\ref{sec:eff}):
@@ -234,9 +243,14 @@ resolution}: agent trajectories are not unstructured documents but event logs
 with stable addresses (step and turn indices, tool-call ids, file paths, URLs),
 and when a query names an address the memory should \emph{dereference} it
 deterministically---reserving content-based routing for the remaining
-budget---rather than force all access through semantic similarity. It is a second
-access path alongside content addressing, not a benchmark-specific heuristic; we
-report its contribution separately throughout (\S\ref{sec:analysis}). How much
+budget---rather than force all access through semantic similarity. The address
+inventory is measured, not assumed: $82\%$ of AMA-Bench questions carry at
+least one deterministically dereferenceable address (step/turn indices $73\%$,
+quoted literals $35\%$, code identifiers $10\%$, file paths $6\%$; analysis
+script released), so step indices are the most \emph{common} address type, not
+the only one---our pin implements that type. It is a second access path
+alongside content addressing, not a benchmark-specific heuristic; we report
+its contribution separately throughout (\S\ref{sec:analysis}). How much
 router sophistication helps is regime-dependent (\S\ref{sec:analysis}); on
 step-indexed agent trajectories a cheap router already saturates, and the
 verbatim \emph{substrate} does the work.
@@ -310,7 +324,10 @@ arbitrary-span KV reuse is realized self-hosting, though the prefix-friendly
 layout also benefits hosted prompt-caching.
 
 \begin{algorithm}[t]
-\caption{\kvm{}: build once, retrieve (and gather KV) per query.}
+\caption{\kvm{}: build once, retrieve (and gather KV) per query. In the KV path,
+un-selected turns are \emph{masked from the query's attention}, not re-encoded
+away: the retained spans' KV was computed in their presence, a carryover we
+measure and bound in \S\ref{sec:eff} and \S\ref{sec:limits}.}
 \label{alg:kvm}
 \begin{algorithmic}[1]
 \Procedure{BuildMemory}{trajectory $T$}
@@ -325,7 +342,7 @@ layout also benefits hosted prompt-caching.
   \State score the remaining (cold) turns by router $R(q,\cdot)$ \Comment{lexical / embedding / RRF hybrid}
   \State $K \gets$ top-$k$ of $P \cup \mathrm{scored}$ under budget $B$; line-trim oversized turns if needed
   \State \textbf{gather} $C$'s KV for $H \cup K$ at their \emph{original} positions (position-preserving)
-  \State decode $q$ over $[\,H\,\Vert\,K\,]$ verbatim (un-selected cold turns dropped), re-prefilling only $q$
+  \State decode $q$ over $[\,H\,\Vert\,K\,]$ verbatim, re-prefilling only $q$ \Comment{un-selected turns masked, not erased}
 \EndProcedure
 \end{algorithmic}
 \end{algorithm}
@@ -341,14 +358,14 @@ Component & Default setting \\
 \midrule
 Hot tier & $h{=}4$ most recent turns, verbatim \\
 Cold gist & extractive head: \texttt{action[:120]} $+$ \texttt{obs[:160]} chars (no LLM) \\
-Lexical router & token overlap over \texttt{[a-z0-9]+} tokens (BM25-like), zero-dependency \\
-Embedding router & Qwen3-Embedding-0.6B, last-token pool, cosine top-$k$, lexical pre-filter \\
+Lexical router & token overlap (BM25-like) over \texttt{[a-z0-9]+}, zero-dependency \\
+Embedding router & Qwen3-Embedding-0.6B, cosine top-$k$, lexical pre-filter \\
 Hybrid router & RRF of \{lexical, embedding\}, $c{=}60$, $4k$ candidates per sub-router \\
 Step-pin & regex \texttt{(turn|step)s?\,$N$(--$M$)?}; pin named turns verbatim \\
 Rehydration $k$ & top-$5$ selected turns (budget-bounded) \\
-Context budget & 22k tokens (32k window $-$ 10k thinking reserve); left-truncate old first \\
+Context budget & 22k (32k window $-$ 10k thinking reserve); truncate oldest first \\
 Answer prompt & structured: sub-questions $\rightarrow$ cite evidence $\rightarrow$ compose (App.~\ref{app:instr}) \\
-Reader / judge & Qwen3-32B (official AMA-Bench Track B) \\
+Reader / judge (AMA) & Qwen3-32B (official Track B; LOCOMO/LME: \S\ref{sec:setup}) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -401,11 +418,19 @@ with it, \kvm{} reaches \textbf{0.6466} on our run of the official harness,
 above AMA-Agent ($+7.4\pp$) and the prior (unreleased) leaderboard best,
 HybridFocus $0.6246$ (submitted for official leaderboard verification; we
 release configs, raw predictions, judge outputs, and the submission file
-itself). AMA-Bench ships only a test split, so we
-disclose that all tuning necessarily happened on it---for every system on the
-leaderboard alike; our defense against overfitting is consistency across three
-benchmark families and released artifacts, not a held-out split that does not
-exist. Per domain (Table~\ref{tab:ama-domain}) \kvm{} beats AMA-Agent in five of
+itself). AMA-Bench ships only a test split, so---for every system on the leaderboard
+alike---tuning necessarily happened on it; we disclose our tuning surface
+exactly. It consists of a handful of discrete choices, each ablated in this
+paper: the router (three candidates; Table~\ref{tab:ablation}), the answer
+instruction (two candidates, both verbatim in Appendix~\ref{app:instr}), and
+the structural step-pin (on/off, with corruption controls). The context budget
+is forced by the model window (and swept in \S\ref{sec:analysis}); the
+remaining knobs (hot tier $h{=}4$, top-$k{=}5$, gist head lengths) are the
+framework's defaults and were never searched. The full configuration is frozen
+in the released repository, and runs after the freeze are ablations, not
+tuning. Our defense against overfitting is this small, disclosed, discrete
+surface plus consistency across three benchmark families---not a held-out
+split that does not exist. Per domain (Table~\ref{tab:ama-domain}) \kvm{} beats AMA-Agent in five of
 six domains; the exception is \textsc{Software}, which we dissect below.
 
 A faithful re-run of the full harness reproduces this headline ($0.643$ under the
@@ -472,8 +497,9 @@ Long-context Qwen3-32B (no memory) & 0.52 \\
 
 \begin{table}[t]
 \centering
-\caption{AMA-Bench per-domain accuracy: \kvm{} (step-pinning) vs the purpose-built
-AMA-Agent. \kvm{} wins five of six domains.}
+\caption{AMA-Bench per-domain accuracy: \kvm{} (hybrid$+$pin memory,
+structured reader---the $0.6466$ run) vs the purpose-built AMA-Agent. \kvm{}
+wins five of six domains.}
 \label{tab:ama-domain}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -624,7 +650,9 @@ default-reader memory stack). The two axes are additive to within batch noise:
 routing adds $+3.1$--$3.5\pp$ at either reader, and the one-sentence structured
 answer instruction adds $+5.1$--$5.8\pp$ at either router. Under the
 \emph{default} reader the memory stack alone already scores above the
-purpose-built AMA-Agent ($0.5722$).}
+purpose-built AMA-Agent ($0.5722$). The lexical/default cell is a same-batch
+replicate of Table~\ref{tab:ama}'s lexical row ($0.5601$ vs $0.5621$, run on
+different days; the $0.2\pp$ gap is within replicate noise).}
 \label{tab:factorial}
 \small
 \begin{tabular}{lcc}
@@ -735,7 +763,8 @@ deployed context and replacing only the router-selected verbatim appendix with L
 steps (same QA, overview, router, reader, and judge; the swap fires on $96\%$ of questions) costs
 $-5.1\pp$ ($0.578$ vs $0.629$, same-day). Notably, the summarized appendix scores slightly \emph{below}
 serving no appendix at all (gist-only $0.587$): a lossy re-encoding of the selected evidence adds
-nothing over the one-line gists already in the overview. Verbatim, or nothing.
+nothing over the one-line gists already in the overview. In this pipeline the choice is verbatim,
+or nothing.
 
 \begin{figure}[t]
 \centering
@@ -1149,16 +1178,18 @@ evaluated redaction pipelines.
 
 For long-horizon agents whose answers are exact, objective, and buried in dense
 trajectories---and whose histories overflow the window or drown the reader in
-distractors---the right memory operation is to \emph{select}, not
-\emph{construct}: keep the raw history as reusable KV and rehydrate verbatim the
-spans a query needs. When the history fits and the reader can exploit it, full
-context can win; when the reader is weak and the facts are tiny, construction
-can win; we state both boundaries rather than universalize the slogan. Within
-its regime, a small framework built on this principle leads our runs of
-AMA-Bench (submitted for official verification), is competitive with dedicated
-dialogue-memory systems on LOCOMO, and generalizes to LongMemEval-S---with the
-win driven by payload fidelity rather than router sophistication, reader-side
-effects measured and reported separately, and the cost amortized by KV reuse.
+distractors---the right memory operation is to \emph{construct indices, not
+answer payloads}: keep the raw history as reusable KV, index and scaffold it
+cheaply, and rehydrate verbatim the spans a query needs. When the history fits
+and the reader can exploit it, full context can win; when the reader is weak
+and the facts are tiny, construction can win; we state both boundaries rather
+than universalize the slogan. Within its regime, a small framework built on
+this principle leads our runs of AMA-Bench (submitted for official
+verification), is competitive with dedicated dialogue-memory systems on
+LOCOMO, and traces the selection-vs-full-context crossover on
+LongMemEval-S---with the win driven by payload fidelity rather than router
+sophistication, reader-side effects measured and reported separately, and the
+cost amortized by KV reuse.
 The recipe is simple enough to fork, and we offer it, with configurations and
 predictions released, as a reproducible baseline that centers payload fidelity
 over memory construction.
