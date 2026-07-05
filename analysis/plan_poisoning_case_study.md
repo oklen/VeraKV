@@ -33,7 +33,26 @@ a single mechanism:
 authority — derivation and commitment are separated, so nothing upstream is ever checked against
 "does this answer the question", and nothing downstream re-checks it.**
 
-**The fix this predicts (running as HOFA/HOFS):** make the memory-side call answer-accountable —
+**VERDICT (all cells run; same-batch h0):** the fix experiments completed the picture with two
+more independent blockers beyond the accountability diagnosis:
+
+- **Layer 2 — the process is not exportable.** When the memory side runs the full structured pass
+  (HOFA), 99% of visible artifacts BEGIN with the final answer: with a reasoning model the
+  derivation happens inside the thinking block and never appears in the output. There is no
+  process to hand over — only the product.
+- **Layer 3 — even the product barely transfers.** Correct answer + evidence in the default
+  reader's context: conditional retention 0.797 vs 0.773 with no artifact (+0.4pp overall). An
+  explicit trust-relay sentence: 0.816 (0.593 overall, still −4.7 below structured-in-place).
+  The reader re-litigates regardless; behavior is set by the instruction, not context content.
+- **Few-shot works as a poison-reducer, not a cure:** PLAN2 (anti-absence + modality-mirroring +
+  worked contrasts + full budget) −5.6 → −2.1pp, poisoned-pool recovery 46/88 (v1: 0/88).
+- HOFS implementation note: the answer-strip emptied 98.7% of artifacts (answer-first format);
+  it served as a third default re-roll anchor (0.5811; default re-roll band ±2pp).
+
+Ladder: 0.562 (no artifact) → 0.567 (answer in context) → 0.593 (answer + trust) → 0.640
+(structured in place). Monotone in how much of the answering pass the reader keeps.
+
+**The original fix prediction (for the record):** make the memory-side call answer-accountable —
 run the full structured derivation *including committing to an answer* at full budget upstream;
 hand the artifact to the default reader. HOFS deterministically strips the final-answer line from
 the SAME upstream generation, separating "the answer transfers" from "the derivation transfers".

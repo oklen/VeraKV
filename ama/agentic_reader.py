@@ -303,6 +303,9 @@ PACKET_INSTR = (
 # prior analysis to verify. AMA_HANDOFF_STRIP=1 deterministically removes the final-answer line from the
 # SAME upstream generation, separating "the answer transfers" from "the derivation transfers".
 HANDOFF_DEFAULT = "Provide a direct and concise answer."
+HANDOFF_TRUST = ("Provide a direct and concise answer. The context ends with a prior analysis of this "
+                 "question by the memory service; briefly verify it against the evidence and, unless it "
+                 "plainly contradicts the evidence, give its final answer.")
 
 def _handoff_answer(client, question, context, max_tokens, xfa, method, memory):
     strip = bool(os.environ.get("AMA_HANDOFF_STRIP"))
@@ -324,7 +327,8 @@ def _handoff_answer(client, question, context, max_tokens, xfa, method, memory):
     else:
         newctx = context
     try:
-        resp = client.query(_harness_prompt(newctx, question, HANDOFF_DEFAULT),
+        rd_instr = HANDOFF_TRUST if os.environ.get("AMA_HANDOFF_TRUST") else HANDOFF_DEFAULT
+        resp = client.query(_harness_prompt(newctx, question, rd_instr),
                             temperature=0.0, max_tokens=min(max_tokens, 6144))
     except Exception:
         try:

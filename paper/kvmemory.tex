@@ -969,6 +969,27 @@ Re-retrieval under a \emph{weak} (lexical) router & $+1.3\pp$ \\
 \end{tabular}
 \end{table}
 
+The arc's endpoint hands the reader the answer itself. A memory-side call runs
+the full structured pass at full budget; with a reasoning model its derivation
+never leaves the thinking block ($99\%$ of visible artifacts begin with the
+final answer), so the \emph{process} is not exportable even in
+principle---only its product is. Relaying that product bounds how far any
+memory-side reasoning can go. With the correct answer and its evidence bullets
+placed in the \emph{default} reader's context, conditional retention of the
+structured pass's wins moves from $0.773$ (no artifact) to $0.797$: the reader
+re-derives from scratch past the correct answer sitting in its own context. An
+explicit one-sentence trust instruction lifts retention to $0.816$ ($0.593$
+overall---still $-4.7\pp$ below running the structured pass in place), and a
+few-shot-hardened planner (worked wrong/right contrasts targeting the audited
+failure modes, full budget) halves plan poisoning ($-5.6\to-2.1\pp$) without
+changing its sign. The ladder---no artifact $0.562$, answer-in-context
+$0.567$, answer$+$trust $0.593$, structured-in-place $0.640$, all
+same-batch---is monotone in how much of the answering pass is restored to the
+reader and saturates only at restoring all of it. The reader's behavior is set
+by its \emph{instruction}, not by its context content; that is why no
+content-side mechanism in this section moves what one instruction sentence
+moves.
+
 \paragraph{How much selected context: fill the budget.}
 Within the \emph{routed} context, more is monotonically better up to the
 window-forced cap: sweeping the assembled-context budget at fixed routing and
