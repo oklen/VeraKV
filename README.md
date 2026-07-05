@@ -3,7 +3,7 @@
 Companion code, configs, and raw prediction artifacts for the paper
 [`paper/kvmemory.pdf`](paper/kvmemory.pdf) (*KVMemory: gist routes, verbatim answers*).
 
-## What is new / what is reproduced / what is NOT claimed
+## What is new / what is reproduced
 
 **New (the paper's claims):**
 - **Payload fidelity dominates.** On dense agent trajectories, selecting raw spans and re-injecting them *verbatim* beats every published lossy-construction memory system; matched-evidence ablations make the payload's role causal (re-encoding the *same* selected evidence costs 8–14pp isolated, −5.1pp in-pipeline).
@@ -16,12 +16,6 @@ Companion code, configs, and raw prediction artifacts for the paper
 prediction file in [`results/`](results/) (official harness, Qwen3-32B reader +
 judge, full open-ended split). See [`results/MANIFEST.md`](results/MANIFEST.md)
 for the tag → paper-table mapping, including all negative results.
-
-**NOT claimed:**
-- No official leaderboard placement yet (submission pending; numbers are our runs of the official harness).
-- No LOCOMO SOTA (positioned as an out-of-domain sanity check; file-first systems report higher under their own setups).
-- No production serving result (efficiency section = single-request prototype microbenchmark; no vLLM/SGLang integration yet).
-- No privacy guarantee for cached KV (contextualized KV carries influence from unselected history; see the paper's Limitations).
 
 ## Layout
 
