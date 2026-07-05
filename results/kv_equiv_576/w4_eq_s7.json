@@ -1,0 +1,24 @@
+{
+  "shard": 7,
+  "n": 72,
+  "argmax_agree": 65,
+  "answer_match": 7,
+  "kv_ok": 3,
+  "tx_ok": 5,
+  "gateb_agree": 0,
+  "gateb_n": 0,
+  "bydom": {
+    "TEXT2SQL": [
+      64,
+      3,
+      5,
+      61
+    ],
+    "EMBODIED_AI": [
+      8,
+      0,
+      0,
+      4
+    ]
+  }
+}

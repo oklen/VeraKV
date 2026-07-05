@@ -1,0 +1,6 @@
+W4GEN SUMMARY n=576 | kv8b=0.1753 tx8b=0.1649 d=+0.0104 | argmax=0.811 ansmatch=0.078 | gateB=24/24
+  EMBODIED_AI    n=152  kv=0.066 tx=0.059 agree=0.586
+  Game           n=152  kv=0.276 tx=0.224 agree=0.868
+  SOFTWARE       n=8    kv=0.250 tx=0.125 agree=0.875
+  TEXT2SQL       n=152  kv=0.072 tx=0.072 agree=0.934
+  WEB            n=112  kv=0.321 tx=0.357 agree=0.866

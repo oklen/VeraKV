@@ -1,0 +1,24 @@
+{
+  "shard": 3,
+  "n": 72,
+  "argmax_agree": 67,
+  "answer_match": 8,
+  "kv_ok": 8,
+  "tx_ok": 6,
+  "gateb_agree": 0,
+  "gateb_n": 0,
+  "bydom": {
+    "TEXT2SQL": [
+      64,
+      7,
+      5,
+      59
+    ],
+    "Game": [
+      8,
+      1,
+      1,
+      8
+    ]
+  }
+}

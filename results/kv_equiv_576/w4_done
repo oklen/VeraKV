@@ -1,0 +1,6 @@
+W4 DONE (32B judge) n=576 err=0 | kv=0.0660 tx=0.0590 delta=+0.0069
+  EMBODIED_AI    n=152  kv=0.046 tx=0.007
+  Game           n=152  kv=0.020 tx=0.020
+  SOFTWARE       n=8    kv=0.375 tx=0.125
+  TEXT2SQL       n=152  kv=0.053 tx=0.059
+  WEB            n=112  kv=0.152 tx=0.179

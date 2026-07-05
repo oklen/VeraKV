@@ -64,3 +64,11 @@ wave whose merged files are on the experiment host; they ship in the next artifa
 - Same-day replicate noise ≈ 0.5pp (B22 vs FSANC); cross-day ≈ 2pp; SOFTWARE batch noise ±4pp (CSW 0.4375 vs CSW2 0.4630 vs FLSA-batch 0.4769, same config) — compare within batch only.
 - `analysis/cluster_ci.py` reproduces QA-level and episode-cluster CIs from these files.
 - `analysis/pin_split.py` reproduces the step-pin mechanism signature (+2.5pp on step-citing questions, +0.0 elsewhere).
+
+## KV-vs-text equivalence at scale (results/kv_equiv_576/, paper §Efficiency)
+
+576 QA / 72 episodes (≤26k tokens, five domains; Qwen3-8B backbone, stripped
+microbenchmark reader — parity is the claim, not absolute accuracy):
+mask-oracle gate 24/24; kv 0.175 vs text 0.165 (+1.0pp, same-model judge);
++0.7pp under an independent Qwen3-32B re-grade; first-token agreement 81%.
+`w4_ans_s*.jsonl` = per-QA answers for both arms; `w4_judged.jsonl` adds 32B grades.

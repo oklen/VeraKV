@@ -1,0 +1,30 @@
+{
+  "shard": 2,
+  "n": 72,
+  "argmax_agree": 55,
+  "answer_match": 2,
+  "kv_ok": 20,
+  "tx_ok": 16,
+  "gateb_agree": 0,
+  "gateb_n": 0,
+  "bydom": {
+    "SOFTWARE": [
+      8,
+      2,
+      1,
+      7
+    ],
+    "Game": [
+      56,
+      18,
+      15,
+      44
+    ],
+    "EMBODIED_AI": [
+      8,
+      0,
+      0,
+      4
+    ]
+  }
+}

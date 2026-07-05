@@ -889,7 +889,17 @@ frequency. A batched (ragged) gather we leave to future work. End-to-end, KV sub
 tied within noise on real AMA under a consistent reader/judge ($-0.7\pp$, one QA of
 $144$)---as expected, since position-preserving reuse is a different computation from
 a compact re-prefill (the $86\%$ first-token agreement between the two paths on that
-real-data run reflects that difference, not a defect). Second, because the sub-selected decode
+real-data run reflects that difference, not a defect). A larger stratified run
+confirms this at $n{=}576$ QA over $72$ episodes across five domains (episodes
+$\le$26k tokens; same 8B backbone, same stripped microbenchmark reader): the
+mask-oracle gate holds at $24/24$, and the two paths remain accuracy-tied with
+KV marginally ahead under both the same-model judge ($0.175$ vs $0.165$,
+$+1.0\pp$) and an independent Qwen3-32B re-grade ($+0.7\pp$), at $81\%$
+first-token agreement. Absolute levels are low by construction---this
+microbenchmark reader is not the deployed pipeline---so the claim is arm
+\emph{parity}, not absolute accuracy; \textsc{OpenWorld} and most
+\textsc{Software} episodes exceed the size filter and are under-represented.
+Second, because the sub-selected decode
 re-processes only the question, its time-to-first-token is \emph{flat} while the
 text path grows with the selected evidence (Fig.~\ref{fig:eff}, Table~\ref{tab:eff}):
 the speedup rises from $1.6\times$ to $10.9\times$ as per-query evidence grows from
@@ -921,8 +931,8 @@ a property of activation-level memory, and we bound the claim in both directions
 It is a statement about \emph{fidelity} to the full-prefill computation, not a
 measured accuracy advantage (the two paths are tied within noise end-to-end; our
 headline benchmark numbers come from the deployed \emph{text} pipeline, with KV
-sub-selection validated as its serving-layer equivalent at $n{=}144$ plus the
-logit-level gates above). And it cuts against a naive privacy reading: because
+sub-selection validated as its serving-layer equivalent at $n{=}144$, on a
+$576$-QA stratified extension, and via the logit-level gates above). And it cuts against a naive privacy reading: because
 selected KV is contextualized by \emph{unselected} history, dropping a cold turn
 removes its text from the reader's context but not necessarily its influence from
 downstream cached KV (\S\ref{sec:limits}). Serving cost likewise still includes
