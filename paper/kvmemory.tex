@@ -916,11 +916,15 @@ ledger-only state reconstruction, verbatim-copy, protective direct answering
 for counterfactuals---rules derived from an annotated 26-case study of what
 the instruction fixes and breaks) scores $-3.0\pp$ overall, with the routed
 classes losing $-7$ to $-23\pp$ while the untouched-default subset replicates
-its anchor to $-0.3\pp$. Every fragment ablates the full
-derive$\to$cite$\to$compose loop, and every ablation loses---the failure
-cases the rules were built from are the tails, and routing the body away from
-a mechanism whose within-class average is positive trades the body for the
-tails. (We did not test additive per-class hints appended to the intact
+its anchor to $-0.3\pp$. The routing \emph{direction} was right---on the
+questions the instruction breaks, routed fragments gain $+10.7\pp$---but the
+exchange rate is ruinous: on the questions the instruction \emph{fixes} within
+the same classes they lose $-39\pp$, and $-6.2\pp$ on everything else, about
+ten collateral losses per targeted fix. Every replacement fragment ablates the
+full derive$\to$cite$\to$compose loop, and the ablated part is exactly how
+the instruction was quietly winning the body of each class---the failure cases
+the rules were built from are the tails, and no rule precision fixes a
+treatment whose side effect is removing the cure. (We did not test additive per-class hints appended to the intact
 instruction.) The law in final form: a mechanism pays only when it supplies
 \emph{specific, query-addressable} information the context is missing;
 reasoning must happen in the answering pass, and the eliciting instruction
