@@ -201,3 +201,8 @@ transfer + F− repair; DVERB2 (default+completeness, prefix replaced) 0.6320
 ties structured → gap = completeness constant + net-zero reasoning trade;
 DMANI/DSCAF memory-side presentation nulls (length unmoved; worksheet guard
 rejects 74%). Full detail: analysis/export_tax_probe.md Endgame section.
+
+**Gate arm (HOFTC, 7/7):** trust+complete relay + named-step override gate =
+0.6747 [0.649,0.701], +4.0 [+1.5,+6.5] vs RESTR4 — project best. Override rate
+unchanged, precision up (F+ 0.767 > anchor 0.722; F− 0.554). Rows
+mu_merged_HOFTC.json, dump sel_HOFTC_full.jsonl.

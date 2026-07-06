@@ -246,3 +246,23 @@ Paper updated (relay-ladder passage v3, law v3, reader-axis framing paragraph
 with the irreversibility asymmetry, tab:reader +2 rows, abstract decomposition
 note). Files: mu_merged_{SXPV,RVERB,HOFV,HOFT2,HOFW,HOFTW,HOFTW2,HOFTWF,RESTRF,
 DVERB,DVERB2,REDEF3,DMANI,DSCAF}.json + sel dumps.
+
+---
+
+# Evidence-priced override: the gate arm (2026-07-07 02:05, HOFTC)
+
+User follow-up ("让 reader 更采信记忆侧?") inverted: maximizing adoption is the wrong
+objective (perfect adoption ⇒ score ≈ upstream ≈ anchor, forfeiting the relay's
+error-correction surplus). The right objective is override *calibration*: HOFTC =
+HOFTW + one sentence — "Depart from its final answer ONLY if you can name the
+specific step whose text contradicts it."
+
+**HOFTC 0.6747 [0.649, 0.701] — project best. +4.0 [+1.5,+6.5] over the same-batch
+structured anchor; +1.1 [−1.2,+3.6] over HOFTW2.** Mechanism: override *rate* on the
+anchor-right pool unchanged (85 vs 83) — the gate raises override *precision*:
+F+ 0.722→0.767 (now above the anchor on structured's home turf) and F− 0.518→0.554.
+Requiring named evidence makes departures right more often, everywhere. Pre-registered
+window 0.665–0.675 (calibration works) hit at the top edge.
+
+Files: `results/mu_merged_HOFTC.json`, `results/sel_HOFTC_full.jsonl`. Full-set
+confirmation (HOFTCF) + router-attribution verification arms queued overnight.

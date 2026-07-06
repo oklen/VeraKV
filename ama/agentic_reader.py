@@ -578,6 +578,12 @@ def _handoff_answer(client, question, context, max_tokens, xfa, method, memory):
         if os.environ.get("AMA_HANDOFF_FULLANS"):
             rd_instr = rd_instr.replace("Provide a direct and concise answer.",
                                         "Provide a complete, well-supported answer.") + HANDOFF_READER_FULLANS
+        if os.environ.get("AMA_HANDOFF_GATE"):
+            # override-calibration gate: departing from the relayed answer requires naming a
+            # contradicting step (targets evidence-free re-adjudications; keeps evidenced repairs)
+            rd_instr += (" Depart from its final answer ONLY if you can name the specific step whose "
+                         "text contradicts it; if you cannot name such a step, its final answer stands "
+                         "and you must give it as yours.")
         resp = client.query(_harness_prompt(newctx, question, rd_instr),
                             temperature=0.0, max_tokens=min(max_tokens, 6144))
     except Exception:
