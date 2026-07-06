@@ -1014,7 +1014,13 @@ pools: on default-wrong/structured-right questions ($n{=}180$) the relay
 retains the structured pass's wins in full ($0.72$--$0.73$, matching the
 anchor), and on structured-wrong/default-right questions it \emph{repairs}
 part of what the structured pass breaks ($0.51$ vs the anchor's
-$0.43$)---the second pass buys genuine error correction. Attribution
+$0.43$)---the second pass buys genuine error correction. The residual relay
+losses are re-adjudications, not compression: on the anchor-right pool,
+$78$--$95\%$ of the relay's failures are conclusions the reader
+\emph{overrode} despite the trust instruction (the completeness rider
+eliminates the compressed-correct failures, $28\to4$), and the same
+independent re-judgment is what buys the repair on the other pool---two faces
+of one behavior, net positive at the observed rates. Attribution
 controls complete the picture: adding the same completeness demand to the
 \emph{default} instruction alone (no structured pass anywhere) recovers the
 entire \emph{net} gap ($0.583\to0.632$, tying the structured anchor at

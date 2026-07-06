@@ -47,3 +47,15 @@ hard reversals. Honesty note: fixed/broke pools also carry judge borderline chur
 (~1/3 by the earlier spontaneous-recovery control); the unambiguous B-type
 reversals (pan 2, domain count) are the load-bearing evidence. Paper updated with
 the two-sided sentence in the attribution passage.
+
+## Addendum: relay failures are overrides, not coverage (2026-07-07 01:10)
+
+On the RESTR4-right pool (n=786): HOFT2 failures split 28 adopted-still-wrong /
+105 overridden (78%); HOFTW2: 4 / 83 (95%). The completeness rider eliminates
+the compressed-correct channel (28→4); the residual loss channel is the reader
+re-adjudicating despite the trust instruction (sample: upstream correctly says
+"already adjacent to the table"; reader invents "an unmentioned obstacle beyond
+the table"). Adopted-still-wrong also contains upstream roll-to-roll errors
+(run agreement 85%; e.g., a 14-vs-15 count faithfully copied). The override
+behavior is two-sided: it loses 83-105 here and wins the F− repair — one
+behavior, net positive at observed rates. Paper patched (relay passage).
