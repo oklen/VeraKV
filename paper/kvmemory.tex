@@ -1024,7 +1024,13 @@ on the questions structured breaks. The structured instruction's celebrated
 $+5\pp$ thus decomposes into an answer-\emph{completeness} constant
 (transferable to any system by one sentence, which we disclose and urge
 leaderboards to fix) plus a reasoning-content \emph{trade} (win the multi-hop
-pool, break the over-derivation pool) whose net is $\approx\!0$; the relay is
+pool, break the over-derivation pool) whose net is $\approx\!0$. Case audits
+show the completeness constant is itself two-sided: it recovers coverage
+credit for elements the model knew but omitted, \emph{and} the
+enumerate-with-citations demand forces a per-element evidence walk that
+changes conclusions in both directions---fixing state-tracking answers the
+terse pass got flatly wrong, while on the trade's losing pool the forced
+elaboration invents details a terse correct answer never risked; the relay is
 the one configuration that keeps the trade's wins and refunds part of its
 losses. Finally, the completeness lever is \emph{instruction-only}: appending
 a requirements checklist or a verbatim-evidence worksheet to the
