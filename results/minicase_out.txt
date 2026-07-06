@@ -1,0 +1,126 @@
+SRV_UP=1
+
+############################## CASE 1 (bad_override, Game, ep 10) ##############################
+Q: At step 86, the agent performs a 'Do' action while facing a diamond, but the diamond remains present in the observation at step 87. Based on Crafter's resource collection rules, wh
+GOLD: It can be definitively inferred that the agent does not have an iron pickaxe in its inventory. In Crafter, each tier of resource requires a specific tool to collect it; diamond, being a high-tier resource, requires an iron pickaxe. The 'Do' action at
+Traceback (most recent call last):
+  File "/home/tiger/stage_w7/minicase.py", line 78, in <module>
+    ctx = get_ctx(eid, q)
+  File "/home/tiger/stage_w7/minicase.py", line 69, in get_ctx
+    mem_cache[eid] = m.memory_construction(traj)
+  File "/home/tiger/AMA-Bench/src/method/kvmemory.py", line 121, in memory_construction
+    router=self._make_router(),
+  File "/home/tiger/AMA-Bench/src/method/kvmemory.py", line 167, in _make_router
+    return self._router_by_name(self.cfg.get("router", "lexical"))
+  File "/home/tiger/AMA-Bench/src/method/kvmemory.py", line 183, in _router_by_name
+    base = self._router_by_name(self.cfg.get("causal_base", "hybrid"))
+  File "/home/tiger/AMA-Bench/src/method/kvmemory.py", line 180, in _router_by_name
+    return HybridRouter([self._router_by_name(n) for n in names],
+  File "/home/tiger/AMA-Bench/src/method/kvmemory.py", line 180, in <listcomp>
+    return HybridRouter([self._router_by_name(n) for n in names],
+  File "/home/tiger/AMA-Bench/src/method/kvmemory.py", line 174, in _router_by_name
+    raise ValueError("router='model' needs the harness client (pass --llm-server)")
+ValueError: router='model' needs the harness client (pass --llm-server)
+MINICASE_DONE
+
+############################## CASE 1 (bad_override, Game, ep 10) ##############################
+Q: At step 86, the agent performs a 'Do' action while facing a diamond, but the diamond remains present in the observation at step 87. Based on Crafter's resource collection rules, wh
+GOLD: It can be definitively inferred that the agent does not have an iron pickaxe in its inventory. In Crafter, each tier of resource requires a specific tool to collect it; diamond, being a high-tier resource, requires an iron pickaxe. The 'Do' action at
+UPSTREAM: The agent's hidden inventory state at step 86 definitively indicates they lacked a tool capable of collecting the diamond (e.g., an iron or diamond pickaxe). The "Do" action failed because Crafter requires specific tools to harvest resources—diamonds cannot be collected without a
+  [G0/HOFTW    ] ADOPT | The agent's hidden inventory state at step 86 definitively indicates they lacked a tool capable of collecting the diamond (e.g., an iron or diamond pickaxe). The "Do" action failed because Crafter requires specific tools
+  [G1/gate-name] ADOPT | The agent's hidden inventory state at step 86 definitively indicates they lacked a tool capable of collecting the diamond (e.g., an iron or diamond pickaxe). The "Do" action failed because Crafter requires specific tools
+  [G2/gate-quote] ADOPT | The agent's hidden inventory state at step 86 definitively indicates they lacked a tool capable of collecting the diamond (e.g., an iron or diamond pickaxe). The "Do" action failed because Crafter requires specific tools
+  [G3/assume   ] ADOPT | The agent's hidden inventory state at step 86 definitively indicates they lacked a tool capable of collecting the diamond (e.g., an iron or diamond pickaxe). The "Do" action failed because Crafter requires specific tools
+
+############################## CASE 2 (bad_override, Game, ep 10) ##############################
+Q: From step 44 to 48, the agent repeatedly executes the 'Move South' action, but its observation that a 'table' is '1 step to your south' remains unchanged. Based on game mechanics, 
+GOLD: The direct cause is that the table (workbench) is a solid object that blocks movement. The agent is attempting to move into a tile that is already occupied by the table. Because the game's physics prevent movement into solid objects, the 'Move South'
+UPSTREAM: The direct cause is that the agent is attempting to move into the position of the "table," which is immovable. From step 44 to 48, the agent repeatedly executes "Move South" while facing the table (observed in step 44: "You face table at your front"). Since the table occupies the
+  [G0/HOFTW    ] OVERRIDE | The direct cause for the agent's inability to move south between steps 44 and 48 is that it is repeatedly attempting to move into a space occupied by an immovable object—the "table"—which blocks further progress. In step
+  [G1/gate-name] OVERRIDE | The direct cause for the agent's inability to move past the "table" from step 44 to 48 is that the table occupies the space directly south of the agent, and the game mechanics prevent movement into an occupied space with
+  [G2/gate-quote] OVERRIDE | The direct cause for the agent's inability to move past the "table" from step 44 to 48 is that the table occupies the space directly south of the agent, rendering the "Move South" action ineffective. In step 44, the agen
+  [G3/assume   ] OVERRIDE | The direct cause for the unchanged observation of the "table 1 step to your south" from step 44 to 48 is that the agent repeatedly attempts to move into the position occupied by the immovable "table" object. In step 44, 
+
+############################## CASE 3 (bad_override, TEXT2SQL, ep 100) ##############################
+Q: At step 17, what was the agent’s most recent knowledge about the scale of the core tables (PATENT, CPC_CURRENT, USPATENTCITATION), and which exact steps established each number?
+GOLD: By step 17, the agent had established these table scales: - PATENT: `659007` rows, established by step 15 (`SELECT COUNT(*) FROM PATENTSVIEW.PATENTSVIEW.PATENT`). - CPC_CURRENT: `3780272` rows, established by step 16 (`SELECT COUNT(*) FROM PATENTSVIE
+UPSTREAM: The agent’s knowledge about the scale of the core tables at step 17 was as follows: - **PATENT**: 659,007 rows (established in step 15 via `SELECT COUNT(*) FROM PATENTSVIEW.PATENTSVIEW.PATENT LIMIT 1`). - **CPC_CURRENT**: 3,780,272 rows (established in step 16 via `SELECT COUNT(*
+  [G0/HOFTW    ] ADOPT | At step 17, the agent’s most recent knowledge about the scale of the core tables was as follows: 1. **PATENT**: 659,007 rows. This was established in **step 15** via the query `SELECT COUNT(*) FROM PATENTSVIEW.PATENTSVIE
+  [G1/gate-name] OVERRIDE | At step 17, the agent’s most recent knowledge about the scale of the core tables was as follows: 1. **PATENT table**: 659,007 rows. This was established in **step 15** via the query `SELECT COUNT(*) FROM PATENTSVIEW.PATE
+  [G2/gate-quote] ADOPT | The agent’s most recent knowledge about the scale of the core tables at step 17 was as follows: - **PATENT**: 659,007 rows, established in **step 15** via the query `SELECT COUNT(*) FROM PATENTSVIEW.PATENTSVIEW.PATENT LI
+  [G3/assume   ] ADOPT | At step 17, the agent’s most recent knowledge about the scale of the core tables was as follows: 1. **PATENT**: 659,007 rows, established in **step 15** via `SELECT COUNT(*) FROM PATENTSVIEW.PATENTSVIEW.PATENT LIMIT 1`. 
+
+############################## CASE 4 (bad_override, TEXT2SQL, ep 100) ##############################
+Q: Before the agent can correctly compute the 1-month backward and forward citation counts as intended in step 11/12, what multiple preconditions must hold across at least three diffe
+GOLD: At least these interdependent preconditions must hold: 1) Application date availability and comparability: `PATENTSVIEW.PATENTSVIEW.APPLICATION."date"` must be non-NULL and convertible to a date type, because the “±1 month” window is computed relativ
+UPSTREAM: To compute the 1-month backward/forward citation counts as intended in step 11/12, the following preconditions must hold across three tables/fields: 1. **PATENT and APPLICATION Tables**: - The `PATENT.id` must match `APPLICATION.patent_id` (ensuring valid joins). - `APPLICATION.d
+  [G0/HOFTW    ] OVERRIDE | To correctly compute the 1-month backward and forward citation counts as intended in steps 11/12, the following preconditions must hold across three tables/fields: 1. **PATENT and APPLICATION Tables**: - **Valid Join Con
+  [G1/gate-name] ADOPT | To correctly compute the 1-month backward and forward citation counts as intended in steps 11/12, the following preconditions must hold across three tables/fields: 1. **PATENT and APPLICATION Tables**: - **Join Validity*
+  [G2/gate-quote] ADOPT | To correctly compute the 1-month backward and forward citation counts as intended in steps 11/12, the following preconditions must hold across three tables/fields: 1. **PATENT and APPLICATION Tables**: - **Join Condition
+  [G3/assume   ] ADOPT | To compute the 1-month backward/forward citation counts as intended in step 11/12, the following preconditions must hold across three tables/fields: 1. **PATENT and APPLICATION Tables**: - The `PATENT.id` must match `APP
+
+############################## CASE 5 (bad_override, TEXT2SQL, ep 100) ##############################
+Q: Hidden-state inference: From steps 11 and 12 (plus the system instruction about quoting), what implicit rule about identifier casing/quoting in this environment can be inferred, an
+GOLD: Implicit rule: Quoted identifiers preserve case and become case-sensitive, while unquoted identifiers are case-folded (uppercased) by Snowflake; mixing them can create “missing column” errors even when the column exists. Evidence synthesized from mul
+UPSTREAM: The implicit rule inferred is that **identifier casing must be preserved using double quotes** in this environment, and unquoted identifiers are case-folded (likely to uppercase), leading to mismatches. This manifested in step 11, where the query referenced `pa.title` (unquoted a
+  [G0/HOFTW    ] OVERRIDE | The implicit rule inferred is that **unquoted identifiers in Snowflake are case-insensitive and subject to case-folding (typically uppercase), while quoted identifiers preserve exact case sensitivity**. This manifested a
+  [G1/gate-name] OVERRIDE | The implicit rule inferred is that **unquoted identifiers in this Snowflake environment are case-folded (typically to uppercase), while quoted identifiers preserve their exact casing**. This manifests as a failure when q
+  [G2/gate-quote] OVERRIDE | The implicit rule inferred is that **unquoted identifiers in this Snowflake environment are case-folded (typically to uppercase), while quoted identifiers preserve their exact case**. This manifests as a failure when que
+  [G3/assume   ] ADOPT | The implicit rule inferred is that **unquoted identifiers are case-folded (typically to uppercase), while quoted identifiers preserve their exact case** in this Snowflake environment. This manifested as a failure in step
+
+############################## CASE 6 (bad_override, TEXT2SQL, ep 108) ##############################
+Q: Counterfactual: If at step 16 the agent had used seg."chromosome" = '15' instead of 'chr15' (without changing anything else), what cascading effect would that have had on steps 17–
+GOLD: If step 16 had used seg."chromosome" = '15' (matching the actual segment table encoding later discovered in steps 18–19), then: - Step 16 would likely have returned non-empty weighted averages (similar to the later successful computation at step 22).
+UPSTREAM: If step 16 had used `seg."chromosome" = '15'` instead of `'chr15'`, the cascading effects on steps 17–22 would be as follows: 1. **Step 16**: The query would return rows (as seen in step 19, where `chromosome = '15'` yields 10 rows). This is because the `COPY_NUMBER_SEGMENT_MASKE
+  [G0/HOFTW    ] ADOPT | If step 16 had used `seg."chromosome" = '15'` instead of `'chr15'` (without altering other steps), the cascading effects on steps 17–22 would be as follows: 1. **Step 16**: The query would return rows (as seen in step 19
+  [G1/gate-name] ADOPT | If step 16 had used `seg."chromosome" = '15'` instead of `'chr15'` (without altering other steps), the cascading effects on steps 17–22 would be as follows: 1. **Step 16**: The query would return rows (as seen in step 19
+  [G2/gate-quote] ADOPT | If step 16 had used `seg."chromosome" = '15'` instead of `'chr15'` (without altering other steps), the cascading effects on steps 17–22 would be as follows: 1. **Step 16**: The query would return rows (as seen in step 19
+  [G3/assume   ] ADOPT | If step 16 had used `seg."chromosome" = '15'` instead of `'chr15'` (without changing anything else), the cascading effects on steps 17–22 would be as follows: 1. **Step 16**: The query would return rows (as seen in step 
+
+############################## CASE 7 (bad_override, TEXT2SQL, ep 110) ##############################
+Q: Before the step 19 query can correctly count forward citations via FLATTEN(PARSE_JSON(p."citation")), what multiple preconditions about data types, join keys, and date formats must
+GOLD: Several interdependent preconditions must hold: 1) PUBLICATIONS."citation" must be parseable JSON (or a JSON-like string) so PARSE_JSON(p."citation") returns a valid VARIANT array. Evidence: step 15 shows "citation" returned as a JSON array string wi
+UPSTREAM: The following preconditions must hold: 1. **Data Type Validity**: The `citation` column must contain valid JSON arrays (e.g., `"[{"publication_number":"US-XXXXXX-B2"},...]"`), as seen in step 15’s observation where `citation` is a JSON string. 2. **Key Consistency**: Each JSON ob
+  [G0/HOFTW    ] ADOPT | The step 19 query relies on the following simultaneous preconditions to correctly count forward citations via `FLATTEN(PARSE_JSON(p."citation"))`: 1. **Data Type Validity**: The `citation` column must store valid JSON ar
+  [G1/gate-name] ADOPT | The step 19 query relies on several critical preconditions to correctly count forward citations using `FLATTEN(PARSE_JSON(p."citation"))`. These preconditions are: 1. **Data Type Validity**: The `citation` column must co
+  [G2/gate-quote] ADOPT | The following preconditions must hold simultaneously for the step 19 query to correctly count forward citations via `FLATTEN(PARSE_JSON(p."citation"))`: 1. **Data Type Validity**: The `citation` column must contain valid
+  [G3/assume   ] ADOPT | The following preconditions must hold simultaneously for the step 19 query to correctly count forward citations: 1. **Data Type Validity**: The `citation` column must contain valid JSON arrays (e.g., `"[{"publication_num
+
+############################## CASE 8 (bad_override, TEXT2SQL, ep 110) ##############################
+Q: Trace the multi-step causal chain (2–4 steps) that led the agent to replace the incorrect 10-year window logic with a correct date conversion using TO_CHAR/TO_NUMBER. Identify the 
+GOLD: The chain is: - Step 18: The agent attempted to implement the 10-year window with DATEADD(year,10,TO_DATE(...)) but then cast the resulting DATE directly to NUMBER ("... )::NUMBER"), producing a compilation/type error. - Step 18 observation: Snowflak
+UPSTREAM: The agent replaced incorrect 10-year window logic with proper date conversion through these causal steps: 1. **Step 18**: The initial query using `DATE_ADD` failed with a type error (`invalid type [CAST(DATE_ADD...`) due to improper handling of the `filing_date` string field. Thi
+  [G0/HOFTW    ] OVERRIDE | The agent's correction of the 10-year window logic followed a clear causal chain across three critical steps, as outlined in the prior analysis and confirmed by the evidence: 1. **Step 18**: The initial implementation of
+  [G1/gate-name] OVERRIDE | The agent's correction of the 10-year window logic followed a clear causal chain across three key steps, as outlined in the prior analysis, which aligns with the evidence in the steps. Here is the detailed breakdown: 1. 
+  [G2/gate-quote] OVERRIDE | The agent's correction of the 10-year window logic followed a clear causal chain across three key steps, as outlined in the prior analysis, which aligns with the evidence: 1. **Step 18**: The initial flawed logic failed 
+  [G3/assume   ] ADOPT | The agent's causal chain to correct the 10-year window logic involved these steps: 1. **Step 18**: The initial query used `DATE_ADD` directly on the string-formatted `filing_date` (e.g., `DATE_ADD(g."filing_date", 10, 'y
+
+############################## CASE 9 (good_override, Game, ep 0) ##############################
+Q: At step 41, the `ball` was '1 step to the right'. After the agent moved `right` in step 42, the `ball` vanished from the observation. Then, after moving `down` in step 43, the `bal
+GOLD: At the end of step 42, the agent (`baba`) was on the exact same tile as the `ball` object. The `ball` vanished from the observation because the observation list only shows objects at a non-zero relative position to the agent. This state was the criti
+UPSTREAM: At the end of step 42, the agent was **in the same position as the `ball`**, which caused the `ball` to vanish from the observation. This is evidenced by the fact that in step 41, the `ball` was "1 step to the right," and after the agent moved `right` in step 42, the `ball` disap
+  [G0/HOFTW    ] OVERRIDE | At the end of step 42, the agent was **directly on top of the `ball`**, which caused the `ball` to vanish from the observation. This is evidenced by the sequence of observations: - In **step 41**, the `ball` was describe
+  [G1/gate-name] ADOPT | At the end of step 42, the agent was **directly on the same tile as the `ball`**, causing the `ball` to vanish from the observation. This is evidenced by the transition from step 41 to step 42: - In **step 41**, the `bal
+  [G2/gate-quote] ADOPT | At the end of step 42, the agent was **directly on the `ball`**, causing it to vanish from the observation. This is confirmed by the sequence of movements and observations: 1. **Step 41** (action: right): The `ball` was 
+  [G3/assume   ] ADOPT | At the end of step 42, the agent was **directly on the `ball`**, causing it to vanish from the observation. This is evidenced by the fact that in step 41, the `ball` was described as "1 step to the right" of the agent, a
+
+############################## CASE 10 (good_override, TEXT2SQL, ep 102) ##############################
+Q: Given the observation window from steps 20–23 (simple DEATHRECORDS aggregations succeed; EAC join row count succeeds; but category-join queries still time out), what should the age
+GOLD: Observations: - Step 20 succeeded: per-age counts in DEATHRECORDS for ages 12–18. - Step 21 succeeded: counting EAC rows joined to those ages returned 31,185 rows. - Steps 22 and 23 timed out: attempts to join EAC to categorized ICD code sets and agg
+UPSTREAM: The agent should break the query into smaller, sequential steps using precomputed ICD-10 codes from steps 17 and 18 to avoid timeouts. Here's the plan: 1. **Precompute ICD-10 codes** (already done in steps 17-18): - Vehicle codes: `Y850, Y03, Y32, V899, X82, V06, V76, V46, V892, 
+  [G0/HOFTW    ] OVERRIDE | The agent should proceed by executing per-age queries using the precomputed ICD-10 codes from steps 17 (vehicle codes) and 18 (firearm codes), as outlined in the prior analysis. This approach is supported by the evidence
+  [G1/gate-name] ADOPT | The prior analysis is valid and aligns with the evidence. The agent should proceed by executing separate queries for each age (12–18) using **hardcoded ICD-10 codes** from steps 17 and 18, as complex joins or CTEs (steps
+  [G2/gate-quote] ADOPT | The prior analysis is correct and aligns with the evidence. The agent should proceed with the plan to **break the query into smaller, sequential steps using precomputed ICD-10 codes** (from steps 17 and 18) to avoid time
+  [G3/assume   ] ADOPT | The agent should execute per-age queries using hardcoded ICD-10 codes from steps 17 (vehicle) and 18 (firearm) to avoid timeouts, as outlined in the prior analysis. This involves: 1. **Using precomputed ICD-10 codes**: V
+
+############################## CASE 11 (good_override, TEXT2SQL, ep 104) ##############################
+Q: Given the observation window in steps 14–17 (step 14 succeeds with a COUNT, while steps 15–17 time out when filtering or sampling), what would be the most strategically reasonable 
+GOLD: From steps 14–17: - Step 14 succeeds quickly (COUNT(*) with WHERE "cpc" IS NOT NULL, LIMIT 1) and reveals the table is large (516,775 rows). - Steps 15–17 time out when attempting content-based filtering (LIKE '%A01B3/%'), CONTAINS("cpc", 'A01B3/'), 
+UPSTREAM: The most strategically reasonable next actions are: 1. **Refine filtering using `FLATTEN` and JSON parsing** (as in step 8/22) instead of `LIKE` or `CONTAINS`, since the `cpc` field is JSON (step 3/7). Step 14’s `COUNT(*)` succeeded, but steps 15–17 timed out due to inefficient f
+  [G0/HOFTW    ] OVERRIDE | The most strategically reasonable next actions to progress toward the goal, based on the evidence and prior analysis, are as follows: 1. **Refine filtering using `LATERAL FLATTEN` and JSON parsing (as in step 22/23)** to
+  [G1/gate-name] ADOPT | The most strategically reasonable next actions to progress toward the goal, based on the evidence from steps 14–17 and prior analysis, are as follows: 1. **Refine filtering using `LATERAL FLATTEN` and JSON parsing** (as 
+  [G2/gate-quote] OVERRIDE | The most strategically reasonable next actions to progress toward the goal are: 1. **Refine filtering using `LATERAL FLATTEN` and JSON parsing** (as in step 22’s `base_data` CTE) to efficiently extract CPC codes from the
+  [G3/assume   ] ADOPT | The most strategically reasonable next actions are: 1. **Refine filtering using `FLATTEN` and JSON parsing** (as in step 22/25) instead of `LIKE` or `CONTAINS`, since the `cpc` field is JSON (steps 3/7). Steps 15–17 time
+
+MINICASE_COMPLETE
+MINICASE_DONE

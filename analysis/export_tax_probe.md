@@ -266,3 +266,37 @@ window 0.665–0.675 (calibration works) hit at the top edge.
 
 Files: `results/mu_merged_HOFTC.json`, `results/sel_HOFTC_full.jsonl`. Full-set
 confirmation (HOFTCF) + router-attribution verification arms queued overnight.
+
+---
+
+# Overnight finale (2026-07-07 04:00–07:30)
+
+**Full-set confirmations (n=2496, same-batch):** HOFTCF (gate relay) **0.6715**
+[0.653,0.690] vs RESTRF 0.6454 (+2.6; h0 0.6747 replicates); DVERB2F 0.6414 vs
+REDEFF 0.5809 (+6.1) vs RESTRF (−0.4 tie) — the completeness attribution closes
+on the official set.
+
+**Different-family judge (Llama-3.1-8B re-grade, 12.5k rows):** every ordering
+preserved; completeness margin grows to +12.7 (DVERB2 0.680 vs REDEF3 0.552),
+relay margin to +12.3 (HOFTW2 0.769 vs RESTR4 0.647), HOFTC top at 0.776;
+compression curve stays monotone (0.473/0.552/0.557/0.655/0.692). Neither
+effect is a same-family-judge artifact. `results/xjudge_out{,2}.json`.
+
+**Mini case rig (11 cases × G0–G3, results/minicase_out.txt):** G3
+(assume-correct) adopts 7/8 bad overrides but kills 3/3 good ones — the
+max-trust trade in miniature; gates G1/G2 intermediate; pool membership drifts
+with upstream rolls (case 2's "overrides" all land the correct answer tonight).
+
+**Router audit (the correction):** deployed default "hybrid" = RRF{lexical,
+model-pick}, whose 32-token pick calls emit thinking-truncated stubs. Same-day
+paired triple (pin fixed, structured reader): lexical-only **0.6506** >
++embedding 0.6410 > +model-pick (deployed) 0.6226; lexical−deployed = **+2.7
+[+0.5,+5.0]** zero-excluded; lexical≈embedding. All paper differences
+unaffected (config constant within batch); absolutes carry ~1–3pp handicap,
+reported as-run; recommended default → pin over lexical base. First embed-arm
+attempt crashed (4 embedders OOM on vLLM-full GPU0) — fixed layout NINST=3 +
+embedder on GPU6. Paper corrected (6 sites + audit paragraph); tab:config/
+tab:ablation/tab:router labels fixed.
+
+Files: mu_merged_{HOFTCF,DVERB2F,REDEFF,RESTR5,RESTREMB,RESTRLEX}.json,
+sel_HOFTCF_full.jsonl.

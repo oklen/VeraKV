@@ -206,3 +206,11 @@ rejects 74%). Full detail: analysis/export_tax_probe.md Endgame section.
 0.6747 [0.649,0.701], +4.0 [+1.5,+6.5] vs RESTR4 — project best. Override rate
 unchanged, precision up (F+ 0.767 > anchor 0.722; F− 0.554). Rows
 mu_merged_HOFTC.json, dump sel_HOFTC_full.jsonl.
+
+**Overnight finale (7/7):** full-set HOFTCF 0.6715 (+2.6 vs RESTRF) / DVERB2F
+0.6414 / REDEFF 0.5809; Llama-8B re-grade preserves all orderings (relay +12.3,
+completeness +12.7, curve monotone; xjudge_out{,2}.json); mini case rig 11×4
+(minicase_out.txt); ROUTER AUDIT: deployed hybrid={lexical,model-pick} with
+truncated pick-stubs, lexical-only beats it +2.7 [+0.5,+5.0] (RESTRLEX 0.6506 /
+RESTREMB 0.6410 / RESTR5 0.6226) — paper corrected, recommended default = pin
+over lexical.

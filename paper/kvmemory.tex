@@ -136,8 +136,9 @@ deployed pipeline, while a deterministic swap to the \emph{original lines} of
 the same steps costs only $2.6\pp$---the cost is paraphrase, not compression.
 \item \textbf{A memory$\times$reader confound audit} (\S\ref{sec:analysis}): a
 same-batch factorial separates memory-side from reader-side gains---routing
-refinements are second-order ($+1.4\pp$ semantic / $+1.7\pp$ structural on AMA;
-regime-dependent: $+4.3\pp$ on LongMemEval, $+12.6\pp$ on LOCOMO) while a
+refinements are second-order on AMA (structural pin $+1.7\pp$; a post-hoc
+audit finds the semantic second signal at best neutral) and regime-dependent
+($+4.3\pp$ on LongMemEval, $+12.6\pp$ on LOCOMO) while a
 one-sentence reader instruction is worth $+5.1$--$5.8\pp$ at either
 router---plus a fourteen-mechanism reader-side stress test showing the memory
 side \emph{saturates} once routing reaches $\sim\!100\%$ recall.
@@ -357,7 +358,7 @@ Hot tier & $h{=}4$ most recent turns, verbatim \\
 Cold gist & extractive head: \texttt{action[:120]} $+$ \texttt{obs[:160]} chars (no LLM) \\
 Lexical router & token overlap (BM25-like) over \texttt{[a-z0-9]+}, zero-dependency \\
 Embedding router & Qwen3-Embedding-0.6B, cosine top-$k$, lexical pre-filter \\
-Hybrid router & RRF of \{lexical, embedding\}, $c{=}60$, $4k$ candidates per sub-router \\
+Hybrid router & RRF fusion; as-deployed \{lexical, model-pick\}, audited $\leq\!0$ (\S\ref{sec:analysis}) \\
 Step-pin & regex \texttt{(turn|step)s?\,$N$(--$M$)?}; pin named turns verbatim \\
 Rehydration $k$ & top-$5$ selected turns (budget-bounded) \\
 Context budget & 22k (32k window $-$ 10k thinking reserve); truncate oldest first \\
@@ -630,8 +631,9 @@ verbatim-selection substrate is the hero---\emph{just selecting raw spans}, with
 token-overlap router and the harness's default reader, already matches the
 purpose-built system ($0.5601$ vs $0.5722$), and the full memory stack under that
 same default reader beats it ($0.5954$, $+2.3\pp$). Routing refinements are
-second-order: the dense-embedding hybrid adds $+1.4\pp$ and the structural
-step-pin $+1.7\pp$, consistently at either reader ($+3.1$--$3.5\pp$ total). The
+second-order: the fused second router signal adds $+1.4\pp$ as originally
+measured (audited and superseded below) and the structural step-pin
+$+1.7\pp$, consistently at either reader ($+3.1$--$3.5\pp$ total). The
 single largest effect is not in the memory at all: swapping the reader's
 one-sentence answer instruction for a structured one adds $+5.1$--$5.8\pp$ at
 either router, and the two axes are additive to within batch noise (same-day
@@ -671,16 +673,16 @@ $+$ hybrid router $+$ step-pin & $0.5954\,[0.576,0.615]$ & $\textbf{0.6466}\,[0.
 
 \begin{table}[t]
 \centering
-\caption{Router sophistication (lexical $\to$ dense-embedding hybrid) is
-regime-dependent: its payoff grows with how lexically un-addressable the evidence
-is.}
+\caption{Router sophistication (lexical $\to$ fused hybrid; embedding-based
+on LOCOMO/LME, post-hoc-audited on AMA) is regime-dependent: its payoff grows
+with how lexically un-addressable the evidence is.}
 \label{tab:router}
 \small
 \begin{tabular}{lc}
 \toprule
 Benchmark (evidence style) & $\Delta$ from the hybrid router \\
 \midrule
-AMA-Bench (step-indexed trajectories) & $+1.4\pp$ \\
+AMA-Bench (step-indexed trajectories) & $\approx 0$ (audited; \S\ref{sec:analysis}) \\
 LongMemEval-S (long chat) & $+4.3\pp$ \\
 LOCOMO (diffuse dialogue) & $+12.6\pp$ \\
 \bottomrule
@@ -692,7 +694,7 @@ On AMA-Bench specifically, three memory-side effects separate cleanly
 (Table~\ref{tab:ablation}). The \emph{substrate}---selecting raw spans at all,
 even with a free token-overlap router---is the bulk of the gain, lifting a
 lossy-construction field into AMA-Agent territory. Semantic router
-\emph{sophistication} (lexical$\to$dense-hybrid) adds a second-order $+1.4\pp$.
+\emph{sophistication} is second-order at best (audited below).
 The remaining lever is not a smarter scorer but a one-line \emph{structural} cue:
 $73\%$ of AMA-Bench questions cite a step index (``at Turn~38'', ``across steps
 28--30''), and pinning exactly those steps adds $+1.7\pp$---and does so
@@ -701,6 +703,24 @@ $+0.0\pp$ on the rest), a clean mechanism signature. We disclose this benchmark
 property rather than lean on it silently: on step-indexed agent traces the order
 is substrate~$\gg$~semantic router~$\approx$~structure, and the structural pin is
 a transparent rule, not a learned exploit.
+
+\paragraph{A post-hoc router audit (correction).}
+Preparing the release we found the deployed default's ``hybrid'' fuses
+lexical scores with a \emph{model-pick} signal (an LLM names useful steps
+over the gist index), not the dense-embedding router; worse, its $32$-token
+pick calls, run on a thinking model, usually return truncated reasoning
+stubs. A same-day paired audit over the $1{,}239$-QA half (structured reader,
+pin fixed) measures the bases directly: lexical-only $0.651$, $+$embedding
+RRF $0.641$, $+$model-pick RRF (the deployed default) $0.623$---lexical-only
+beats the deployed fusion by $+2.7\pp$ $[+0.5,+5.0]$, and lexical vs
+embedding is a tie. Every comparison in this paper holds the memory
+configuration fixed within batch, so no reported \emph{difference} is
+affected; the absolute flagship numbers carry a $\sim\!1$--$3\pp$ handicap
+from the defective fusion and are reported as-run, and the framework's
+recommended default is now the structural pin over a lexical base. The
+correction sharpens rather than weakens the section's conclusion: on
+step-indexed trajectories even the flagship's semantic second signal was at
+best neutral---the substrate and the structural pin carry the routing.
 
 \paragraph{Is the result a step-citing artifact? (robustness).}
 Largely not, and we cross-check with a second judge. Controlling on the same
@@ -740,7 +760,7 @@ Component & $\Delta$ Avg.\ accuracy \\
 \midrule
 Substrate: raw spans vs.\ lossy construction (cross-system) & $+10$ to $+35\pp$ \\
 \quad\emph{controlled} (same oracle evidence; Fig.~\ref{fig:payload}) & $+8$ to $+10\pp$ \\
-Semantic router (lexical $\to$ dense-embedding hybrid) & $+1.4\pp$ \\
+Fused second router signal (superseded by the post-hoc audit) & $+1.4\pp$ \\
 Structural step-pin ($+2.5\pp$ on the $73\%$ cited-step questions, $+0.0$ else) & $+1.7\pp$ \\
 \midrule
 \emph{Reader-side, for scale: structured answer instruction} & $+5.1$--$5.8\pp$ \\
@@ -1020,7 +1040,14 @@ $78$--$95\%$ of the relay's failures are conclusions the reader
 \emph{overrode} despite the trust instruction (the completeness rider
 eliminates the compressed-correct failures, $28\to4$), and the same
 independent re-judgment is what buys the repair on the other pool---two faces
-of one behavior, net positive at the observed rates. Attribution
+of one behavior, net positive at the observed rates. Pricing the override
+sharpens it further: requiring the reader to \emph{name the contradicting
+step} before departing leaves the override rate unchanged but raises its
+precision on both pools at once ($0.72\to0.77$ on the structured-only wins,
+$0.43\to0.55$ on the pool structured breaks), reaching $0.675$
+($+4.0$ $[+1.5,+6.5]$ over the in-place anchor) on the half and $0.672$ vs
+$0.645$ on the full $2{,}496$-QA set---the strongest configuration we
+measure. Attribution
 controls complete the picture: adding the same completeness demand to the
 \emph{default} instruction alone (no structured pass anywhere) recovers the
 entire \emph{net} gap ($0.583\to0.632$, tying the structured anchor at
@@ -1038,7 +1065,12 @@ changes conclusions in both directions---fixing state-tracking answers the
 terse pass got flatly wrong, while on the trade's losing pool the forced
 elaboration invents details a terse correct answer never risked; the relay is
 the one configuration that keeps the trade's wins and refunds part of its
-losses. Finally, the completeness lever is \emph{instruction-only}: appending
+losses. Both facts replicate on the full $2{,}496$-QA set with same-batch
+anchors (default $0.581$, $+$completeness $0.641$, structured $0.645$), and
+neither is a same-family-judge artifact: re-grading ten arms with a
+different-family judge (Llama-3.1-8B) preserves every ordering, with the
+completeness and relay margins \emph{growing} ($+12.7\pp$ and $+12.3\pp$
+respectively) and the compression curve staying monotone. Finally, the completeness lever is \emph{instruction-only}: appending
 a requirements checklist or a verbatim-evidence worksheet to the
 \emph{context} (memory-side presentation, default instruction untouched)
 leaves the reply length unmoved ($348\to353$--$379$ chars) and accuracy null
