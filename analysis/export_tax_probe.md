@@ -155,3 +155,44 @@ is any good. Reasoning must happen in the answering pass, unobserved.
 Files: `results/mu_merged_{RESTR4,SXPH,HOFX}.json`,
 `results/sel_{SXPH,HOFX}_full.jsonl`; analysis `analysis/w8_verdict.py`
 (paired-bootstrap CIs, F± pools, domain/type splits).
+
+---
+
+# Decomposition correction (2026-07-06 16:30) — the tax is mostly answer-form, not process
+
+**User audit challenge: "差的也太多了" — and the audit vindicated it.** SXPH's final
+answers are 3.5× shorter than the anchor's (median 869→247 chars): the terse few-shot
+(`Answer[1]: desk 1`) re-shaped the final answer, confounding reasoning damage with
+completeness-credit loss at the judge. Two same-day controls (n=1239 paired):
+
+| arm | manipulation | med chars | Δ vs RESTR4 [CI] |
+|---|---|---|---|
+| SXPH | export demand, terse few-shot | 247 | −11.8 [−14.4,−9.1] |
+| SBRF | brevity-only ("≤3 sentences"), **no derivation** | 389 | **−7.5 [−10.1,−4.9]** |
+| SXPF | export demand + complete-answer demand & long few-shot | 513 | **−5.3 [−8.0,−2.7]** |
+
+- The four arms sit on one monotone curve: penalty ∝ how far the reply is compressed
+  away from the instruction's natural output (247/389/513/869 → −11.8/−7.5/−5.3/0).
+- **F+ pool (n=180): brevity-only loses the same as full export (0.722→0.500 vs 0.511)** —
+  on exactly the questions the structured instruction fixes, the damage is carried by
+  answer completeness, not derivation corruption.
+- SXPF's −5.3 residual, whose answers are still 41% shorter than anchor, is therefore an
+  **upper bound** on any pure "observation corrupts the process" effect; the data are
+  consistent with full mediation by answer completeness. The earlier "Verdict, final form"
+  section above is **superseded** on attribution (its mechanism numbers — 99% compliance,
+  95% adoption, 21% verbatim quotes, faithful relay — all stand).
+- What remains export-specific: quote fidelity (21% all-verbatim) — the visible Evidence
+  section is post-hoc reconstruction, not a record of the thinking. But the accuracy loss
+  can no longer be attributed to that.
+
+**Corrected moral.** The eliciting instruction's *visible output form is part of its
+mechanism*: its gain flows partly through the complete, multi-part final answers it
+elicits (note SBRF ≈ default anchors — structured with short answers ≈ default). Any
+secondary demand that re-shapes the reply — derivation sections, citation lines,
+brevity — trades that away, roughly in proportion to the compression. Paper updated
+accordingly (law clause "nor observed without corrupting it" → "its reply cannot be
+re-shaped"). Pre-registered windows: SBRF 0.56–0.59 (actual 0.559 ✓ edge), SXPF
+0.58–0.61 (actual 0.581 ✓).
+
+Files: `results/mu_merged_{SBRF,SXPF}.json`, `results/sel_{SBRF,SXPF}_full.jsonl`,
+`analysis/w9_verdict.py`, `analysis/w8_audit.py` (the length/leak audit that caught it).

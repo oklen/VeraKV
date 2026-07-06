@@ -353,6 +353,40 @@ HANDOFF_EXPORT_COMPACT = ("\n\nEnd your visible reply with exactly one line in t
                           "Answer[1]: <final answer> [evidence: steps <N>, <M>, ...]\n"
                           "listing only the step numbers that decide the answer.")
 
+# Tax-decomposition controls (audit found SXPH answers 3.5x shorter than anchor: the terse few-shot
+# compressed final answers, confounding reasoning damage with completeness-credit loss at the judge).
+# EXPORT=3: brevity demand alone, no derivation export -- prices the compression penalty by itself.
+# EXPORT=4: same Evidence/Derivation export, but the Answer line and few-shot demand a COMPLETE final
+# answer -- the residual is the process tax with verbosity restored.
+HANDOFF_BREVITY_SUFFIX = ("\n\nKeep your final answer brief: state only the conclusion, in at most three "
+                          "sentences. Do not enumerate your reasoning or list evidence in the answer.")
+
+HANDOFF_EXPORT_SUFFIX_FULL = """
+
+Your visible reply (the part after your private thinking) must lay out the full worked derivation AND a complete final answer, in exactly this format:
+
+Evidence:
+- step <N>: "<verbatim quote from that step>" -- <what it establishes>
+(2-6 bullets; only the steps that decide the answer)
+
+Derivation:
+1. <sub-question> -> <conclusion, citing step numbers>
+(numbered lines; end with the check that no other step overturns the conclusion)
+
+Answer[1]: <your COMPLETE final answer -- write it exactly as fully as you would if the sections above did not exist: full sentences, every required part, step citations included. Do not compress it.>
+
+Example of the required reply shape (illustrative only, unrelated to the actual context):
+
+Evidence:
+- step 12: "You open the cabinet 2. In it, you see a mug 1." -- mug 1 first seen in cabinet 2
+- step 19: "You put the mug 1 in/on the desk 1." -- mug 1 moved to desk 1
+
+Derivation:
+1. Where is mug 1 last placed? -> step 19 puts it on desk 1, after step 12.
+2. Does any step after 19 move mug 1? -> no later step touches mug 1.
+
+Answer[1]: The mug 1 ends up on the desk 1. It was first seen inside cabinet 2 when the agent opened it at step 12, and at step 19 the agent explicitly put the mug 1 in/on the desk 1; no step after 19 moves or removes it, so its final location is the desk 1."""
+
 HANDOFF_VERIFY_LITE = ("Provide a direct and concise answer. The context ends with the memory service's prior "
                        "analysis of this question, ending in its final answer and the steps it relied on. Do not "
                        "re-derive the answer from scratch: check those steps against the evidence above, and if "
@@ -366,6 +400,10 @@ def _handoff_answer(client, question, context, max_tokens, xfa, method, memory):
     up_instr = _structured_instr()   # run with PROMPT=structured: the exact headline instruction
     if export == "2":
         up_instr = up_instr + HANDOFF_EXPORT_COMPACT
+    elif export == "3":
+        up_instr = up_instr + HANDOFF_BREVITY_SUFFIX
+    elif export == "4":
+        up_instr = up_instr + HANDOFF_EXPORT_SUFFIX_FULL
     elif export:
         up_instr = up_instr + HANDOFF_EXPORT_SUFFIX
     art = ""

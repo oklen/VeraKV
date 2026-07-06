@@ -920,8 +920,8 @@ The law in final form: \emph{a mechanism pays only when it supplies specific,
 query-addressable information the context is missing; reasoning must happen
 in the answering pass; and the eliciting instruction survives as an
 indivisible whole---its content cannot be pre-computed, its presentation
-cannot be compiled, its process cannot be displaced (Table~\ref{tab:reader})
-nor observed without corrupting it (below), and its parts cannot be
+cannot be compiled, its process cannot be displaced (Table~\ref{tab:reader}),
+its reply cannot be re-shaped (below), and its parts cannot be
 specialized.}
 
 \begin{table}[t]
@@ -974,24 +974,36 @@ changing its sign. The ladder---no artifact $0.562$, answer-in-context
 $0.567$, answer$+$trust $0.593$, structured-in-place $0.640$, all
 same-batch---is monotone in how much of the answering pass is restored to the
 reader and saturates only at restoring all of it. Forcing the \emph{process}
-out instead is worse than not exporting it. Appending an explicit
+out is costly, and the cost decomposes informatively. Appending an explicit
 visible-derivation format demand (with a schematic few-shot) to the same
 structured instruction achieves $99\%$ compliance, but costs
 $-11.8\pp$ $[-14.4,-9.1]$ \emph{answered in place, no relay involved} ($0.519$
 vs its same-batch anchor $0.635$ over a $1{,}248$-QA half)---below even the
-default instruction---with the loss concentrated on reasoning-heavy question
-types ($-21\pp$) and on precisely the questions the instruction otherwise
-fixes ($0.72\to0.41$ on the default-wrong/structured-right pool). The exported
-evidence is itself symptomatic: only $21\%$ of derivations quote the context
-fully verbatim---the model re-writes evidence from memory of its thinking
-rather than re-copying it---and a verification-framed reader that adopts the
-exported derivation $95\%$ of the time faithfully inherits the damage
-($+1.1\pp$ $[-1.1,+3.5]$ over the taxed pass). The thinking block is not
-hiding the derivation; it is protecting the conditions under which it is any
-good. The reader's behavior is set by its \emph{instruction}, not by its
-context content---and the instruction's value lives in reasoning left
-\emph{unobserved}; that is why no content-side mechanism in this section moves
-what one instruction sentence moves.
+default instruction. Two controls attribute the loss. The demand also
+\emph{compresses the final answer} (median $869\to247$ chars), and a
+brevity-only demand with no derivation at all already costs
+$-7.5\pp$ $[-10.1,-4.9]$ (at $389$ chars), while re-demanding a complete final
+answer under the full export format recovers half the loss
+($-5.3\pp$ $[-8.0,-2.7]$, at $513$ chars): across the four arms the penalty is
+monotone in how far the reply is re-shaped away from the instruction's natural
+output, and on the pool the instruction exists to fix
+(default-wrong/structured-right, $n{=}180$) the brevity control and the full
+export arm lose \emph{identically} ($0.72\to0.50$ vs $0.51$)---so the
+accuracy damage is carried by answer completeness, not by derivation
+corruption per se, and the $-5.3\pp$ residual (whose answers remain $41\%$
+shorter than the anchor's) is an \emph{upper} bound on any pure
+observation effect. What is export-specific is fidelity: only $21\%$ of
+exported derivations quote the context fully verbatim---the visible Evidence
+section is a post-hoc reconstruction from the model's thinking, not a record
+of it---and a verification-framed reader that adopts the exported derivation
+$95\%$ of the time faithfully inherits whatever was lost
+($+1.1\pp$ $[-1.1,+3.5]$ over the taxed pass). The corrected moral: the
+instruction's \emph{visible output form is part of its mechanism}---its gain
+flows partly through the complete, multi-part final answers it elicits, so
+any secondary demand that re-shapes the reply (derivation sections, citation
+lines, brevity) trades that away. The reader's behavior is set by its
+\emph{instruction}, not by its context content; that is why no content-side
+mechanism in this section moves what one instruction sentence moves.
 
 \paragraph{How much selected context: fill the budget.}
 Within the \emph{routed} context, more is monotonically better up to the

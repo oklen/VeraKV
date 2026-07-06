@@ -181,3 +181,13 @@ verbatim quotes. Tax by type: B −20.6, A −11.1, D −9.1, C −6.0; on the F
 `sel_{SXPH,HOFX}_full.jsonl`, analysis `analysis/w8_verdict.py`. Integrated
 into the paper's relay-ladder passage + law ("nor observed without corrupting
 it").
+
+**Decomposition correction (same day):** SXPH's answers were 3.5× shorter than
+anchor (869→247 med chars) — completeness confound. Controls: SBRF (brevity-only,
+no derivation) −7.5 [−10.1,−4.9] @389 chars; SXPF (export + complete-answer
+demand) −5.3 [−8.0,−2.7] @513 chars; penalty monotone in reply compression; F+
+pool loses identically under brevity-only vs full export (0.72→0.50 vs 0.51) →
+the tax is carried by answer completeness, not derivation corruption; −5.3 =
+upper bound on any pure observation effect. Paper passage + law clause
+corrected ("its reply cannot be re-shaped"). Rows `mu_merged_{SBRF,SXPF}.json`,
+dumps `sel_{SBRF,SXPF}_full.jsonl`, `analysis/w9_verdict.py`, `analysis/w8_audit.py`.
