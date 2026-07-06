@@ -150,3 +150,23 @@ kv within 1.1 nats, direction *below* text). Positive control (secret restated
 in a *selected* step) leaks in both arms (kv 120/120, tx 83/120), so the probe
 is sensitive. The kv arm's higher positive-control recall confounds restatement
 with carryover — we do not claim it as a fidelity advantage.
+
+## Export-tax probe: forcing the derivation out of the thinking block (analysis/export_tax_probe.md)
+
+Small-set screening wave (n=144 QA, 12 episodes stratified 2/domain from h0, all
+arms same-batch on identical questions; ±7pp per-arm CIs — directional, not
+headline). Follow-up to the relay ladder: prompt+few-shot CAN export the
+derivation (99% format compliance vs ~1% default) and a verify-with-named-flaw
+reader instruction CAN drive adoption to 94% — but the export demand itself
+taxes the answering pass **−7.7pp with no relay involved** (PRSXP 0.587 vs
+PRSTR 0.664, answered in place; the only change is "your visible reply must lay
+out the derivation"). Fingerprint: all-quotes-verbatim collapses to 19–23% on
+derivation-demand arms (~50–57% elsewhere) — the model re-writes evidence from
+memory of its thinking instead of re-copying; victims concentrate in
+counterfactual/strategic types. Even a one-line citation demand nets −6.3;
+verify-framing on a bare answer underperforms blanket trust; nothing beats the
+dumbest relay (bare answer + trust, −2.8). Revised blocker-2 verdict: a
+tax-free export does not exist — the thinking block is not hiding the
+derivation, it is protecting it. Rows: `mu_merged_PR{STR,DEF,TRU,AV,X1,XC,XD,SXP}.json`
+(0.664 / 0.671 / 0.636 / 0.615 / 0.608 / 0.601 / 0.573 / 0.587), artifact dumps
+`sel_PR*_full.jsonl` (per-question q/art/up_ans/quotes_ok/ans).

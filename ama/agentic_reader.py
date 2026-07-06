@@ -307,9 +307,67 @@ HANDOFF_TRUST = ("Provide a direct and concise answer. The context ends with a p
                  "question by the memory service; briefly verify it against the evidence and, unless it "
                  "plainly contradicts the evidence, give its final answer.")
 
+# Blocker-2 attack (goal follow-up): under the plain structured instruction the derivation happens inside
+# <think> and 99.2% of visible artifacts begin "Answer[1]:" -- only the product transfers. AMA_HANDOFF_EXPORT=1
+# appends an explicit visible-format demand plus a schematic few-shot to the SAME structured instruction,
+# forcing the derivation (verbatim evidence quotes + numbered reasoning) into the artifact itself.
+# AMA_HANDOFF_VERIFY=1 replaces blanket trust with a verification procedure whose default outcome is adoption:
+# the reader can CHECK an exported derivation instead of re-deriving, which a bare answer never allowed.
+HANDOFF_EXPORT_SUFFIX = """
+
+Your visible reply (the part after your private thinking) must lay out the full worked derivation, not just the final answer, in exactly this format:
+
+Evidence:
+- step <N>: "<verbatim quote from that step>" -- <what it establishes>
+(2-6 bullets; only the steps that decide the answer)
+
+Derivation:
+1. <sub-question> -> <conclusion, citing step numbers>
+(numbered lines; end with the check that no other step overturns the conclusion)
+
+Answer[1]: <final answer>
+
+Example of the required reply shape (illustrative only, unrelated to the actual context):
+
+Evidence:
+- step 12: "You open the cabinet 2. In it, you see a mug 1." -- mug 1 first seen in cabinet 2
+- step 19: "You put the mug 1 in/on the desk 1." -- mug 1 moved to desk 1
+
+Derivation:
+1. Where is mug 1 last placed? -> step 19 puts it on desk 1, after step 12.
+2. Does any step after 19 move mug 1? -> no later step touches mug 1.
+
+Answer[1]: desk 1"""
+
+HANDOFF_VERIFY = ("Provide a direct and concise answer. The context ends with a worked derivation of this "
+                  "question by the memory service: evidence quotes, its reasoning steps, and its final answer. "
+                  "Do not re-derive the answer from scratch. Instead, check the derivation: confirm its quotes "
+                  "appear in the evidence above and that no step it overlooked contradicts its conclusion. If it "
+                  "survives these checks, answer with its final answer. Depart from it only if you can name the "
+                  "specific quote or step that is wrong, and then answer with the correction.")
+
+# S2 variants: PRSXP measures the export tax directly (upstream export pass answered in place, no relay);
+# PRAV relays the untouched structured answer under a verify-adopt reader (no export demand, no tax);
+# PRXC is a minimal-footprint export (answer + deciding step numbers only, no derivation prose).
+HANDOFF_EXPORT_COMPACT = ("\n\nEnd your visible reply with exactly one line in this form:\n"
+                          "Answer[1]: <final answer> [evidence: steps <N>, <M>, ...]\n"
+                          "listing only the step numbers that decide the answer.")
+
+HANDOFF_VERIFY_LITE = ("Provide a direct and concise answer. The context ends with the memory service's prior "
+                       "analysis of this question, ending in its final answer and the steps it relied on. Do not "
+                       "re-derive the answer from scratch: check those steps against the evidence above, and if "
+                       "nothing you can name contradicts the answer, give its final answer as yours. Depart from "
+                       "it only if you can cite the specific step that contradicts it, and then answer with the "
+                       "correction.")
+
 def _handoff_answer(client, question, context, max_tokens, xfa, method, memory):
     strip = bool(os.environ.get("AMA_HANDOFF_STRIP"))
+    export = os.environ.get("AMA_HANDOFF_EXPORT", "")
     up_instr = _structured_instr()   # run with PROMPT=structured: the exact headline instruction
+    if export == "2":
+        up_instr = up_instr + HANDOFF_EXPORT_COMPACT
+    elif export:
+        up_instr = up_instr + HANDOFF_EXPORT_SUFFIX
     art = ""
     try:
         respU = client.query(_harness_prompt(context, question, up_instr), temperature=0.0, max_tokens=max_tokens)
@@ -321,13 +379,28 @@ def _handoff_answer(client, question, context, max_tokens, xfa, method, memory):
             art = re.sub(r"(?is)\n[^\n]*final answer[^\n]*$", "", art).rstrip()
     except Exception:
         art = ""
+    if os.environ.get("AMA_HANDOFF_NORELAY"):
+        # export-tax probe: answer in place from the upstream pass itself, no reader relay
+        m0 = re.search(r"Answer\[1\]:\s*(.+?)$", art, re.DOTALL)
+        txt0 = ("###Answer: %s" % m0.group(1).strip()) if m0 else art
+        if os.environ.get("AMA_AGENTIC_DBG") == "2" and art:
+            try:
+                import json as _j
+                open(LOGBASE + "_full.jsonl", "a").write(_j.dumps(
+                    {"q": question[:200], "art": art[:2600], "up_ans": (m0.group(1).strip()[:300] if m0 else None),
+                     "ans": txt0[:300]}) + "\n")
+            except Exception:
+                pass
+        return {"final_answer": xfa(txt0, mcq_mode=False), "reasoning_trace": ""}
     if art:
         newctx = (context + "\n\n## Prior analysis of this question (produced by the memory service; "
                   "verify it against the evidence above before relying on it)\n" + art[:8000])
     else:
         newctx = context
     try:
-        rd_instr = HANDOFF_TRUST if os.environ.get("AMA_HANDOFF_TRUST") else HANDOFF_DEFAULT
+        rd_instr = ((HANDOFF_VERIFY if export == "1" else HANDOFF_VERIFY_LITE)
+                    if os.environ.get("AMA_HANDOFF_VERIFY")
+                    else HANDOFF_TRUST if os.environ.get("AMA_HANDOFF_TRUST") else HANDOFF_DEFAULT)
         resp = client.query(_harness_prompt(newctx, question, rd_instr),
                             temperature=0.0, max_tokens=min(max_tokens, 6144))
     except Exception:
@@ -343,8 +416,12 @@ def _handoff_answer(client, question, context, max_tokens, xfa, method, memory):
             open(LOGBASE + "_dbg.log", "a").write("handoff=%d strip=%d q=%s\n" % (int(bool(art)), int(strip), question[:60]))
             if os.environ.get("AMA_AGENTIC_DBG") == "2" and art:
                 import json as _j
+                mu = re.search(r"Answer\[1\]:\s*(.+?)$", art, re.DOTALL)
+                qs = re.findall(r'"([^"\n]{12,200})"', art)
+                qok = (sum(1 for s in qs if s in context) / len(qs)) if qs else None
                 open(LOGBASE + "_full.jsonl", "a").write(_j.dumps(
-                    {"q": question[:200], "art": art[:1800], "ans": txt[:300]}) + "\n")
+                    {"q": question[:200], "art": art[:2600], "up_ans": (mu.group(1).strip()[:300] if mu else None),
+                     "quotes_ok": qok, "nq": len(qs), "ans": txt[:300]}) + "\n")
         except Exception:
             pass
     return {"final_answer": xfa(txt, mcq_mode=False), "reasoning_trace": ""}
