@@ -170,3 +170,14 @@ tax-free export does not exist — the thinking block is not hiding the
 derivation, it is protecting it. Rows: `mu_merged_PR{STR,DEF,TRU,AV,X1,XC,XD,SXP}.json`
 (0.664 / 0.671 / 0.636 / 0.615 / 0.608 / 0.601 / 0.573 / 0.587), artifact dumps
 `sel_PR*_full.jsonl` (per-question q/art/up_ans/quotes_ok/ans).
+
+**Full-scale confirmation (n=1248 h0, same-batch, 2026-07-06):** RESTR4 0.6354
+(anchor, in band) / SXPH 0.5192 / HOFX 0.5304. Tax = **−11.8pp [−14.4,−9.1]**
+paired (fixed 74 / broke 220) — overshoots the entire structured gain, landing
+below every default anchor. Relay adds +1.1 [−1.1,+3.5] (faithful, zero-incl.);
+HOFX ≪ HOFT 0.593. Mechanism replicates: 99% compliance / 95% adoption / 21%
+verbatim quotes. Tax by type: B −20.6, A −11.1, D −9.1, C −6.0; on the F+ pool
+0.722→0.411. Rows `mu_merged_{RESTR4,SXPH,HOFX}.json`, dumps
+`sel_{SXPH,HOFX}_full.jsonl`, analysis `analysis/w8_verdict.py`. Integrated
+into the paper's relay-ladder passage + law ("nor observed without corrupting
+it").

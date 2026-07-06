@@ -920,8 +920,9 @@ The law in final form: \emph{a mechanism pays only when it supplies specific,
 query-addressable information the context is missing; reasoning must happen
 in the answering pass; and the eliciting instruction survives as an
 indivisible whole---its content cannot be pre-computed, its presentation
-cannot be compiled, its process cannot be displaced
-(Table~\ref{tab:reader}), and its parts cannot be specialized.}
+cannot be compiled, its process cannot be displaced (Table~\ref{tab:reader})
+nor observed without corrupting it (below), and its parts cannot be
+specialized.}
 
 \begin{table}[t]
 \centering
@@ -960,9 +961,8 @@ Re-retrieval under a \emph{weak} (lexical) router & $+1.3\pp$ \\
 The arc's endpoint hands the reader the answer itself. A memory-side call runs
 the full structured pass at full budget; with a reasoning model its derivation
 never leaves the thinking block ($99\%$ of visible artifacts begin with the
-final answer), so the \emph{process} is not exportable even in
-principle---only its product is. Relaying that product bounds how far any
-memory-side reasoning can go. With the correct answer and its evidence bullets
+final answer), so by default only its \emph{product} is exportable. Relaying
+that product bounds how far any memory-side reasoning can go. With the correct answer and its evidence bullets
 placed in the \emph{default} reader's context, conditional retention of the
 structured pass's wins moves from $0.773$ (no artifact) to $0.797$: the reader
 re-derives from scratch past the correct answer sitting in its own context. An
@@ -973,10 +973,25 @@ failure modes, full budget) halves plan poisoning ($-5.6\to-2.1\pp$) without
 changing its sign. The ladder---no artifact $0.562$, answer-in-context
 $0.567$, answer$+$trust $0.593$, structured-in-place $0.640$, all
 same-batch---is monotone in how much of the answering pass is restored to the
-reader and saturates only at restoring all of it. The reader's behavior is set
-by its \emph{instruction}, not by its context content; that is why no
-content-side mechanism in this section moves what one instruction sentence
-moves.
+reader and saturates only at restoring all of it. Forcing the \emph{process}
+out instead is worse than not exporting it. Appending an explicit
+visible-derivation format demand (with a schematic few-shot) to the same
+structured instruction achieves $99\%$ compliance, but costs
+$-11.8\pp$ $[-14.4,-9.1]$ \emph{answered in place, no relay involved} ($0.519$
+vs its same-batch anchor $0.635$ over a $1{,}248$-QA half)---below even the
+default instruction---with the loss concentrated on reasoning-heavy question
+types ($-21\pp$) and on precisely the questions the instruction otherwise
+fixes ($0.72\to0.41$ on the default-wrong/structured-right pool). The exported
+evidence is itself symptomatic: only $21\%$ of derivations quote the context
+fully verbatim---the model re-writes evidence from memory of its thinking
+rather than re-copying it---and a verification-framed reader that adopts the
+exported derivation $95\%$ of the time faithfully inherits the damage
+($+1.1\pp$ $[-1.1,+3.5]$ over the taxed pass). The thinking block is not
+hiding the derivation; it is protecting the conditions under which it is any
+good. The reader's behavior is set by its \emph{instruction}, not by its
+context content---and the instruction's value lives in reasoning left
+\emph{unobserved}; that is why no content-side mechanism in this section moves
+what one instruction sentence moves.
 
 \paragraph{How much selected context: fill the budget.}
 Within the \emph{routed} context, more is monotonically better up to the

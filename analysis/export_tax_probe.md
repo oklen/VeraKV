@@ -102,3 +102,56 @@ must happen in the answering pass, *unobserved*.
 - Files: `results/mu_merged_PR{STR,DEF,TRU,AV,X1,XC,XD,SXP}.json`,
   `results/sel_PR{TRU,AV,X1,XC,XD,SXP}_full.jsonl`; analysis in
   `analysis/s1_verdict.py`-style scripts (worker `stage_w7/`).
+
+---
+
+# Full-scale confirmation (n=1248, test_h0, same-batch — 2026-07-06 15:18)
+
+The small-set screening under-estimated the tax. Same-batch full-half run,
+paired on 1,239 common questions:
+
+| arm | config | acc |
+|---|---|---|
+| RESTR4 | structured, in place (anchor; band 0.629–0.642) | **0.6354** |
+| SXPH | structured + export demand, in place, no relay | **0.5192** |
+| HOFX | export demand + verify-adopt relay | **0.5304** |
+
+**1. The tax at scale: −11.8pp, CI[−14.4, −9.1]** (paired bootstrap; fixed 74 /
+broke 220). Not only does the export demand refund the structured instruction's
+entire +7–8pp gain — it **overshoots into net harm**: SXPH 0.519 sits *below
+every default-instruction anchor* (REDEF2 0.564, HOFS 0.583, REDEF 0.597).
+Demanding a visible derivation makes the structured instruction worse than the
+one-line default.
+
+**2. The mechanism numbers replicate exactly**: compliance 98–99%, reader
+adoption 95%, all-quotes-verbatim 21% (small set: 99% / 94% / 23%).
+
+**3. The relay is faithful and irrelevant: HOFX − SXPH = +1.1pp, CI[−1.1, +3.5]**
+(zero-inclusive). The verify reader adopts what it is given and inherits the
+damage. HOFX 0.528 ≪ HOFT 0.593 (trust-relay of the *untaxed* pass's bare
+answer, joint n=1239): adoption was never the binding constraint — upstream
+quality is.
+
+**4. The tax lands on exactly the questions the instruction exists to fix.**
+On the F+ pool (default-wrong ∧ structured-right, n=180): RESTR4 re-roll 0.722
+→ SXPH **0.411** (−31pp; HOFX 0.433) — the demand destroys ~43% of what
+structured wins there, while HOFT holds 0.589. On F− (n=83) SXPH ≈ anchor
+(0.422 vs 0.434): pure harm, no compensating class.
+
+**5. Concentration confirms the small-set fingerprint.** By qa_type, Type B
+(strategic/reasoning) pays −20.6pp, A (exact recall) −11.1, D −9.1, C −6.0.
+By domain: TEXT2SQL −15.7, OPENWORLD −15.0, SOFTWARE −14.4 vs EMBODIED −4.7,
+WEB −6.1.
+
+**Verdict, final form.** Forcing the derivation into the visible reply is not a
+lossy export of the reasoning — it is a *different, worse reasoning process*:
+the model commits prose sub-conclusions as it thinks (Type B pays most),
+re-writes evidence from memory instead of re-copying (21% quote fidelity), and
+the visible-format constraint binds precisely where the instruction's freedom
+was producing the gain (F+). The thinking block is not hiding the derivation
+from the pipeline; it is protecting the conditions under which the derivation
+is any good. Reasoning must happen in the answering pass, unobserved.
+
+Files: `results/mu_merged_{RESTR4,SXPH,HOFX}.json`,
+`results/sel_{SXPH,HOFX}_full.jsonl`; analysis `analysis/w8_verdict.py`
+(paired-bootstrap CIs, F± pools, domain/type splits).
