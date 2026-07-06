@@ -196,3 +196,53 @@ re-shaped"). Pre-registered windows: SBRF 0.56–0.59 (actual 0.559 ✓ edge), S
 
 Files: `results/mu_merged_{SBRF,SXPF}.json`, `results/sel_{SBRF,SXPF}_full.jsonl`,
 `analysis/w9_verdict.py`, `analysis/w8_audit.py` (the length/leak audit that caught it).
+
+---
+
+# Endgame (2026-07-07 00:40) — one curve, one constant, one trade, one winner
+
+Final wave (all same-batch n=1239 paired unless noted; full-set n=2476):
+
+| arm | config | med chars | acc | Δ [CI] |
+|---|---|---|---|---|
+| SXPV | export + completeness v2, in place | 786 | 0.6239 | −1.1 [−3.6,+1.6] vs RESTR4 (tax fully recovered) |
+| RVERB | completeness only, in place | 1443 | 0.6360 | +0.2 [−2.2,+2.5] (flat above natural length) |
+| HOFV | zero-tax artifact + verify relay | 666 | 0.5900 | −4.4 (= HOFT2: relay fixed point) |
+| HOFT2 | bare artifact + trust relay | 522 | 0.5900 | −4.4 — **both on the compression curve** |
+| **HOFTW** | trust relay + complete re-emission | 1664 | **0.6586** | **+2.4 [+0.1,+4.7]** |
+| **HOFTW2** | replicate | — | **0.6635** | **+2.8 [+0.7,+5.1]**; agreement 85% |
+| **HOFTWF** | full 2496 set | 1638 | **0.6631** | **+1.7 [+0.1,+3.3]** vs RESTRF 0.6454 |
+| DVERB | default + completeness (appended) | 1111 | 0.6126 | +3.0 [+0.4,+5.6] vs REDEF3 |
+| DVERB2 | default + completeness (prefix replaced) | 1542 | 0.6320 | −0.2 [−2.7,+2.3] vs RESTR4 — **tie** |
+| REDEF3 | default anchor (same batch) | 348 | 0.5827 | — |
+| DMANI | requirements checklist as context | 379 | 0.5681 | −1.8 [−4.2,+0.7] null; length unmoved |
+| DSCAF | evidence worksheet as context | 353 | 0.5777 | −0.7 [−2.9,+1.5] null; guard rejects 74%, served subset −3.1 |
+
+**The four claims.**
+1. **One curve**: score ≈ anchor − f(final-answer compression); monotone below the
+   natural output length, flat above (RVERB). The relay "friction" (0.593 fixed
+   point) was reader-side compression, not relay loss.
+2. **One constant**: answer completeness — transferable to the default instruction
+   by one sentence (DVERB2 ties structured), an additive constant any system can
+   add; we disclose it and recommend leaderboards fix the answer instruction.
+3. **One trade**: structured's reasoning content = win F+ (0.372→0.722, of which
+   completeness alone reaches 0.650) / lose F− (0.699→0.434); net ≈ 0 beyond
+   completeness.
+4. **One winner**: the composed relay (structured pass upstream → trust + complete
+   re-emission downstream) keeps the F+ wins in full AND repairs part of F−
+   (0.506-0.627 vs anchor 0.434) — the only configuration above the in-place
+   anchor, three independent zero-excluded confirmations incl. the full official
+   set (0.6631 > headline 0.6466 > prior best 0.6246). Not submitted: its edge is
+   architecture × completeness, disclosed as mechanism evidence, not leaderboard
+   fodder.
+
+**Memory-side presentation is closed**: neither the checklist nor the
+verbatim-evidence worksheet moves the reply length (348→353–379) — content
+cannot reach emission behavior; the worksheet also reprises the fabrication
+signature (26% guard-pass; 4th independent sighting: packet 31%, export 21–23%,
+DSCAF 26–28% faithful).
+
+Paper updated (relay-ladder passage v3, law v3, reader-axis framing paragraph
+with the irreversibility asymmetry, tab:reader +2 rows, abstract decomposition
+note). Files: mu_merged_{SXPV,RVERB,HOFV,HOFT2,HOFW,HOFTW,HOFTW2,HOFTWF,RESTRF,
+DVERB,DVERB2,REDEF3,DMANI,DSCAF}.json + sel dumps.

@@ -191,3 +191,13 @@ the tax is carried by answer completeness, not derivation corruption; −5.3 =
 upper bound on any pure observation effect. Paper passage + law clause
 corrected ("its reply cannot be re-shaped"). Rows `mu_merged_{SBRF,SXPF}.json`,
 dumps `sel_{SBRF,SXPF}_full.jsonl`, `analysis/w9_verdict.py`, `analysis/w8_audit.py`.
+
+**Endgame wave (7/6-7/7 night):** SXPV −1.1 (export tax fully recovered at 786
+chars) / RVERB +0.2 (flat above natural) → one compression curve; relay fixed
+point 0.593 = reader-side compression (HOFV=HOFT2=0.5900 @522-666 chars);
+completeness-protected relay HOFTW 0.6586 / HOFTW2 0.6635 / full-set HOFTWF
+0.6631 (+1.7 [+0.1,+3.3] vs RESTRF 0.6454) — three zero-excluded, F+ full
+transfer + F− repair; DVERB2 (default+completeness, prefix replaced) 0.6320
+ties structured → gap = completeness constant + net-zero reasoning trade;
+DMANI/DSCAF memory-side presentation nulls (length unmoved; worksheet guard
+rejects 74%). Full detail: analysis/export_tax_probe.md Endgame section.

@@ -387,6 +387,54 @@ Derivation:
 
 Answer[1]: The mug 1 ends up on the desk 1. It was first seen inside cabinet 2 when the agent opened it at step 12, and at step 19 the agent explicitly put the mug 1 in/on the desk 1; no step after 19 moves or removes it, so its final location is the desk 1."""
 
+# Reverse test (does more output fully recover?): a shared maximal-completeness answer demand,
+# applied WITH the export format (EXPORT=5) and WITHOUT it (EXPORT=6). If the two arms score the
+# same at comparable answer lengths, the derivation format itself is harmless; any gap that
+# survives length-matching is the isolated process tax. EXPORT=6 also probes the ceiling: does
+# demanding more-complete answers beat the anchor's natural output?
+ANSWER_COMPLETENESS = (
+    "Your final answer must be COMPLETE and self-contained: address every part of the question, "
+    "enumerate every required element with step citations, and write it at the length the question "
+    "deserves -- typically 5-12 full sentences (or a structured multi-part answer). A short summary "
+    "is NOT acceptable.")
+
+HANDOFF_EXPORT_SUFFIX_V = """
+
+Your visible reply (the part after your private thinking) must lay out the full worked derivation AND a complete final answer, in exactly this format:
+
+Evidence:
+- step <N>: "<verbatim quote from that step>" -- <what it establishes>
+(2-6 bullets; only the steps that decide the answer)
+
+Derivation:
+1. <sub-question> -> <conclusion, citing step numbers>
+(numbered lines; end with the check that no other step overturns the conclusion)
+
+Answer[1]: <""" + ANSWER_COMPLETENESS + """>
+
+Example of the required reply shape (illustrative only, unrelated to the actual context):
+
+Evidence:
+- step 12: "You open the cabinet 2. In it, you see a mug 1." -- mug 1 first seen in cabinet 2
+- step 19: "You put the mug 1 in/on the desk 1." -- mug 1 moved to desk 1
+
+Derivation:
+1. Where is mug 1 last placed? -> step 19 puts it on desk 1, after step 12.
+2. Does any step after 19 move mug 1? -> no later step touches mug 1.
+
+Answer[1]: The mug 1 ends up on the desk 1. It was first observed inside cabinet 2 when the agent opened that cabinet at step 12, which establishes where it started. At step 19 the agent explicitly performed "put the mug 1 in/on the desk 1", which is the last action affecting the mug anywhere in the trajectory. No step after 19 picks the mug up again, moves it, or removes it, and no other container is ever associated with it afterwards. Its final location is therefore the desk 1, per steps 12 and 19."""
+
+HANDOFF_VERBOSE_ONLY = "\n\n" + ANSWER_COMPLETENESS
+
+# Relay-stage completeness protection (AMA_HANDOFF_FULLANS=1): the relay readers' "direct and
+# concise" prefix compresses their final answers (522-666 med chars) onto the same penalty curve
+# that explained the export tax -- the 0.593 relay ceiling is answer-form, not friction. This rider
+# swaps the prefix and demands the adopted answer be re-emitted in full.
+HANDOFF_READER_FULLANS = (" When you give the final answer, give it IN FULL: address every part of the "
+                          "question, enumerate every required element with step citations, and write it at "
+                          "the length the question deserves -- typically 5-12 full sentences (or a structured "
+                          "multi-part answer). Do not compress it into a one-line summary.")
+
 HANDOFF_VERIFY_LITE = ("Provide a direct and concise answer. The context ends with the memory service's prior "
                        "analysis of this question, ending in its final answer and the steps it relied on. Do not "
                        "re-derive the answer from scratch: check those steps against the evidence above, and if "
@@ -394,7 +442,86 @@ HANDOFF_VERIFY_LITE = ("Provide a direct and concise answer. The context ends wi
                        "it only if you can cite the specific step that contradicts it, and then answer with the "
                        "correction.")
 
+WORKSHEET_INSTR = (
+    "You are the memory service preparing an ANSWER WORKSHEET for a colleague who will write the final "
+    "answer. Using ONLY the context above, produce:\n"
+    "Requirements: a numbered list of every distinct element a complete answer must provide.\n"
+    "Then, for EACH requirement:\n"
+    "- Evidence: the exact raw lines that decide it, COPIED VERBATIM from the context in double quotes, "
+    "each with its <step N> number. Copy characters exactly; never paraphrase inside quotes.\n"
+    "- Working: a very detailed, numbered sequence of small steps from the quoted evidence to what it "
+    "establishes for this requirement -- spell out every comparison, count, and check explicitly.\n"
+    "Do NOT write the final overall answer. Keep each quote under 25 words and exact.")
+
 def _handoff_answer(client, question, context, max_tokens, xfa, method, memory):
+    if os.environ.get("AMA_HANDOFF_MANIFEST") == "2":
+        # DSCAF: per-requirement worksheet with verbatim evidence pre-pasted + very detailed working.
+        # Containment guard (packet lesson): any non-verbatim quote voids the whole worksheet.
+        wp = (context + "\n\n## Question\n" + question + "\n\n## Task\n" + WORKSHEET_INSTR
+              + "\n\nWorksheet:")
+        ws = ""
+        try:
+            wresp = client.query(wp, temperature=0.0, max_tokens=max_tokens)
+            ws = (wresp.split("</think>")[-1] if "</think>" in wresp else wresp).strip()
+        except Exception:
+            ws = ""
+        qs = re.findall(r'"([^"\n]{12,200})"', ws)
+        qok = (sum(1 for s in qs if s in context) / len(qs)) if qs else 1.0
+        ws_ok = bool(ws) and qok == 1.0 and len(ws) < 9000
+        newctx = (context + "\n\n## Answer worksheet from the memory service (requirements, the raw "
+                  "evidence for each quoted verbatim from the trajectory, and detailed working)\n"
+                  + ws[:6000]) if ws_ok else context
+        try:
+            resp = client.query(_harness_prompt(newctx, question, HANDOFF_DEFAULT),
+                                temperature=0.0, max_tokens=min(max_tokens, 6144))
+        except Exception:
+            resp = ""
+        m = re.search(r"Answer\[1\]:\s*(.+?)$", resp, re.DOTALL)
+        txt = ("###Answer: %s" % m.group(1).strip()) if m else resp
+        if os.environ.get("AMA_AGENTIC_DBG") == "2":
+            try:
+                import json as _j
+                open(LOGBASE + "_full.jsonl", "a").write(_j.dumps(
+                    {"q": question[:200], "art": ws[:2600], "ws_ok": ws_ok, "quotes_ok": qok,
+                     "nq": len(qs), "ans": txt[:300]}) + "\n")
+            except Exception:
+                pass
+        return {"final_answer": xfa(txt, mcq_mode=False), "reasoning_trace": ""}
+    if os.environ.get("AMA_HANDOFF_MANIFEST"):
+        # memory-side presentation probe: append a checklist of what the question asks for
+        # (question-requirements only -- generated WITHOUT the context, so evidence fabrication is
+        # structurally impossible; no imperatives -- presentation, not instruction smuggling).
+        # Reader keeps the untouched default instruction.
+        mp = ("Read the question below. List the distinct elements a complete answer must provide, "
+              "as a short numbered list (one line each). Do NOT answer the question. Do NOT mention "
+              "the trajectory, steps, or any evidence.\n\nQuestion: %s\n\nRequirements:" % question)
+        man = ""
+        try:
+            mresp = client.query(mp, temperature=0.0, max_tokens=1536)
+            man = (mresp.split("</think>")[-1] if "</think>" in mresp else mresp).strip()
+        except Exception:
+            man = ""
+        if man and "step " not in man.lower() and len(man) < 1500:
+            newctx = (context + "\n\n## What the question asks for (a checklist of elements a "
+                      "complete answer must cover)\n" + man)
+        else:
+            man = ""
+            newctx = context
+        try:
+            resp = client.query(_harness_prompt(newctx, question, HANDOFF_DEFAULT),
+                                temperature=0.0, max_tokens=min(max_tokens, 6144))
+        except Exception:
+            resp = ""
+        m = re.search(r"Answer\[1\]:\s*(.+?)$", resp, re.DOTALL)
+        txt = ("###Answer: %s" % m.group(1).strip()) if m else resp
+        if os.environ.get("AMA_AGENTIC_DBG") == "2":
+            try:
+                import json as _j
+                open(LOGBASE + "_full.jsonl", "a").write(_j.dumps(
+                    {"q": question[:200], "art": man[:1500], "ans": txt[:300]}) + "\n")
+            except Exception:
+                pass
+        return {"final_answer": xfa(txt, mcq_mode=False), "reasoning_trace": ""}
     strip = bool(os.environ.get("AMA_HANDOFF_STRIP"))
     export = os.environ.get("AMA_HANDOFF_EXPORT", "")
     up_instr = _structured_instr()   # run with PROMPT=structured: the exact headline instruction
@@ -404,6 +531,15 @@ def _handoff_answer(client, question, context, max_tokens, xfa, method, memory):
         up_instr = up_instr + HANDOFF_BREVITY_SUFFIX
     elif export == "4":
         up_instr = up_instr + HANDOFF_EXPORT_SUFFIX_FULL
+    elif export == "5":
+        up_instr = up_instr + HANDOFF_EXPORT_SUFFIX_V
+    elif export == "6":
+        up_instr = up_instr + HANDOFF_VERBOSE_ONLY
+    elif export == "7":
+        # completeness with the conflicting "concise" prefix REPLACED, not just appended-over
+        up_instr = (up_instr.replace("Provide a direct and concise answer.",
+                                     "Provide a complete, well-supported answer.")
+                    + HANDOFF_VERBOSE_ONLY)
     elif export:
         up_instr = up_instr + HANDOFF_EXPORT_SUFFIX
     art = ""
@@ -436,9 +572,12 @@ def _handoff_answer(client, question, context, max_tokens, xfa, method, memory):
     else:
         newctx = context
     try:
-        rd_instr = ((HANDOFF_VERIFY if export == "1" else HANDOFF_VERIFY_LITE)
+        rd_instr = ((HANDOFF_VERIFY if export in ("1", "4", "5") else HANDOFF_VERIFY_LITE)
                     if os.environ.get("AMA_HANDOFF_VERIFY")
                     else HANDOFF_TRUST if os.environ.get("AMA_HANDOFF_TRUST") else HANDOFF_DEFAULT)
+        if os.environ.get("AMA_HANDOFF_FULLANS"):
+            rd_instr = rd_instr.replace("Provide a direct and concise answer.",
+                                        "Provide a complete, well-supported answer.") + HANDOFF_READER_FULLANS
         resp = client.query(_harness_prompt(newctx, question, rd_instr),
                             temperature=0.0, max_tokens=min(max_tokens, 6144))
     except Exception:

@@ -61,8 +61,10 @@ factorial and matched payload ablations locate the gains: re-encoding the
 \emph{same} selected evidence lossily costs $5$--$14\pp$ (the poison is
 paraphrase, not compression); router sophistication is second-order and
 regime-dependent; and the largest single knob is the \emph{reader} instruction
-($+5.1$--$5.8\pp$ at either router)---so memory comparisons that do not
-control the reader largely measure reader differences. The same
+($+5.1$--$5.8\pp$ at either router---decomposed below into an
+answer-completeness constant plus a net-zero reasoning trade)---so memory
+comparisons that do not control the reader largely measure reader
+differences. The same
 fidelity-over-lossy-payload pattern holds on \textbf{LOCOMO} and
 \textbf{LongMemEval-S}.
 
@@ -137,7 +139,7 @@ same-batch factorial separates memory-side from reader-side gains---routing
 refinements are second-order ($+1.4\pp$ semantic / $+1.7\pp$ structural on AMA;
 regime-dependent: $+4.3\pp$ on LongMemEval, $+12.6\pp$ on LOCOMO) while a
 one-sentence reader instruction is worth $+5.1$--$5.8\pp$ at either
-router---plus a twelve-mechanism reader-side stress test showing the memory
+router---plus a fourteen-mechanism reader-side stress test showing the memory
 side \emph{saturates} once routing reaches $\sim\!100\%$ recall.
 \item \textbf{Results on official harnesses} (\S\ref{sec:ama},
 \S\ref{sec:locomo}, \S\ref{sec:lme}): $\mathbf{0.5954}$ under the AMA-Bench
@@ -836,9 +838,19 @@ BM25 ($0.3436$) and every lossy-construction system (Table~\ref{tab:ama})---so
 ``standard RAG with verbatim re-injection'' is already most of the win, and
 \kvm{} adds tiering, structural pinning, and KV reuse on top.
 
+\paragraph{Why map the reader axis at all.}
+Not to argue for prompt engineering: because any memory comparison that does
+not control it is confounded (the factorial above), because the boundary
+tells us what a memory should \emph{not} attempt, and because the two axes
+are asymmetric in a way that settles design priority---a memory error
+(evidence lost to lossy construction or truncation) is unrecoverable
+downstream, while every reader-side deficit we found is repairable at answer
+time by one sentence or one extra pass. Memory errors are permanent; reader
+errors are one sentence away.
+
 \paragraph{Reader-side machinery saturates once routing is strong.}
 If a one-sentence reader instruction is worth $+5.5\pp$, is the single-pass
-reader leaving more on the table? We stress-tested this with twelve reader-side
+reader leaving more on the table? We stress-tested this with fourteen reader-side
 mechanisms over a \emph{fixed} memory (same-batch controls;
 Table~\ref{tab:reader}). On the flagship memory: letting the model compress the
 selected evidence before answering; a sufficiency gate fused into the answer
@@ -916,13 +928,15 @@ $-9.5\pp$ gap), a separate sufficiency gate fires on $19\%$ of questions yet
 recovers nothing ($-0.4\pp$)---the budget cut removes the overview, and
 fetching more individual steps does not restore breadth.
 
-The law in final form: \emph{a mechanism pays only when it supplies specific,
-query-addressable information the context is missing; reasoning must happen
-in the answering pass; and the eliciting instruction survives as an
-indivisible whole---its content cannot be pre-computed, its presentation
-cannot be compiled, its process cannot be displaced (Table~\ref{tab:reader}),
-its reply cannot be re-shaped (below), and its parts cannot be
-specialized.}
+The law, final form: \emph{a reader-side mechanism pays only when it
+supplies specific, query-addressable information the context is missing, or
+when it changes the reply the reader is instructed to produce. The
+instruction is the only lever that reaches emission behavior---content
+cannot (plans, compiled views, checklists, worksheets), and specialized
+fragments of the instruction cannot replace it. Pre-computed reasoning
+transfers only as a relayed product whose re-emission is itself
+completeness-protected---and that composed relay is the one mechanism that
+beats the single pass (below).}
 
 \begin{table}[t]
 \centering
@@ -953,57 +967,73 @@ Type-routed specialized instructions (rules from a 26-case study) & $-3.0\pp$ \\
 Pre-computed reasoning plan (memory-side artifact) & $-5.6$ / $-2.7\pp$ \\
 Re-retrieval under budget starvation (6k cap, gate fires $19\%$) & $-0.4\pp$ \\
 \midrule
+Requirements checklist appended to the \emph{context} (instruction untouched) & $-1.8\pp$ \\
+Verbatim-evidence worksheet appended (containment guard rejects $74\%$) & $-0.7\pp$ \\
+\midrule
 Re-retrieval under a \emph{weak} (lexical) router & $+1.3\pp$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The arc's endpoint hands the reader the answer itself. A memory-side call runs
-the full structured pass at full budget; with a reasoning model its derivation
-never leaves the thinking block ($99\%$ of visible artifacts begin with the
-final answer), so by default only its \emph{product} is exportable. Relaying
-that product bounds how far any memory-side reasoning can go. With the correct answer and its evidence bullets
-placed in the \emph{default} reader's context, conditional retention of the
-structured pass's wins moves from $0.773$ (no artifact) to $0.797$: the reader
-re-derives from scratch past the correct answer sitting in its own context. An
-explicit one-sentence trust instruction lifts retention to $0.816$ ($0.593$
-overall---still $-4.7\pp$ below running the structured pass in place), and a
-few-shot-hardened planner (worked wrong/right contrasts targeting the audited
-failure modes, full budget) halves plan poisoning ($-5.6\to-2.1\pp$) without
-changing its sign. The ladder---no artifact $0.562$, answer-in-context
-$0.567$, answer$+$trust $0.593$, structured-in-place $0.640$, all
-same-batch---is monotone in how much of the answering pass is restored to the
-reader and saturates only at restoring all of it. Forcing the \emph{process}
-out is costly, and the cost decomposes informatively. Appending an explicit
-visible-derivation format demand (with a schematic few-shot) to the same
-structured instruction achieves $99\%$ compliance, but costs
-$-11.8\pp$ $[-14.4,-9.1]$ \emph{answered in place, no relay involved} ($0.519$
-vs its same-batch anchor $0.635$ over a $1{,}248$-QA half)---below even the
-default instruction. Two controls attribute the loss. The demand also
-\emph{compresses the final answer} (median $869\to247$ chars), and a
-brevity-only demand with no derivation at all already costs
-$-7.5\pp$ $[-10.1,-4.9]$ (at $389$ chars), while re-demanding a complete final
-answer under the full export format recovers half the loss
-($-5.3\pp$ $[-8.0,-2.7]$, at $513$ chars): across the four arms the penalty is
-monotone in how far the reply is re-shaped away from the instruction's natural
-output, and on the pool the instruction exists to fix
-(default-wrong/structured-right, $n{=}180$) the brevity control and the full
-export arm lose \emph{identically} ($0.72\to0.50$ vs $0.51$)---so the
-accuracy damage is carried by answer completeness, not by derivation
-corruption per se, and the $-5.3\pp$ residual (whose answers remain $41\%$
-shorter than the anchor's) is an \emph{upper} bound on any pure
-observation effect. What is export-specific is fidelity: only $21\%$ of
-exported derivations quote the context fully verbatim---the visible Evidence
-section is a post-hoc reconstruction from the model's thinking, not a record
-of it---and a verification-framed reader that adopts the exported derivation
-$95\%$ of the time faithfully inherits whatever was lost
-($+1.1\pp$ $[-1.1,+3.5]$ over the taxed pass). The corrected moral: the
-instruction's \emph{visible output form is part of its mechanism}---its gain
-flows partly through the complete, multi-part final answers it elicits, so
-any secondary demand that re-shapes the reply (derivation sections, citation
-lines, brevity) trades that away. The reader's behavior is set by its
-\emph{instruction}, not by its context content; that is why no content-side
-mechanism in this section moves what one instruction sentence moves.
+The arc's endpoint hands the reader the answer itself---and finally explains
+the whole arc. A memory-side call runs the full structured pass at full
+budget; with a reasoning model its derivation never leaves the thinking block
+($99\%$ of visible artifacts begin with the final answer), so by default only
+its \emph{product} is exportable. Relayed to the default reader, that product
+barely helps: retention of the structured pass's wins is $0.797$ vs $0.773$
+with no artifact---the reader re-derives from scratch past the correct answer
+sitting in its own context---and an explicit trust instruction lifts the arm
+only to $0.593$, $-4.2\pp$ below running the structured pass in place.
+Forcing the \emph{process} out looked worse still: an explicit
+visible-derivation format demand (with a schematic few-shot) achieves $99\%$
+compliance but costs $-11.8\pp$ $[-14.4,-9.1]$ \emph{answered in place, no
+relay involved}. But the cost decomposes, and the decomposition dissolves the
+mystery. The demand also compresses the \emph{final answer} (median
+$869\to247$ chars); a brevity-only demand with no derivation already costs
+$-7.5\pp$ $[-10.1,-4.9]$ (at $389$ chars); re-demanding a complete final
+answer under the full export format recovers the loss almost entirely
+($-1.1\pp$ $[-3.6,+1.6]$ at $786$ chars, statistically zero); and a
+verbose-only control $66\%$ \emph{longer} than the anchor is exactly flat
+($+0.2\pp$). Across seven same-batch arms the penalty is monotone in how far
+the reply is compressed below the instruction's natural output and flat above
+it---and the relay arms' ``irreducible'' friction sits on the same curve
+(their readers re-emit at $522$--$666$ chars): the concise re-emission, not
+the relay, was the ceiling. What is derivation-specific is only fidelity:
+$21\%$ of exported derivations quote the context fully verbatim---a post-hoc
+reconstruction from thinking, not a record of it.
+
+Protecting completeness at the relay's second stage closes the arc. With the
+reader told to verify the memory service's analysis and give its final answer
+\emph{in full}, the trust relay of the structured pass's bare answer reaches
+$0.659$ and $0.664$ in two same-batch runs ($+2.4$ $[+0.1,+4.7]$ and $+2.8$
+$[+0.7,+5.1]$ over the in-place structured anchor) and $0.663$ on the full
+$2{,}496$-QA set ($+1.7$ $[+0.1,+3.3]$ over its same-batch anchor
+$0.645$)---the composed system meets, and in each batch nominally exceeds,
+the single structured pass. The mechanism splits cleanly on the question
+pools: on default-wrong/structured-right questions ($n{=}180$) the relay
+retains the structured pass's wins in full ($0.72$--$0.73$, matching the
+anchor), and on structured-wrong/default-right questions it \emph{repairs}
+part of what the structured pass breaks ($0.51$ vs the anchor's
+$0.43$)---the second pass buys genuine error correction. Attribution
+controls complete the picture: adding the same completeness demand to the
+\emph{default} instruction alone (no structured pass anywhere) recovers the
+entire \emph{net} gap ($0.583\to0.632$, tying the structured anchor at
+$-0.2\pp$ $[-2.7,+2.3]$)---but with a different profile, still $-7\pp$ behind
+on the structured-only wins while keeping $+18\pp$ of the default's advantage
+on the questions structured breaks. The structured instruction's celebrated
+$+5\pp$ thus decomposes into an answer-\emph{completeness} constant
+(transferable to any system by one sentence, which we disclose and urge
+leaderboards to fix) plus a reasoning-content \emph{trade} (win the multi-hop
+pool, break the over-derivation pool) whose net is $\approx\!0$; the relay is
+the one configuration that keeps the trade's wins and refunds part of its
+losses. Finally, the completeness lever is \emph{instruction-only}: appending
+a requirements checklist or a verbatim-evidence worksheet to the
+\emph{context} (memory-side presentation, default instruction untouched)
+leaves the reply length unmoved ($348\to353$--$379$ chars) and accuracy null
+(Table~\ref{tab:reader})---and the worksheet reprises the fabrication
+signature (the containment guard rejects $74\%$ of generated worksheets; the
+served remainder scores $-3\pp$ on its own subset). Content cannot reach the
+emission behavior that one instruction sentence sets.
 
 \paragraph{How much selected context: fill the budget.}
 Within the \emph{routed} context, more is monotonically better up to the
