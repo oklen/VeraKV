@@ -36,7 +36,7 @@ Verbatim KV-Memory for Long-Horizon Agents}
 \lhead{Preprint}
 
 \begin{abstract}
-Long-horizon agents---coding, web, embodied, multi-session chat---accumulate
+Long-horizon agents (coding, web, embodied, multi-session chat) accumulate
 interaction histories that overflow any context window. Many deployed memory
 systems answer this by \emph{constructing} a lossy store---extracting atomic
 facts, building knowledge graphs, or summarizing---and retrieving from it; on
@@ -53,20 +53,18 @@ and not router sophistication---is the dominant \emph{memory-side} variable. On
 \textbf{AMA-Bench} (official Qwen3-32B harness, full 2{,}496 QA), under the
 harness's \emph{default} answer prompt, the memory stack alone reaches
 $\mathbf{0.5954}$: above the purpose-built AMA-Agent ($+2.3\pp$), with every
-prior memory system $+10$--$35\pp$ behind. This is the memory-side result. A
-disclosed, separately ablated structured answer instruction---a reader-side
-variable, not a memory effect---brings the end-to-end recipe to $0.6466$ in our
-run (submitted for official leaderboard verification). A same-batch
-memory$\times$reader factorial and matched payload ablations locate the gains:
-lossily re-encoding the \emph{same} selected evidence costs $5$--$14\pp$;
-router sophistication is second-order ($+1.4\pp$ semantic, $+1.7\pp$
-structural) and regime-dependent ($+12.6\pp$ on diffuse dialogue); and the
-largest single knob is the \emph{reader} instruction ($+5.1$--$5.8\pp$ at
-either router)---so memory comparisons that do not control the reader largely
-measure reader differences. The same fidelity-over-lossy-payload pattern holds
-on \textbf{LOCOMO} and \textbf{LongMemEval-S}, where we map when selection
-beats full context (history overflows; distractors dominate) and when it does
-not.
+prior memory system $+10$--$35\pp$ behind. A disclosed, separately ablated
+structured answer instruction---a reader-side variable, not a memory
+effect---brings the end-to-end recipe to $0.6466$ in our run (submitted for
+official leaderboard verification). A same-batch memory$\times$reader
+factorial and matched payload ablations locate the gains: re-encoding the
+\emph{same} selected evidence lossily costs $5$--$14\pp$ (the poison is
+paraphrase, not compression); router sophistication is second-order and
+regime-dependent; and the largest single knob is the \emph{reader} instruction
+($+5.1$--$5.8\pp$ at either router)---so memory comparisons that do not
+control the reader largely measure reader differences. The same
+fidelity-over-lossy-payload pattern holds on \textbf{LOCOMO} and
+\textbf{LongMemEval-S}.
 
 Because the store is verbatim KV, selection is also a \emph{serving} primitive:
 prefill the trajectory once, gather the selected spans' cached KV at their
@@ -140,8 +138,7 @@ refinements are second-order ($+1.4\pp$ semantic / $+1.7\pp$ structural on AMA;
 regime-dependent: $+4.3\pp$ on LongMemEval, $+12.6\pp$ on LOCOMO) while a
 one-sentence reader instruction is worth $+5.1$--$5.8\pp$ at either
 router---plus a twelve-mechanism reader-side stress test showing the memory
-side \emph{saturates} once routing reaches $\sim\!100\%$ recall. Memory
-comparisons that do not control the reader largely measure reader differences.
+side \emph{saturates} once routing reaches $\sim\!100\%$ recall.
 \item \textbf{Results on official harnesses} (\S\ref{sec:ama},
 \S\ref{sec:locomo}, \S\ref{sec:lme}): $\mathbf{0.5954}$ under the AMA-Bench
 \emph{default} reader---the memory-side result, above the purpose-built
@@ -160,10 +157,9 @@ noise under a consistent reader/judge), and runs $1.6$--$10.9\times$ faster to
 first token as selected evidence grows (prototype microbenchmark), on top of
 $\sim$2M prefill tokens saved per full AMA run.
 \item \textbf{A regime map and a forkable baseline} (\S\ref{sec:method},
-\S\ref{sec:limits}): a small, readable framework, plus the boundaries---verbatim
-selection wins with a capable reader over dense evidence; full context can win
-when it fits; construction-time extraction wins only for a \emph{weak} reader
-over tiny isolated facts.
+\S\ref{sec:limits}): a small, readable framework, plus quantified boundaries
+for the conditional claim above---when selection wins, when full context does,
+when construction does.
 \end{enumerate}
 
 \section{Method: \kvm{}}
@@ -249,9 +245,8 @@ inventory is measured, not assumed: $82\%$ of AMA-Bench questions carry at
 least one deterministically dereferenceable address (step/turn indices $73\%$,
 quoted literals $35\%$, code identifiers $10\%$, file paths $6\%$; analysis
 script released), so step indices are the most \emph{common} address type, not
-the only one---our pin implements that type. It is a second access path
-alongside content addressing, not a benchmark-specific heuristic; we report
-its contribution separately throughout (\S\ref{sec:analysis}). How much
+the only one---our pin implements that type, and its contribution is reported
+separately throughout (\S\ref{sec:analysis}). How much
 router sophistication helps is regime-dependent (\S\ref{sec:analysis}); on
 step-indexed agent trajectories a cheap router already saturates, and the
 verbatim \emph{substrate} does the work.
@@ -263,13 +258,12 @@ verbatim selection avoids that and, by dropping irrelevant turns, also denoises
 relative to dumping the full context (lost-in-the-middle). Under a hard budget, a
 query-focused per-step trim keeps only the query-relevant \emph{lines} of a giant
 observation---a rule/lexical line filter that preserves the original lines
-verbatim (no paraphrase), so ``verbatim'' means the retained lines are exact, not
-that the whole segment is always kept---letting more of a multi-hop chain fit. This
-trim fires only when a single observation overflows the budget; because it removes
-surrounding lines, it can drop context a question needs (e.g.\ in a stack trace,
-diff, or DOM)---a failure mode we flag rather than hide, and ``verbatim'' should be
-read as \emph{retained evidence is verbatim}, not \emph{the full observation is
-always retained}.
+verbatim (no paraphrase)---letting more of a multi-hop chain fit. This trim
+fires only when a single observation overflows the budget; because it removes
+surrounding lines, it can drop context a question needs (e.g.\ in a stack
+trace, diff, or DOM), a failure mode we flag. ``Verbatim'' therefore means
+\emph{retained evidence is verbatim}, not \emph{the full observation is always
+retained}.
 
 \paragraph{KV reuse by sub-selection (the efficiency claim).}
 Because the store is verbatim KV, selection is a \emph{cache} operation, not a
@@ -291,10 +285,10 @@ a prefix-friendly layout additionally benefits from the prompt-caching that
 production APIs now expose.
 
 \paragraph{Assembly: two modes.}
-The deployed \emph{benchmark (text) pipeline} assembles
-$[\,\text{recency overview}\,\Vert\,\text{selected warm turns,
-verbatim}\,\Vert\,\text{question}\,]$, where the overview $=$ hot turns verbatim
-$+$ every cold turn as its one-line gist. The overview is query-independent
+The deployed \emph{benchmark (text) pipeline} assembles three blocks,
+$[\,\text{overview}\,\Vert\,\text{selected turns}\,\Vert\,\text{question}\,]$
+(selected warm turns verbatim), where the overview $=$ hot turns verbatim $+$
+every cold turn as its one-line gist. The overview is query-independent
 (identical for every query in an episode, so its KV is prefilled once and
 reused); the evidence appendix and question vary per query. \emph{All headline
 benchmark numbers use this layout}; the budget sweep and gist-only ablations
@@ -838,10 +832,9 @@ Mem0/A-Mem/AMA-Agent---the only difference being that we re-inject the retrieved
 spans \emph{verbatim} rather than a constructed store. On a shared subset its
 ordering is $\text{lexical }0.557 < \text{vector-RAG }0.583 < \text{RRF hybrid
 }0.600$: our routing edges plain vector retrieval, but all three sit far above
-BM25 ($0.3436$) and every lossy-construction system (Table~\ref{tab:ama}). The
-lesson is the same---the decisive gap is the verbatim-vs-lossy \emph{payload}, not
-the retriever, so ``standard RAG with verbatim re-injection'' is already most of
-the win, and \kvm{} adds tiering, structural pinning, and KV reuse on top.
+BM25 ($0.3436$) and every lossy-construction system (Table~\ref{tab:ama})---so
+``standard RAG with verbatim re-injection'' is already most of the win, and
+\kvm{} adds tiering, structural pinning, and KV reuse on top.
 
 \paragraph{Reader-side machinery saturates once routing is strong.}
 If a one-sentence reader instruction is worth $+5.5\pp$, is the single-pass
@@ -862,77 +855,73 @@ mechanism pays only when it injects information the selected context is actually
 side is saturated---residual errors are backbone reading and reasoning failures,
 which none of this machinery (including verbatim tool access) repairs.
 
-Three further probes sharpen the law. First,
-\emph{pre-computed reasoning does not transfer}. If a one-sentence instruction
-that elicits sub-question reasoning is worth $+5\pp$, can the memory service
-cache that reasoning instead---produce an evidence plan (sub-questions, cited
-values, local conclusions) and hand it to a plain reader? No: prepending such a plan costs $-5.6\pp$ under the default
-reader and $-2.7\pp$ under the structured one (same-batch)---\emph{worse than no
-scaffold at all}, and the more reasoning a scaffold carries, the more it hurts
-(plan $-5.6$ vs state timeline $-1.6$; compression's $-3.0$ is a different
-failure---it removes context outright). The reader inherits the plan's errors
-and skips its own derivation:
-the instruction's value is \emph{eliciting the reader's own reasoning in the
-answering pass}, not the reasoning content---which is why it cannot be moved
-into the memory. Third, neither can the reasoning's \emph{presentation}. We
+Four further probes sharpen the law.
+\emph{First, the instruction's content cannot be pre-computed.} If a
+one-sentence instruction that elicits sub-question reasoning is worth
+$+5\pp$, can the memory service cache that reasoning---produce an evidence
+plan (sub-questions, cited values, local conclusions) and hand it to a plain
+reader? No: prepending such a plan costs $-5.6\pp$ under the default reader
+and $-2.7\pp$ under the structured one (same-batch)---\emph{worse than no
+scaffold at all}---and the more reasoning a scaffold carries, the more it
+hurts (plan $-5.6$ vs state timeline $-1.6$; compression's $-3.0$ removes
+context outright, a different failure). The reader inherits the plan's errors
+and skips its own derivation: the instruction's value is eliciting the
+reader's \emph{own} reasoning in the answering pass, not the reasoning
+content. \emph{Second, the reasoning's presentation cannot be compiled.} We
 compiled the same selected verbatim evidence into a reasoning-affordant
 view---need-grouped quotes, occurrence lists, timelines, conflict and
 missing-evidence panels, with conclusions and instructions expressly
 forbidden---and handed it to the \emph{default} reader, targeting exactly the
 questions the structured instruction fixes (default-wrong, structured-right;
-$n{=}316$) with a same-batch raw-context control and a $299$-question
-both-right stability sample. The view recovers nothing the instruction
-recovers ($32.6\%$ vs the control's $32.3\%$ spontaneous recovery---a
-same-config re-run alone re-fixes a third of the ``fixed'' set, so
-per-question flips are dominated by borderline items) and \emph{breaks}
-$13.4\pp$ of previously-correct questions, partly through mechanisms we
-verified against raw trajectories: the compiler's missing-evidence annotations
-assert appendix-scoped absences as data-wide facts, and its citations can be
-fabricated outright---in one audited case it promoted an environment's
-\emph{available-actions menu} to executed events, with step numbers and quote
-marks---while the reader trusts the panel over the overview it still has. A
-hardened second iteration makes this quantitative: with subset-scoped wording,
-computed deltas and absence claims forbidden, an explicit option-vs-event rule,
-and a deterministic verbatim-containment guard (every quoted string must appear
-in the cited step), the guard still rejected $69\%$ of compilations---
-instructions alone do not enforce fidelity---and the surviving packets, net of
-same-batch re-roll churn measured on the fallback subset, recover $+0.8\pp$ on
-the flip set while still breaking $5\%$ of the stability set; deployed on the
-full $1{,}248$-question half it is exactly null against its same-batch raw
-control ($0.5617$ vs $0.5641$ at a $31\%$ serve rate)---harmless, and
-worthless. Fidelity can be guarded; usefulness cannot be compiled: grouping, occurrence, and absence
-judgments remain conclusions however the compiler is prompted, and the
-stability set has nothing to gain from a second lossy pass. In hindsight the boundary could not have held:
-grouping asserts which steps are relevant, a timeline asserts what changed, a
-missingness note asserts what does not exist---every panel of a compiled view
-is an implicit conclusion. A view compiler is a query-time lossy
-\emph{constructor}, and the paper's core claim applies to it recursively; the
-paired case study (released) shows wins and losses flow through the same
-mechanisms, netting zero where there is something to gain and $-13\pp$ where
-there is not. Second, re-retrieval cannot repair \emph{breadth} starvation:
-at a 6k budget (a known $-9.5\pp$ gap), a separate sufficiency gate fires on
-$19\%$ of questions yet recovers nothing ($-0.4\pp$)---the budget cut removes
-the overview, and fetching more individual steps does not restore breadth. Nor does the instruction \emph{decompose}: deterministic
-question-type routing to specialized fragments of it (enumerate-then-count,
-ledger-only state reconstruction, verbatim-copy, protective direct answering
-for counterfactuals---rules derived from an annotated 26-case study of what
-the instruction fixes and breaks) scores $-3.0\pp$ overall, with the routed
-classes losing $-7$ to $-23\pp$ while the untouched-default subset replicates
-its anchor to $-0.3\pp$. The routing \emph{direction} was right---on the
-questions the instruction breaks, routed fragments gain $+10.7\pp$---but the
-exchange rate is ruinous: on the questions the instruction \emph{fixes} within
-the same classes they lose $-39\pp$, and $-6.2\pp$ on everything else, about
-ten collateral losses per targeted fix. Every replacement fragment ablates the
-full derive$\to$cite$\to$compose loop, and the ablated part is exactly how
-the instruction was quietly winning the body of each class---the failure cases
-the rules were built from are the tails, and no rule precision fixes a
-treatment whose side effect is removing the cure. (We did not test additive per-class hints appended to the intact
-instruction.) The law in final form: a mechanism pays only when it supplies
-\emph{specific, query-addressable} information the context is missing;
-reasoning must happen in the answering pass, and the eliciting instruction
-survives as an indivisible whole---its content cannot be pre-computed, its
-presentation cannot be compiled, its process cannot be displaced, and its
-parts cannot be specialized by question type.
+$n{=}316$), with a same-batch raw-context control and a $299$-question
+both-right stability sample. The view recovers nothing beyond the control's
+spontaneous-recovery rate ($32.6\%$ vs $32.3\%$; a same-config re-run alone
+re-fixes a third of the ``fixed'' set, so per-question flips are dominated by
+borderline items) and \emph{breaks} $13.4\pp$ of previously-correct questions,
+through mechanisms we verified against raw trajectories: appendix-scoped
+absences asserted as data-wide facts, and fabricated citations---one audited
+compilation promoted an environment's \emph{available-actions menu} to
+executed events, with step numbers and quote marks---which the reader trusts
+over the overview it still has. A hardened second iteration (subset-scoped
+wording, computed deltas and absence claims forbidden, an explicit
+option-vs-event rule, a deterministic verbatim-containment guard) still saw
+the guard reject $69\%$ of compilations---instructions alone do not enforce
+fidelity---and, deployed on the full $1{,}248$-question half, is exactly null
+against its same-batch control ($0.5617$ vs $0.5641$ at a $31\%$ serve rate):
+harmless, and worthless. \emph{Fidelity can be guarded; usefulness cannot be
+compiled.} In hindsight the boundary could not have held: grouping asserts
+relevance, a timeline asserts change, a missingness note asserts
+nonexistence---every panel of a compiled view is an implicit conclusion, so a
+view compiler is a query-time lossy \emph{constructor}, and the paper's core
+claim applies to it recursively (the released paired case study shows wins and
+losses flowing through the same mechanisms).
+
+\emph{Third, the instruction's parts cannot be specialized by question type.}
+Deterministic routing to purpose-built fragments of it (enumerate-then-count,
+ledger-only state reconstruction, verbatim-copy, protective direct
+answering---rules derived from an annotated 26-case study of what the
+instruction fixes and breaks) scores $-3.0\pp$ overall: the routed classes
+lose $-7$ to $-23\pp$ while the untouched-default remainder replicates its
+anchor ($-0.3\pp$). The routing \emph{direction} was right---on the questions
+the instruction breaks, routed fragments gain $+10.7\pp$---but the exchange
+rate is ruinous: within the same classes, the questions the instruction
+\emph{fixes} lose $-39\pp$, about ten collateral losses per targeted fix.
+Every fragment ablates the full derive$\to$cite$\to$compose loop, which is
+exactly how the instruction was quietly winning the body of each class; no
+rule precision fixes a treatment whose side effect is removing the cure. (We
+did not test additive per-class hints appended to the intact instruction.)
+\emph{Fourth, a repair mechanism needs something specific to fetch.}
+Re-retrieval cannot fix \emph{breadth} starvation: at a 6k budget (a known
+$-9.5\pp$ gap), a separate sufficiency gate fires on $19\%$ of questions yet
+recovers nothing ($-0.4\pp$)---the budget cut removes the overview, and
+fetching more individual steps does not restore breadth.
+
+The law in final form: \emph{a mechanism pays only when it supplies specific,
+query-addressable information the context is missing; reasoning must happen
+in the answering pass; and the eliciting instruction survives as an
+indivisible whole---its content cannot be pre-computed, its presentation
+cannot be compiled, its process cannot be displaced
+(Table~\ref{tab:reader}), and its parts cannot be specialized.}
 
 \begin{table}[t]
 \centering
@@ -942,10 +931,9 @@ readers: default\,/\,structured). Same-day replicate noise is $\pm0.5\pp$; the
 tools and loop rows are probed on the \textsc{Software} domain, where the
 mechanisms were hypothesized to matter and whose batch noise is
 $\pm4\pp$---so $+0.7$ reads as $\approx\!0$; both loop rows are same-batch
-against their own control. Only re-retrieval under a weak router
-helps---i.e.\ only when the mechanism supplies \emph{specific, query-addressable}
-evidence the selected context is missing; pre-computed reasoning and
-breadth-repair both fail.}
+against their own control. Only re-retrieval under a weak router helps---the
+one case where the mechanism supplies evidence the selected context is
+missing.}
 \label{tab:reader}
 \small
 \begin{tabular}{lc}
@@ -1036,8 +1024,8 @@ logit gap that is the usual bf16 split-vs-joint-prefill non-determinism. The
 agreement is sequence-level and distributional, not just first-token: greedy-decoding
 $256$ tokens, sub-selection and the mask oracle emit the \emph{identical full sequence}
 on every query at both a $3.2$k- and a $27$k-token trajectory, at first-position
-logit-KL $\le\!0.011$ to the oracle (median $0$)---versus $\sim\!0.28$ to a compact
-re-prefill, again showing the two are different computations---and the oracle's
+logit-KL $\le\!0.011$ to the oracle (median $0$; vs $\sim\!0.28$ to a compact
+re-prefill)---and the oracle's
 top-1-minus-top-2 answer margin averages $7.7$ (min $0.25$), so these are not
 knife-edge decisions. This full-sequence match survives the settings a reviewer would
 stress: it holds at $256$-token generations (not just short answers), under an
@@ -1103,11 +1091,10 @@ of the span in isolation would not reconstruct (the $\sim\!13.5$ logit gap above
 \emph{is} that difference, measured). We view this \emph{contextual carryover} as
 a property of activation-level memory, and we bound the claim in both directions.
 It is a statement about \emph{fidelity} to the full-prefill computation, not a
-measured accuracy advantage (the two paths are tied within noise end-to-end; our
-headline benchmark numbers come from the deployed \emph{text} pipeline, with KV
-sub-selection validated as its serving-layer equivalent at $n{=}144$, on a
-$576$-QA stratified extension, on the deployed overview$+$appendix layout
-itself, and via the logit-level gates above). And it cuts against a naive privacy reading: because
+measured accuracy advantage (the two paths are tied within noise end-to-end
+across the three parity runs above; the headline benchmark numbers come from
+the deployed \emph{text} pipeline, with KV sub-selection validated as its
+serving-layer equivalent). And it cuts against a naive privacy reading: because
 selected KV is contextualized by \emph{unselected} history, dropping a cold turn
 removes its text from the reader's context but not necessarily its influence from
 downstream cached KV (quantified in \S\ref{sec:limits}: a planted-secret probe
@@ -1264,24 +1251,19 @@ benchmark whose answers are tiny isolated facts, systems that extract atomic
 facts at construction time can present an easier context---the gap is a matter of
 reader capacity, not retrieval (our router surfaces the evidence $94\%$ of the
 time). This is also why we report LongMemEval-S only in the strong-reader
-(Qwen3-32B) regime: it is a scoping choice---testing the settings the claim is
-about, capable self-hosted readers---not a counterexample we hide.
+(Qwen3-32B) regime: a scoping choice, testing the settings the claim is
+about---capable self-hosted readers.
 
 Third, \emph{once routing is strong, the reader is the residual bottleneck---and a
 different answer-production paradigm owns one domain}. On AMA-Bench
-\textsc{Software}, selection achieves $100\%$ recall of the asked steps and
-deterministic tool access adds nothing (\S\ref{sec:ama}), yet AMA-Agent leads
-there by $+17\pp$ through an iterative loop that retrieves, executes code over
-the full trajectory, verifies, and composes from tool outputs. The value is not
-the iteration as such: a prompted lookup loop over our lossless store adds
-exactly nothing as an evidence-gatherer ($\pm0.0\pp$) and costs $-9\pp$ when
-it displaces the answering pass, and a quote-first single-pass imitation of the
-output style costs $-10\pp$ (\S\ref{sec:ama}). What our reader lacks is the
-\emph{computational} step---code executed over the raw trajectory to compute
-counts, diffs, and aggregations---plus AMA-Agent's construction-time causal
-index; our ablations indicate the rest cannot be absorbed by bolting machinery
-onto a single-pass reader. It is a genuinely complementary design, not a
-retrieval gap.
+\textsc{Software}, selection achieves $100\%$ recall of the asked steps, yet
+AMA-Agent leads by $+17\pp$. The dissection in \S\ref{sec:ama} eliminates
+retrieval, tool access, output format, and prompted iteration in turn; what
+our reader lacks is the \emph{computational} step---code executed over the raw
+trajectory to compute counts, diffs, and aggregations---plus AMA-Agent's
+construction-time causal index. That is a genuinely complementary design, not
+a retrieval gap, and our ablations indicate it cannot be absorbed by bolting
+machinery onto a single-pass reader.
 
 Fourth, \emph{verbatim storage has governance costs}. Unlike lossy construction,
 the store retains raw history: PII persists verbatim and must be handled by
@@ -1313,20 +1295,19 @@ evaluated redaction pipelines.
 \section{Conclusion}
 \label{sec:conclusion}
 
-For long-horizon agents whose answers are exact, objective, and buried in dense
-trajectories---and whose histories overflow the window or drown the reader in
-distractors---the right memory operation is to \emph{construct indices, not
+For a long-horizon agent whose answers are exact, objective, and buried in a
+dense trajectory---and whose history overflows the window or drowns the reader
+in distractors---the right memory operation is to \emph{construct indices, not
 answer payloads}: keep the raw history as reusable KV, index and scaffold it
 cheaply, and rehydrate verbatim the spans a query needs. When the history fits
 and the reader can exploit it, full context can win; when the reader is weak
-and the facts are tiny, construction can win; we state both boundaries rather
-than universalize the slogan. Within its regime, a small framework built on
-this principle leads our runs of AMA-Bench (submitted for official
-verification), is competitive with dedicated dialogue-memory systems on
-LOCOMO, and traces the selection-vs-full-context crossover on
-LongMemEval-S---with the win driven by payload fidelity rather than router
-sophistication, reader-side effects measured and reported separately, and the
-cost amortized by KV reuse.
+and the facts are tiny, construction can win; we state both boundaries. Within
+its regime, a small framework built on this principle leads our runs of
+AMA-Bench (submitted for official verification), is competitive with dedicated
+dialogue-memory systems on LOCOMO, and traces the selection-vs-full-context
+crossover on LongMemEval-S, with the win driven by payload fidelity rather
+than router sophistication, reader-side effects measured and reported
+separately, and the cost amortized by KV reuse.
 The recipe is simple enough to fork, and we offer it, with configurations and
 predictions released, as a reproducible baseline that centers payload fidelity
 over memory construction.
