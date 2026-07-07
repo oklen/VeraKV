@@ -561,8 +561,8 @@ def _handoff_answer(client, question, context, max_tokens, xfa, method, memory):
             try:
                 import json as _j
                 open(LOGBASE + "_full.jsonl", "a").write(_j.dumps(
-                    {"q": question[:200], "art": art[:2600], "up_ans": (m0.group(1).strip()[:300] if m0 else None),
-                     "ans": txt0[:300]}) + "\n")
+                    {"q": question[:200], "art": art[:9000], "up_ans": (m0.group(1).strip()[:4000] if m0 else None),
+                     "ans": txt0[:2000]}) + "\n")
             except Exception:
                 pass
         return {"final_answer": xfa(txt0, mcq_mode=False), "reasoning_trace": ""}
@@ -603,8 +603,8 @@ def _handoff_answer(client, question, context, max_tokens, xfa, method, memory):
                 qs = re.findall(r'"([^"\n]{12,200})"', art)
                 qok = (sum(1 for s in qs if s in context) / len(qs)) if qs else None
                 open(LOGBASE + "_full.jsonl", "a").write(_j.dumps(
-                    {"q": question[:200], "art": art[:2600], "up_ans": (mu.group(1).strip()[:300] if mu else None),
-                     "quotes_ok": qok, "nq": len(qs), "ans": txt[:300]}) + "\n")
+                    {"q": question[:200], "art": art[:9000], "up_ans": (mu.group(1).strip()[:4000] if mu else None),
+                     "quotes_ok": qok, "nq": len(qs), "ans": txt[:2000]}) + "\n")
         except Exception:
             pass
     return {"final_answer": xfa(txt, mcq_mode=False), "reasoning_trace": ""}
