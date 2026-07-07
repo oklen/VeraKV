@@ -300,3 +300,38 @@ tab:ablation/tab:router labels fixed.
 
 Files: mu_merged_{HOFTCF,DVERB2F,REDEFF,RESTR5,RESTREMB,RESTRLEX}.json,
 sel_HOFTCF_full.jsonl.
+
+---
+
+# Full-set router replication: the pin+lexical headline rerun (2026-07-07 12:28, w20)
+
+User: "pin+lexical 重跑 headline 吧,跑完对比一下." Same-batch trio (n=2496, SRC=test,
+structured reader): RESTRLEXF (pin over lexical), RESTRF2 (deployed cfg_flagship
+re-anchor), HOFTCL (lexical base + gate relay). Pre-registered windows: RESTRLEXF
+0.66–0.68 (the audit's +2.7 carried over), RESTRF2 0.635–0.655, HOFTCL 0.68–0.70.
+
+**RESTRLEXF 0.6466 [0.628,0.665] — below window. The half-set handicap does NOT
+replicate:** RESTRLEXF−RESTRF2 (0.6538) = **−0.8 [−2.3,+0.8] n.s.** (wins 181 /
+losses 200); vs the earlier full-set anchor RESTRF 0.6454, +0.2 n.s.; RESTRF2−RESTRF
+(same config, two batches) +0.9 n.s. — run-to-run scale ≈1pp. Per-domain the two
+bases trade: lexical wins EMBODIED_AI +2.6 / Game +1.7, loses OPENWORLD_QA −3.1 /
+TEXT2SQL −3.1. Verdict: at full scale the model-pick fusion is score-neutral (≈0),
+not a 1–3pp tax; the recommended-default switch to lexical now rests on cost (one
+LLM pick-call per retrieval saved, no malformed stubs), not on score. No official
+resubmission warranted — the submitted 0.6466 headline stands (RESTRLEXF lands on
+the same number by coincidence).
+
+**HOFTCL 0.6707 [0.653,0.690]:** the gate relay on the lexical base — **+2.3
+[+0.7,+3.9] zero-excluded** over its same-batch in-place anchor (4th independent
+relay confirmation), −0.2 n.s. vs HOFTCF (hybrid base) → the relay margin is
+router-base-indifferent. HOFTCL−RESTRF2 +1.5 [−0.0,+3.1] grazes zero.
+
+Paper: audit paragraph rewritten (pre-registered full-set replication sentence,
+handicap claim withdrawn → "score-neutral at full scale" + cost-based default
+rationale), tab:config ≤0 → ≈0, gate sentence gains the router-base-indifference
+clause. Methodology note: a zero-excluded n=1248 CI (+2.7 [+0.5,+5.0]) failed to
+replicate at n=2496 — treat half-set zero-exclusion as screening, only full-set
+paired runs as confirmatory.
+
+Files: mu_merged_{RESTRLEXF,RESTRF2,HOFTCL}.json, sel_HOFTCL_full.jsonl;
+paired analysis: /home/tiger/w20_verdict.py.
