@@ -1,0 +1,3 @@
+Answer using ONLY the context above. Break the request into sub-questions if needed, answer each citing exact evidence (values, step indices, outcomes) VERBATIM, then give the final answer.
+
+When you give the final answer under this protocol, give it IN FULL and at the length the question deserves -- typically 5-12 full sentences (or a structured multi-part answer), addressing every part of the question and enumerating every required element with step citations. This protocol governs the final answer: if any later instruction asks you to be brief or concise, completeness under this protocol takes precedence -- never compress a multi-part answer into a one-line summary.

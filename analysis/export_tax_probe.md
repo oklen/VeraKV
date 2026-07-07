@@ -424,3 +424,35 @@ agentic_reader mode=protocol(AMA_PROTOCOL_FILE);w21_verdict.py。
 Files: mu_merged_{PROTX2F,REDEFF2,RESTRF3}.json;w22_verdict.py。
 基建注:mux 隧道晚间抖动("Connection closed by UNKNOWN port 65535" + jump proxy
 banner),直连 `ssh -o ControlMaster=no -p 22222` 可作后备,几分钟后 mux 自愈。
+
+---
+
+# Reasoning-as-memory 第二次全量复刻 + v3 证伪(2026-07-08 05:00,w24 四臂同批 n=2496,新栈)
+
+一夜 7 个基建坑修通后(transformers 5.x 兼容锁版、staging 检查裸奔 cudafix、链接期
+libcuda 截断 LIBRARY_PATH+文件修复、自改运行中脚本、nvidia-smi 被 libnvidia-ml 存根
+致盲(数卡用 /dev/nvidia*)、双写下载竞争、**vLLM 0.10 setproctitle 让僵尸清扫失配
+(补 pkill "VLLM::" + 起服前显存等待循环)**),四臂在 2×8 卡新 worker(vLLM 0.10.2)
+同批落地:
+
+**REDEFF3B 0.5966 / PROTX3F 0.6170 / PROTX2F2 0.6334 / RESTRF4 0.6410**(配对 n=2476):
+
+- **PROTX2F2−REDEFF3B = +3.8 [+2.0,+5.5] 零排除 = 85% 转移**(gap +4.4 [+2.7,+6.3]);
+  **RESTRF4−PROTX2F2 = +0.7 [−1.1,+2.4] 含零** —— 本批与 live 位置统计打平;
+- 昨日独立批(旧栈):+2.3 [+0.5,+4.1] = 46% 转移,残差 +2.8 [+1.1,+4.5] 零排除
+  → **残差大小跨批敏感(+0.7 n.s. ↔ +2.8),转移本身两批都零排除**;
+- **v3(优先级条款+5-12句锚)证伪:长度纹丝不动(713 vs v2 689)、同批净 −1.7
+  [−3.3,−0.1] 零排除** —— 远程措辞再强也夺不走邻近指令的发射权,只有诱发可旅行;
+- 长度锁定跨批复现:协议臂 686/689/713,live structured 840/846,default 342 ——
+  发射长度由答案槽邻近指令设定,是前缀交付不可及的那一份;
+- 分域:TEXT2SQL 本批 v2 0.703 **>** structured 0.683(主场完全替代再确认+超越),
+  WEB 0.723>0.696;SOFTWARE/Game 仍欠。锚稳定性:default 三度同水位
+  (0.5954/0.5974/0.5966);structured 0.6466/0.6410(±0.6 跨栈)。
+
+**论文终版口径:回答协议作为记忆拥有的查询无关前缀,转移指令增益的主要部分
+(两独立全量批 46%/85%,均零排除),TEXT2SQL/EMBODIED 类完全替代;残差跟随前缀
+唯一够不到的量——发射长度(锁 ~690 vs ~845),且不可由更强措辞夺取(v3 −1.7);
+示例中毒 −9.6(question substitution);KV 交付 judge 级 parity。**
+
+Files: mu_merged_{PROTX3F,PROTX2F2,REDEFF3B,RESTRF4}.json + sel dumps + protx3.txt;
+w24_verdict.py/lenq2.py on master。
