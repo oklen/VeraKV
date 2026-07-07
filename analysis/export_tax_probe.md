@@ -335,3 +335,33 @@ paired runs as confirmatory.
 
 Files: mu_merged_{RESTRLEXF,RESTRF2,HOFTCL}.json, sel_HOFTCL_full.jsonl;
 paired analysis: /home/tiger/w20_verdict.py.
+
+---
+
+# HOFTC 失误解剖:官方尺度 2×2 + rider 措辞 mini 筛(2026-07-07 16:00,j2x2-j2x4 + mc2)
+
+用户 goal:HOFTC 还错什么、是不是记忆侧、能否提升。三轮判分(严判 → 官方 prompt 复刻
+agreement 99.5%,3-worker 分片 → 发现 dump 截断 bug:up_ans 被截 300 字符、96.4% 触顶,
+从 art 重抽全文重判)后的官方尺度 2×2(n=2356,上游=中继的记忆侧 structured 趟):
+
+**KEPT 1428 (60.6%) / BOTHWRONG 651 (27.6%) / REPAIRED 157 (6.7%) / DESTROYED 105 (4.5%)。
+上游 0.651 ≈ 同批原地锚 0.6466(记忆侧作答满血,无隐藏损失);中继净 +52 题(修复:摧毁
+1.5:1),分域 SOFTWARE +30 / TEXT2SQL +23 / Game −3 / OPENWORLD −8。**
+
+错例(764)判词:85% = BOTHWRONG(证据在场、双趟都推错:归因偏步、计数滑落、反事实带偏),
+其中 32% 从未被 73 arm 任一做对(gold/judge 噪声——ep150 实锤 gold 步号错位:gold 称 step 15
+用 grep,原始轨迹 turn 15 是 str_replace_editor view、grep 在 turn 16,73 个 arm 全按轨迹答)、
+20% 仅 1-2 arm 碰对(重掷边缘)、34%(222 题,~9pp)稳定可解但均匀摊在全部域×题型 → 无单一
+杠杆 = 已八连攻确认的推理天花板。14% = DESTROYED(上游对、reader 重发射毁掉):86% 稳定可解,
+模式 = 完整性 rider 的 "5-12 句" 在短 gold 题上逼出过度展开(5 步写成 4 步、坐标写错)+ 多要素
+改写漂移 + judge 边界。**记忆侧检索与作答均已饱和——剩余错误不是记忆侧的锅。**
+
+**mini 筛(mc2,12 DESTROYED + 12 KEPT,上游 artifact 用实跑原件,官方 judge):现行 rider
+CUR 自发救回 4/12(DESTROYED 池同样有 ~33% 重掷边缘性)、KEPT 12/12;长度自适应 ADA 救回
+7/12(配对 +3)但 KEPT 破 1/12。基率算术:KEPT 体量是 DESTROYED 的 13.6×,破 1/12(8.3%)
+的点估计 = 4.8× 盈亏线(1.8%),外推净 −3.9pp → 与 ADAPT 同构("拿身体换尾巴")。判决:
+不上规模,杠杆关闭;DESTROYED 是修复引擎(+157)的价格,不是可摘除的缺陷。**
+
+工程:dump 截断已根治(agentic_reader.py art[:9000]/up_ans[:4000]/ans[:2000],同步 worker);
+官方 judge prompt 完整复刻件在 j2x3/j2x4_run.py;3-worker 分片判分 ~5 分钟/轮。
+Files: analysis/hoftcl_{autopsy,2x2}.py, results/j2x{2,3,4}_*, /home/tiger/mc2.log。
