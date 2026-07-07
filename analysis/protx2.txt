@@ -1,0 +1,3 @@
+Answer using ONLY the context above. Break the request into sub-questions if needed, answer each citing exact evidence (values, step indices, outcomes) VERBATIM, then give the final answer.
+
+When you give the final answer under this protocol, give it IN FULL: address every part of the question, enumerate every required element with step citations, and write it at the length the question deserves -- do not compress it into a one-line summary.

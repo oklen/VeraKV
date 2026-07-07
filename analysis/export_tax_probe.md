@@ -365,3 +365,37 @@ CUR 自发救回 4/12(DESTROYED 池同样有 ~33% 重掷边缘性)、KEPT 12/12;
 工程:dump 截断已根治(agentic_reader.py art[:9000]/up_ans[:4000]/ans[:2000],同步 worker);
 官方 judge prompt 完整复刻件在 j2x3/j2x4_run.py;3-worker 分片判分 ~5 分钟/轮。
 Files: analysis/hoftcl_{autopsy,2x2}.py, results/j2x{2,3,4}_*, /home/tiger/mc2.log。
+
+---
+
+# Reasoning-as-memory: 协议段前缀交付(2026-07-07 18:30,w21 五臂 + kvproto)
+
+用户提案"构建推理用 KV 而不仅仅调 prompt"→ 两层实验。**Tier-1(官方管线,32B,h0,
+五臂同日,配对 n=1239):**
+
+| 臂 | acc | vs REDEF4(配对) |
+|---|---|---|
+| REDEF4(default 锚) | 0.5617 | — |
+| PROTX(dec_instr 协议段前置,reader=default 一字不改) | 0.6074 | **+4.4 [+1.9,+6.8] 零排除** |
+| **PROTX2(协议段+完整性条款)** | **0.6258** | **+6.4 [+3.8,+9.0] 零排除** |
+| PRIMER(协议段+2 个 schematic 全长示例) | 0.4647 | **−9.6 [−12.6,−6.6] 零排除(负)** |
+| RESTR6(structured 原地,天花板) | 0.6282 | +6.6 [+4.0,+9.3] |
+
+**判决:(1) 诱发指令可以从"紧贴作答处"搬到记忆拥有的可缓存前缀——PROTX 收回 69%,
+PROTX2 全额恢复(RESTR6−PROTX2 = +0.2 [−2.2,+2.7] 统计打平;分域互换:TEXT2SQL +2.8/
+Game +1.7 vs SOFTWARE −6/OPENWORLD −3.3)。完整性常数也从前缀转移。reader 可见指令
+始终是官方 default。(2) 只有指令类文本能搬:worked examples 中毒 −9.6,机制抓现行 =
+question substitution(模型把示例题当真题答,think 里数"steps 10-30 的 search"而问题
+是 cabinet 8)——内容类文本(即使 schematic)第 5 次确认有毒,指令类文本无毒。**
+
+**Tier-2(8B HF rig,48 QA deployed-layout,预算 1280):** 协议段 KV prefill-once/
+crop-back 复用 vs 逐题重预填 = **judge 级 parity(PREkv 16/48 ≈ PREtx 17/48)**;
+exact-match 24/48 — bf16 分块预填数值差在长生成里自回归发散,"逐字节等价"不成立
+(诚实口径 = judge 级 parity + 首 token argmax,与 §eff 一贯口径一致)。8B 上协议
+方向为负(16-17 vs DEF 21,n=48)→ 协议效应依赖 reader 能力,与论文"capable
+self-hosted readers"的 scope 声明一致。protocol_tok=56(dec_instr 很短;效率主张
+不在此,主张是所有权+零损交付)。
+
+Files: mu_merged_{PROTX,PROTX2,PRIMER,REDEF4,RESTR6}.json, kvproto_ans.jsonl,
+analysis/{protx2,primer}.txt, sel_{PROTX,PROTX2,PRIMER} dumps on master;
+agentic_reader mode=protocol(AMA_PROTOCOL_FILE);w21_verdict.py。

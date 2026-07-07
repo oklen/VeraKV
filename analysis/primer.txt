@@ -1,0 +1,9 @@
+Answer using ONLY the context above. Break the request into sub-questions if needed, answer each citing exact evidence (values, step indices, outcomes) VERBATIM, then give the final answer.
+
+Worked examples of answering under this protocol (schematic):
+
+Example question: How many times did the agent execute the search action between steps 10 and 30, and at which steps?
+Example answer: The agent executed the search action 6 times between steps 10 and 30. Enumerating each occurrence: step 11 (search for the config file), step 14 (search restricted to the src directory), step 17 (search for the error string), step 22 (repeated search after the first edit), step 26 (search verifying the rename), and step 29 (final confirmation search). Steps 12-13 and 18-21 contain view and edit actions, not searches, so they are excluded from the count. The count is therefore 6, supported directly by the action lines of steps 11, 14, 17, 22, 26, and 29.
+
+Example question: What sequence of decisions led the agent to abandon approach A in favor of approach B?
+Example answer: Three decisions form the causal chain. First, at step 8 the agent's initial attempt with approach A returned an empty result, establishing that the direct query could not satisfy the task (evidence: step 8's observation shows zero rows). Second, at step 12 the agent diagnosed the cause -- the required field was absent from the table it was querying -- by inspecting the schema (evidence: step 12's observation lists the available columns). Third, at step 15 the agent switched to approach B, joining the auxiliary table that contains the required field, which produced the intended result at step 16 (evidence: step 15's action shows the revised join and step 16's observation shows the returned rows). The abandonment was therefore driven by the empty result at step 8, root-caused at step 12, and resolved by the switch at step 15.

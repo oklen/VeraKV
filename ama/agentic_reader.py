@@ -29,6 +29,8 @@ def agentic_answer(client, question, context, max_tokens, extract_final_answer, 
         return _plan_answer(client, question, context, max_tokens, extract_final_answer, method, memory, v2=True)
     if MODE == "handoff":
         return _handoff_answer(client, question, context, max_tokens, extract_final_answer, method, memory)
+    if MODE == "protocol":
+        return _protocol_answer(client, question, context, max_tokens, extract_final_answer)
     if MODE == "adapt":
         return _adapt_answer(client, question, context, max_tokens, extract_final_answer, method, memory)
     if MODE == "packet2":
@@ -60,6 +62,40 @@ def agentic_answer(client, question, context, max_tokens, extract_final_answer, 
     if MODE == "reretrieve" and method is not None and memory is not None:
         return _reretrieve_answer(client, question, context, max_tokens, extract_final_answer, method, memory)
     return _code_answer(client, question, context, max_tokens, extract_final_answer)
+
+
+# ===================== mode: protocol (answering protocol delivered as a memory-owned prefix) =====================
+# The reader's visible answer instruction stays the harness DEFAULT; the memory service prepends its
+# answering-protocol segment (the structured instruction text, verbatim) at the very FRONT of the returned
+# context -- the position a precomputed KV segment occupies in serving (prefill once, splice everywhere).
+# Tests whether the instruction's eliciting effect survives moving from the answer slot to a cacheable,
+# query-independent prefix owned by the memory interface.
+PROTOCOL_HEADER = ("## Memory service note: answering protocol for questions over this trajectory\n"
+                   "%s\n\n")
+
+def _protocol_answer(client, question, context, max_tokens, xfa):
+    proto = None
+    f = os.environ.get("AMA_PROTOCOL_FILE")
+    if f and os.path.exists(f):
+        try:
+            proto = open(f).read().strip()
+        except Exception:
+            proto = None
+    if not proto:
+        proto = _structured_instr()
+    newctx = (PROTOCOL_HEADER % proto) + context
+    resp = client.query(_harness_prompt(newctx, question, "Provide a direct and concise answer."),
+                        temperature=0.0, max_tokens=max_tokens)
+    m = re.search(r"Answer\[1\]:\s*(.+?)$", resp, re.DOTALL)
+    txt = ("###Answer: %s" % m.group(1).strip()) if m else resp
+    if os.environ.get("AMA_AGENTIC_DBG") == "2":
+        try:
+            import json as _j
+            open(LOGBASE + "_full.jsonl", "a").write(_j.dumps(
+                {"q": question[:200], "ans": txt[:2000]}) + "\n")
+        except Exception:
+            pass
+    return {"final_answer": xfa(txt, mcq_mode=False), "reasoning_trace": ""}
 
 
 # ===================== mode: gated (structured-first; re-retrieve ONLY when model flags insufficiency) =====================
