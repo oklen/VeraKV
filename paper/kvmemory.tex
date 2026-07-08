@@ -714,24 +714,16 @@ a transparent rule, not a learned exploit.
 
 \paragraph{A post-hoc router audit (correction).}
 Preparing the release we found the deployed default's ``hybrid'' fuses
-lexical scores with a \emph{model-pick} signal (an LLM names useful steps
-over the gist index), not the dense-embedding router; worse, its $32$-token
-pick calls, run on a thinking model, usually return truncated reasoning
-stubs. A same-day paired audit over the $1{,}239$-QA half (structured reader,
-pin fixed) measures the bases directly: lexical-only $0.651$, $+$embedding
-RRF $0.641$, $+$model-pick RRF (the deployed default) $0.623$---lexical-only
-ahead by $+2.7\pp$ $[+0.5,+5.0]$, lexical vs embedding a tie. A
-pre-registered full-set replication (paired, $n{=}2{,}496$) does \emph{not}
-reproduce the handicap: lexical-only $0.647$ vs the deployed fusion $0.654$
-($-0.8\pp$ $[-2.3,+0.8]$), the two bases trading domains. Every comparison
-in this paper holds the memory configuration fixed within batch, so no
-reported \emph{difference} is affected; at full scale the defective fusion
-is score-neutral, and the framework's recommended default is now the
-structural pin over a lexical base---same accuracy, one fewer LLM call per
-retrieval, no malformed pick calls. The audit sharpens the section's
-conclusion: on step-indexed trajectories the flagship's semantic second
-signal is neutral (replicated at $n{=}2{,}496$)---the substrate and the
-structural pin carry the routing.
+lexical scores with a \emph{model-pick} signal (not the dense-embedding
+router) whose $32$-token pick calls, run on a thinking model, usually return
+truncated stubs. A same-day paired audit favored dropping it (lexical-only
+ahead $+2.7\pp$ $[+0.5,+5.0]$ on the half), but a pre-registered full-set
+replication is score-neutral ($-0.8\pp$ $[-2.3,+0.8]$, the two bases trading
+domains). No reported \emph{difference} is affected (memory configuration is
+constant within batch); the recommended default is now the structural pin
+over a lexical base---same accuracy, one fewer LLM call per retrieval, no
+malformed pick calls---and the conclusion sharpens: the semantic second
+signal is neutral; the substrate and the pin carry the routing.
 
 \paragraph{Is the result a step-citing artifact? (robustness).}
 Largely not, and we cross-check with a second judge. Controlling on the same
@@ -881,83 +873,18 @@ errors are one sentence away.
 
 \paragraph{Reader-side machinery saturates once routing is strong.}
 If a one-sentence reader instruction is worth $+5.5\pp$, is the single-pass
-reader leaving more on the table? We stress-tested this with fourteen reader-side
-mechanisms over a \emph{fixed} memory (same-batch controls;
-Table~\ref{tab:reader}). On the flagship memory: letting the model compress the
-selected evidence before answering; a sufficiency gate fused into the answer
-prompt that can trigger re-retrieval; the same gate as a separate call; a
-query-conditioned entity-state timeline prepended as a scaffold; and
-deterministic lookup tools (exact get-by-index, exhaustive search) over the
-lossless store. None of these helps; several hurt. The one positive in the
-table is re-retrieval under a \emph{weak} (lexical) router ($+1.3\pp$), and the
-attribution is exact: the fused gate's $-1.6\pp$ splits into $-2.6\pp$ from the
-escape clause perturbing the answer prompt and $+0.4\pp$ from the re-retrieval
-action itself. The pattern is uniform: a reader-side
-mechanism pays only when it injects information the selected context is actually
-\emph{missing}. Once routing reaches $\sim\!100\%$ evidence recall, the memory
-side is saturated---residual errors are backbone reading and reasoning failures,
-which none of this machinery (including verbatim tool access) repairs.
-
-Four further probes sharpen the law.
-\emph{First, the instruction's content cannot be pre-computed.} If a
-one-sentence instruction that elicits sub-question reasoning is worth
-$+5\pp$, can the memory service cache that reasoning---produce an evidence
-plan (sub-questions, cited values, local conclusions) and hand it to a plain
-reader? No: prepending such a plan costs $-5.6\pp$ under the default reader
-and $-2.7\pp$ under the structured one (same-batch)---\emph{worse than no
-scaffold at all}---and the more reasoning a scaffold carries, the more it
-hurts (plan $-5.6$ vs state timeline $-1.6$; compression's $-3.0$ removes
-context outright, a different failure). The reader inherits the plan's errors
-and skips its own derivation: the instruction's value is eliciting the
-reader's \emph{own} reasoning in the answering pass, not the reasoning
-content. \emph{Second, the reasoning's presentation cannot be compiled.} We
-compiled the same selected verbatim evidence into a reasoning-affordant
-view---need-grouped quotes, occurrence lists, timelines, conflict and
-missing-evidence panels, with conclusions and instructions expressly
-forbidden---and handed it to the \emph{default} reader, targeting exactly the
-questions the structured instruction fixes (default-wrong, structured-right;
-$n{=}316$), with a same-batch raw-context control and a $299$-question
-both-right stability sample. The view recovers nothing beyond the control's
-spontaneous-recovery rate ($32.6\%$ vs $32.3\%$; a same-config re-run alone
-re-fixes a third of the ``fixed'' set, so per-question flips are dominated by
-borderline items) and \emph{breaks} $13.4\pp$ of previously-correct questions,
-through mechanisms we verified against raw trajectories: appendix-scoped
-absences asserted as data-wide facts, and fabricated citations---one audited
-compilation promoted an environment's \emph{available-actions menu} to
-executed events, with step numbers and quote marks---which the reader trusts
-over the overview it still has. A hardened second iteration (subset-scoped
-wording, computed deltas and absence claims forbidden, an explicit
-option-vs-event rule, a deterministic verbatim-containment guard) still saw
-the guard reject $69\%$ of compilations---instructions alone do not enforce
-fidelity---and, deployed on the full $1{,}248$-question half, is exactly null
-against its same-batch control ($0.5617$ vs $0.5641$ at a $31\%$ serve rate):
-harmless, and worthless. \emph{Fidelity can be guarded; usefulness cannot be
-compiled.} In hindsight the boundary could not have held: grouping asserts
-relevance, a timeline asserts change, a missingness note asserts
-nonexistence---every panel of a compiled view is an implicit conclusion, so a
-view compiler is a query-time lossy \emph{constructor}, and the paper's core
-claim applies to it recursively (the released paired case study shows wins and
-losses flowing through the same mechanisms).
-
-\emph{Third, the instruction's parts cannot be specialized by question type.}
-Deterministic routing to purpose-built fragments of it (enumerate-then-count,
-ledger-only state reconstruction, verbatim-copy, protective direct
-answering---rules derived from an annotated 26-case study of what the
-instruction fixes and breaks) scores $-3.0\pp$ overall: the routed classes
-lose $-7$ to $-23\pp$ while the untouched-default remainder replicates its
-anchor ($-0.3\pp$). The routing \emph{direction} was right---on the questions
-the instruction breaks, routed fragments gain $+10.7\pp$---but the exchange
-rate is ruinous: within the same classes, the questions the instruction
-\emph{fixes} lose $-39\pp$, about ten collateral losses per targeted fix.
-Every fragment ablates the full derive$\to$cite$\to$compose loop, which is
-exactly how the instruction was quietly winning the body of each class; no
-rule precision fixes a treatment whose side effect is removing the cure. (We
-did not test additive per-class hints appended to the intact instruction.)
-\emph{Fourth, a repair mechanism needs something specific to fetch.}
-Re-retrieval cannot fix \emph{breadth} starvation: at a 6k budget (a known
-$-9.5\pp$ gap), a separate sufficiency gate fires on $19\%$ of questions yet
-recovers nothing ($-0.4\pp$)---the budget cut removes the overview, and
-fetching more individual steps does not restore breadth.
+reader leaving more on the table? We stress-tested this with fourteen
+reader-side mechanisms over a \emph{fixed} memory (same-batch controls),
+spanning the four ways a memory service could try to help a reader beyond
+serving evidence---content, presentation, access, and instruction
+specialization. All fourteen are null or negative; the one positive is
+re-retrieval under a \emph{weak} router ($+1.3\pp$), the single case where
+the mechanism supplies evidence the selected context is actually
+\emph{missing}. Once routing reaches $\sim\!100\%$ evidence recall the memory
+side is saturated---residual errors are backbone reading and reasoning
+failures that none of this machinery repairs
+(Table~\ref{tab:reader} and Appendix~\ref{app:readermap} carry the map and
+the audited failure signatures).
 
 The law, final form: \emph{a reader-side mechanism pays only when it
 supplies specific, query-addressable information the context is missing, or
@@ -972,135 +899,62 @@ instruction's eliciting component travels through the memory interface,
 prepended to the retrieved context as text or as cached activations, while
 its emission-shaping component does not (below).}
 
-\begin{table}[t]
-\centering
-\caption{Reader-side mechanisms over a \emph{fixed} flagship memory (AMA-Bench,
-same-batch $\Delta$ vs the plain single-pass reader; the plan row reports both
-readers: default\,/\,structured). Same-day replicate noise is $\pm0.5\pp$; the
-tools and loop rows are probed on the \textsc{Software} domain, where the
-mechanisms were hypothesized to matter and whose batch noise is
-$\pm4\pp$---so $+0.7$ reads as $\approx\!0$; both loop rows are same-batch
-against their own control. The protocol rows are measured against same-batch
-\emph{default} anchors on two independent full-set runs (\S the serveable-lever
-paragraph). Only re-retrieval under a weak router helps---the
-one case where the mechanism supplies evidence the selected context is
-missing; the served protocol is the constructive exception the law predicts.}
-\label{tab:reader}
-\small
-\begin{tabular}{lc}
-\toprule
-Reader-side mechanism (memory fixed) & $\Delta$ accuracy \\
-\midrule
-Model-selected evidence compression & $-3.0\pp$ \\
-Entity-state timeline scaffold & $-1.6\pp$ \\
-Sufficiency gate fused into the answer prompt & $-1.6\pp$ \\
-\quad(escape clause alone $-2.6\pp$; re-retrieval action alone $+0.4\pp$) & \\
-Sufficiency gate as a separate call & $\pm0.0\pp$ \\
-Deterministic lookup tools over the lossless store & $+0.7\pp$ \\
-Iterative lookup loop \emph{replacing} the answering pass & $-9.0\pp$ \\
-Iterative lookup loop as evidence-gatherer (answer pass kept) & $\pm0.0\pp$ \\
-Type-routed specialized instructions (rules from a 26-case study) & $-3.0\pp$ \\
-Pre-computed reasoning plan (memory-side artifact) & $-5.6$ / $-2.7\pp$ \\
-Re-retrieval under budget starvation (6k cap, gate fires $19\%$) & $-0.4\pp$ \\
-\midrule
-Requirements checklist appended to the \emph{context} (instruction untouched) & $-1.8\pp$ \\
-Verbatim-evidence worksheet appended (containment guard rejects $74\%$) & $-0.7\pp$ \\
-\midrule
-Answering protocol served in the retrieved context (directives only) & $+2.3$\,/\,$+3.8\pp$ \\
-\quad$+$ two schematic worked examples (question substitution) & $-9.6\pp$ \\
-\quad$+$ hardened emission wording (precedence, length anchor) & $-1.7\pp$ \\
-\midrule
-Re-retrieval under a \emph{weak} (lexical) router & $+1.3\pp$ \\
-\bottomrule
-\end{tabular}
-\end{table}
 
 The arc's endpoint hands the reader the answer itself---and finally explains
 the whole arc. A memory-side call runs the full structured pass at full
 budget; with a reasoning model its derivation never leaves the thinking block
-($99\%$ of visible artifacts begin with the final answer), so by default only
-its \emph{product} is exportable. Relayed to the default reader, that product
-barely helps: retention of the structured pass's wins is $0.797$ vs $0.773$
-with no artifact---the reader re-derives from scratch past the correct answer
-sitting in its own context---and an explicit trust instruction lifts the arm
-only to $0.593$, $-4.2\pp$ below running the structured pass in place.
-Forcing the \emph{process} out looked worse still: an explicit
-visible-derivation format demand (with a schematic few-shot) achieves $99\%$
-compliance but costs $-11.8\pp$ $[-14.4,-9.1]$ \emph{answered in place, no
-relay involved}. But the cost decomposes, and the decomposition dissolves the
-mystery. The demand also compresses the \emph{final answer} (median
-$869\to247$ chars); a brevity-only demand with no derivation already costs
-$-7.5\pp$ $[-10.1,-4.9]$ (at $389$ chars); re-demanding a complete final
-answer under the full export format recovers the loss almost entirely
-($-1.1\pp$ $[-3.6,+1.6]$ at $786$ chars, statistically zero); and a
-verbose-only control $66\%$ \emph{longer} than the anchor is exactly flat
-($+0.2\pp$). Across seven same-batch arms the penalty is monotone in how far
-the reply is compressed below the instruction's natural output and flat above
-it---and the relay arms' ``irreducible'' friction sits on the same curve
-(their readers re-emit at $522$--$666$ chars): the concise re-emission, not
-the relay, was the ceiling. What is derivation-specific is only fidelity:
-$21\%$ of exported derivations quote the context fully verbatim---a post-hoc
-reconstruction from thinking, not a record of it.
+($99\%$ of visible artifacts begin with the final answer), so only its
+\emph{product} is exportable---and relayed to the default reader, that
+product barely helps ($0.593$ even under an explicit trust instruction,
+$-4.2\pp$ below running the pass in place: the reader re-derives from scratch
+past the correct answer sitting in its own context). Forcing the
+\emph{process} out costs $-11.8\pp$ $[-14.4,-9.1]$ answered in place---but
+the cost decomposes: the format demand also compresses the final answer, a
+brevity-only control reproduces most of the loss, re-demanding a complete
+final answer recovers it to statistically zero, and across seven same-batch
+arms the penalty is monotone in how far the reply is compressed below the
+instruction's natural output and flat above it. The relay arms'
+``irreducible'' friction sits on the same curve: the concise re-emission, not
+the relay, was the ceiling. What is derivation-specific is only
+fidelity---$21\%$ of exported derivations quote the context verbatim; the
+visible derivation is a post-hoc reconstruction from thinking, not a record
+of it.
 
 Protecting completeness at the relay's second stage closes the arc. With the
 reader told to verify the memory service's analysis and give its final answer
-\emph{in full}, the trust relay of the structured pass's bare answer reaches
-$0.659$ and $0.664$ in two same-batch runs ($+2.4$ $[+0.1,+4.7]$ and $+2.8$
-$[+0.7,+5.1]$ over the in-place structured anchor) and $0.663$ on the full
-$2{,}496$-QA set ($+1.7$ $[+0.1,+3.3]$ over its same-batch anchor
-$0.645$)---the composed system meets, and in each batch nominally exceeds,
-the single structured pass. The mechanism splits cleanly on the question
-pools: on default-wrong/structured-right questions ($n{=}180$) the relay
-retains the structured pass's wins in full ($0.72$--$0.73$, matching the
-anchor), and on structured-wrong/default-right questions it \emph{repairs}
-part of what the structured pass breaks ($0.51$ vs the anchor's
-$0.43$)---the second pass buys genuine error correction. The residual relay
-losses are re-adjudications, not compression: on the anchor-right pool,
-$78$--$95\%$ of the relay's failures are conclusions the reader
-\emph{overrode} despite the trust instruction (the completeness rider
-eliminates the compressed-correct failures, $28\to4$), and the same
-independent re-judgment is what buys the repair on the other pool---two faces
-of one behavior, net positive at the observed rates (a full-set audit that
-re-judges the relay's own upstream pass makes the trade exact: $6.7\%$ of
-questions repaired against $4.5\%$ destroyed). Pricing the override
-sharpens it further: requiring the reader to \emph{name the contradicting
-step} before departing leaves the override rate unchanged but raises its
-precision on both pools at once ($0.72\to0.77$ on the structured-only wins,
-$0.43\to0.55$ on the pool structured breaks), reaching $0.675$
-($+4.0$ $[+1.5,+6.5]$ over the in-place anchor) on the half and $0.672$ vs
-$0.645$ on the full $2{,}496$-QA set---the strongest configuration we
-measure, and indifferent to the router base ($0.671$ on lexical-only,
-$+2.3$ $[+0.7,+3.9]$ over its same-batch in-place anchor). Attribution
-controls complete the picture: adding the same completeness demand to the
-\emph{default} instruction alone (no structured pass anywhere) recovers the
-entire \emph{net} gap ($0.583\to0.632$, tying the structured anchor at
-$-0.2\pp$ $[-2.7,+2.3]$)---but with a different profile, still $-7\pp$ behind
-on the structured-only wins while keeping $+18\pp$ of the default's advantage
-on the questions structured breaks. The structured instruction's celebrated
-$+5\pp$ thus decomposes into an answer-\emph{completeness} constant
-(transferable to any system by one sentence, which we disclose and urge
-leaderboards to fix) plus a reasoning-content \emph{trade} (win the multi-hop
-pool, break the over-derivation pool) whose net is $\approx\!0$. Case audits
-show the completeness constant is itself two-sided: it recovers coverage
-credit for elements the model knew but omitted, \emph{and} the
-enumerate-with-citations demand forces a per-element evidence walk that
-changes conclusions in both directions---fixing state-tracking answers the
-terse pass got flatly wrong, while on the trade's losing pool the forced
-elaboration invents details a terse correct answer never risked; the relay is
-the one configuration that keeps the trade's wins and refunds part of its
-losses. Both facts replicate on the full $2{,}496$-QA set with same-batch
-anchors (default $0.581$, $+$completeness $0.641$, structured $0.645$), and
-neither is a same-family-judge artifact: re-grading ten arms with a
-different-family judge (Llama-3.1-8B) preserves every ordering, with the
-completeness and relay margins \emph{growing} ($+12.7\pp$ and $+12.3\pp$
-respectively) and the compression curve staying monotone. Finally, the completeness lever is \emph{instruction-only}: appending
-a requirements checklist or a verbatim-evidence worksheet to the
-\emph{context} (memory-side presentation, default instruction untouched)
-leaves the reply length unmoved ($348\to353$--$379$ chars) and accuracy null
-(Table~\ref{tab:reader})---and the worksheet reprises the fabrication
-signature (the containment guard rejects $74\%$ of generated worksheets; the
-served remainder scores $-3\pp$ on its own subset). Content cannot reach the
-emission behavior that one instruction sentence sets.
+\emph{in full}, the trust relay reaches $0.659$/$0.664$ on two same-batch
+halves and $0.663$ on the full $2{,}496$-QA set ($+1.7$ $[+0.1,+3.3]$ over
+its same-batch structured anchor)---the composed system meets, and nominally
+exceeds, the single structured pass. The mechanism splits cleanly: the relay
+retains the structured pass's wins in full and \emph{repairs} part of what it
+breaks; the residual losses are re-adjudications, not compression
+($78$--$95\%$ are overrides despite the trust instruction), and the same
+independent re-judgment is what buys the repairs---two faces of one behavior,
+whose exchange a full-set audit of the relay's own upstream pass prices
+exactly: $6.7\%$ of questions repaired against $4.5\%$ destroyed. Pricing the
+override sharpens it: requiring the reader to \emph{name the contradicting
+step} before departing raises override precision on both pools at once,
+reaching $0.675$ ($+4.0$ $[+1.5,+6.5]$) on the half and $0.672$ vs $0.645$ on
+the full set---the strongest configuration we measure, indifferent to the
+router base. Attribution controls then decompose the instruction's celebrated
+$+5\pp$: the completeness demand alone, added to the \emph{default}
+instruction with no structured pass anywhere, recovers the entire \emph{net}
+gap ($0.583\to0.632$, tying the structured anchor)---so the gain splits into
+an answer-\emph{completeness} constant (transferable to any system by one
+sentence, which we disclose and urge leaderboards to fix) plus a
+reasoning-content \emph{trade} (win the multi-hop pool, break the
+over-derivation pool, net $\approx\!0$). Case audits show the constant is
+itself two-sided---coverage credit for elements the model knew but omitted,
+plus a forced per-element evidence walk that fixes flat-wrong state tracking
+on one pool and invents details on the other; the relay is the one
+configuration that keeps the trade's wins and refunds part of its losses.
+Both facts replicate on the full set with same-batch anchors
+($0.581$/$0.641$/$0.645$) and survive a different-family judge
+(Llama-3.1-8B: every ordering preserved, both margins growing, the
+compression curve monotone). The completeness lever is
+\emph{instruction-only}: memory-side checklists and worksheets leave reply
+length and accuracy unmoved (Appendix~\ref{app:readermap}). Content cannot
+reach the emission behavior that one instruction sentence sets.
 
 \paragraph{The lever itself is serveable: an answering protocol in the memory
 channel.}
@@ -1518,5 +1372,125 @@ strings. The former gains $+5$--$6\pp$ overall, the latter loses $10\pp$ on its
 probe domain: the structured instruction's value is the elicited sub-question
 reasoning in the answering pass, not the grounding phrase or the verbatim
 emphasis it shares with a losing variant.
+
+
+\section{The reader-side falsification map}
+\label{app:readermap}
+
+This appendix carries the mechanism-level evidence behind the saturation law
+of \S\ref{sec:analysis}; Table~\ref{tab:reader} tabulates all fourteen
+mechanisms. On the flagship memory we tested: letting the model compress the
+selected evidence before answering; a sufficiency gate fused into the answer
+prompt that can trigger re-retrieval; the same gate as a separate call; a
+query-conditioned entity-state timeline prepended as a scaffold; and
+deterministic lookup tools (exact get-by-index, exhaustive search) over the
+lossless store. None of these helps; several hurt, and the attribution is
+exact: the fused gate's $-1.6\pp$ splits into $-2.6\pp$ from the escape
+clause perturbing the answer prompt and $+0.4\pp$ from the re-retrieval
+action itself.
+
+Four further probes sharpen the law.
+\emph{First, the instruction's content cannot be pre-computed.} If a
+one-sentence instruction that elicits sub-question reasoning is worth
+$+5\pp$, can the memory service cache that reasoning---produce an evidence
+plan (sub-questions, cited values, local conclusions) and hand it to a plain
+reader? No: prepending such a plan costs $-5.6\pp$ under the default reader
+and $-2.7\pp$ under the structured one (same-batch)---\emph{worse than no
+scaffold at all}---and the more reasoning a scaffold carries, the more it
+hurts (plan $-5.6$ vs state timeline $-1.6$; compression's $-3.0$ removes
+context outright, a different failure). The reader inherits the plan's errors
+and skips its own derivation: the instruction's value is eliciting the
+reader's \emph{own} reasoning in the answering pass, not the reasoning
+content. \emph{Second, the reasoning's presentation cannot be compiled.} We
+compiled the same selected verbatim evidence into a reasoning-affordant
+view---need-grouped quotes, occurrence lists, timelines, conflict and
+missing-evidence panels, with conclusions and instructions expressly
+forbidden---and handed it to the \emph{default} reader, targeting exactly the
+questions the structured instruction fixes (default-wrong, structured-right;
+$n{=}316$), with a same-batch raw-context control and a $299$-question
+both-right stability sample. The view recovers nothing beyond the control's
+spontaneous-recovery rate ($32.6\%$ vs $32.3\%$; a same-config re-run alone
+re-fixes a third of the ``fixed'' set, so per-question flips are dominated by
+borderline items) and \emph{breaks} $13.4\pp$ of previously-correct questions,
+through mechanisms we verified against raw trajectories: appendix-scoped
+absences asserted as data-wide facts, and fabricated citations---one audited
+compilation promoted an environment's \emph{available-actions menu} to
+executed events, with step numbers and quote marks---which the reader trusts
+over the overview it still has. A hardened second iteration (subset-scoped
+wording, computed deltas and absence claims forbidden, an explicit
+option-vs-event rule, a deterministic verbatim-containment guard) still saw
+the guard reject $69\%$ of compilations---instructions alone do not enforce
+fidelity---and, deployed on the full $1{,}248$-question half, is exactly null
+against its same-batch control ($0.5617$ vs $0.5641$ at a $31\%$ serve rate):
+harmless, and worthless. \emph{Fidelity can be guarded; usefulness cannot be
+compiled.} In hindsight the boundary could not have held: grouping asserts
+relevance, a timeline asserts change, a missingness note asserts
+nonexistence---every panel of a compiled view is an implicit conclusion, so a
+view compiler is a query-time lossy \emph{constructor}, and the paper's core
+claim applies to it recursively (the released paired case study shows wins and
+losses flowing through the same mechanisms).
+
+\emph{Third, the instruction's parts cannot be specialized by question type.}
+Deterministic routing to purpose-built fragments of it (enumerate-then-count,
+ledger-only state reconstruction, verbatim-copy, protective direct
+answering---rules derived from an annotated 26-case study of what the
+instruction fixes and breaks) scores $-3.0\pp$ overall: the routed classes
+lose $-7$ to $-23\pp$ while the untouched-default remainder replicates its
+anchor ($-0.3\pp$). The routing \emph{direction} was right---on the questions
+the instruction breaks, routed fragments gain $+10.7\pp$---but the exchange
+rate is ruinous: within the same classes, the questions the instruction
+\emph{fixes} lose $-39\pp$, about ten collateral losses per targeted fix.
+Every fragment ablates the full derive$\to$cite$\to$compose loop, which is
+exactly how the instruction was quietly winning the body of each class; no
+rule precision fixes a treatment whose side effect is removing the cure. (We
+did not test additive per-class hints appended to the intact instruction.)
+\emph{Fourth, a repair mechanism needs something specific to fetch.}
+Re-retrieval cannot fix \emph{breadth} starvation: at a 6k budget (a known
+$-9.5\pp$ gap), a separate sufficiency gate fires on $19\%$ of questions yet
+recovers nothing ($-0.4\pp$)---the budget cut removes the overview, and
+fetching more individual steps does not restore breadth.
+
+\begin{table}[h]
+\centering
+\caption{Reader-side mechanisms over a \emph{fixed} flagship memory (AMA-Bench,
+same-batch $\Delta$ vs the plain single-pass reader; the plan row reports both
+readers: default\,/\,structured). Same-day replicate noise is $\pm0.5\pp$; the
+tools and loop rows are probed on the \textsc{Software} domain, where the
+mechanisms were hypothesized to matter and whose batch noise is
+$\pm4\pp$---so $+0.7$ reads as $\approx\!0$; both loop rows are same-batch
+against their own control. The protocol rows are measured against same-batch
+\emph{default} anchors on two independent full-set runs (\S the serveable-lever
+paragraph). Only re-retrieval under a weak router helps---the
+one case where the mechanism supplies evidence the selected context is
+missing; the served protocol is the constructive exception the law predicts.}
+\label{tab:reader}
+\small
+\begin{tabular}{lc}
+\toprule
+Reader-side mechanism (memory fixed) & $\Delta$ accuracy \\
+\midrule
+Model-selected evidence compression & $-3.0\pp$ \\
+Entity-state timeline scaffold & $-1.6\pp$ \\
+Sufficiency gate fused into the answer prompt & $-1.6\pp$ \\
+\quad(escape clause alone $-2.6\pp$; re-retrieval action alone $+0.4\pp$) & \\
+Sufficiency gate as a separate call & $\pm0.0\pp$ \\
+Deterministic lookup tools over the lossless store & $+0.7\pp$ \\
+Iterative lookup loop \emph{replacing} the answering pass & $-9.0\pp$ \\
+Iterative lookup loop as evidence-gatherer (answer pass kept) & $\pm0.0\pp$ \\
+Type-routed specialized instructions (rules from a 26-case study) & $-3.0\pp$ \\
+Pre-computed reasoning plan (memory-side artifact) & $-5.6$ / $-2.7\pp$ \\
+Re-retrieval under budget starvation (6k cap, gate fires $19\%$) & $-0.4\pp$ \\
+\midrule
+Requirements checklist appended to the \emph{context} (instruction untouched) & $-1.8\pp$ \\
+Verbatim-evidence worksheet appended (containment guard rejects $74\%$) & $-0.7\pp$ \\
+\midrule
+Answering protocol served in the retrieved context (directives only) & $+2.3$\,/\,$+3.8\pp$ \\
+\quad$+$ two schematic worked examples (question substitution) & $-9.6\pp$ \\
+\quad$+$ hardened emission wording (precedence, length anchor) & $-1.7\pp$ \\
+\midrule
+Re-retrieval under a \emph{weak} (lexical) router & $+1.3\pp$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \end{document}
