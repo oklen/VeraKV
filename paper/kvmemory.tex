@@ -426,11 +426,10 @@ itself). AMA-Bench ships only a test split, so---for every system on the leaderb
 alike---tuning necessarily happened on it; we disclose our tuning surface
 exactly. It consists of a handful of discrete choices, each ablated in this
 paper: the router (three candidates; Table~\ref{tab:ablation}), the answer
-instruction (two candidates, both verbatim in Appendix~\ref{app:instr}), and
-the structural step-pin (on/off, with corruption controls); the served
-answering protocol of \S\ref{sec:analysis} (not part of the headline recipe)
-was likewise iterated on the test set---three wordings, one kept, one
-falsified---mitigated by two independent full-set replications. The context budget
+instruction (two candidates, both verbatim in Appendix~\ref{app:instr}), the
+structural step-pin (on/off, with corruption controls), and the served
+protocol of \S\ref{sec:analysis} (three wordings, twice replicated at full
+scale; not part of the headline recipe). The context budget
 is forced by the model window (and swept in \S\ref{sec:analysis}); the
 remaining knobs (hot tier $h{=}4$, top-$k{=}5$, gist head lengths) are the
 framework's defaults and were never searched. The full configuration is frozen
