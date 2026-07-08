@@ -125,6 +125,22 @@ class KVMemoryMethod(BaseMethod):
         return mem
 
     def memory_retrieve(self, memory, question: str) -> str:
+        # Optional answering-protocol prefix (reasoning-as-memory; paper "the lever itself is
+        # serveable"): a fixed, query-independent DIRECTIVE segment served as part of the memory's
+        # return value -- cacheable at position 0 in KV serving (prefill once, reuse everywhere).
+        # Directives only: worked examples in this slot poison (-9.6pp, question substitution).
+        # Off unless cfg["protocol_file"] is set; the host's answer instruction stays untouched.
+        proto = ""
+        pf = self.cfg.get("protocol_file")
+        if pf and os.path.exists(pf):
+            try:
+                proto = ("## Memory service note: answering protocol for questions over this "
+                         "trajectory\n" + open(pf).read().strip() + "\n\n")
+            except Exception:
+                proto = ""
+        return proto + self._retrieve_body(memory, question)
+
+    def _retrieve_body(self, memory, question: str) -> str:
         if self.cfg["arm"] == "full":
             # full-context control: the raw trajectory, recency-truncated to the same token budget
             # (drop OLDEST first) -- no routing, no gists, no appendix; same reader/prompt/judge.

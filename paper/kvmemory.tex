@@ -62,7 +62,9 @@ factorial and matched payload ablations locate the gains: re-encoding the
 paraphrase, not compression); router sophistication is second-order and
 regime-dependent; and the largest single knob is the \emph{reader} instruction
 ($+5.1$--$5.8\pp$ at either router---decomposed below into an
-answer-completeness constant plus a net-zero reasoning trade)---so memory
+answer-completeness constant plus a net-zero reasoning trade, and whose
+eliciting half can itself be served from inside the memory's return
+value)---so memory
 comparisons that do not control the reader largely measure reader
 differences. The same
 fidelity-over-lossy-payload pattern holds on \textbf{LOCOMO} and
@@ -141,7 +143,11 @@ audit finds the semantic second signal at best neutral) and regime-dependent
 ($+4.3\pp$ on LongMemEval, $+12.6\pp$ on LOCOMO) while a
 one-sentence reader instruction is worth $+5.1$--$5.8\pp$ at either
 router---plus a fourteen-mechanism reader-side stress test showing the memory
-side \emph{saturates} once routing reaches $\sim\!100\%$ recall.
+side \emph{saturates} once routing reaches $\sim\!100\%$ recall, and its
+constructive corollary: the instruction's \emph{eliciting} half can be served
+from inside the memory's return value ($46$--$85\%$ of the gain across two
+full-set replications, host reader untouched), while its emission-shaping
+half cannot.
 \item \textbf{Results on official harnesses} (\S\ref{sec:ama},
 \S\ref{sec:locomo}, \S\ref{sec:lme}): $\mathbf{0.5954}$ under the AMA-Bench
 \emph{default} reader---the memory-side result, above the purpose-built
@@ -421,7 +427,10 @@ alike---tuning necessarily happened on it; we disclose our tuning surface
 exactly. It consists of a handful of discrete choices, each ablated in this
 paper: the router (three candidates; Table~\ref{tab:ablation}), the answer
 instruction (two candidates, both verbatim in Appendix~\ref{app:instr}), and
-the structural step-pin (on/off, with corruption controls). The context budget
+the structural step-pin (on/off, with corruption controls); the served
+answering protocol of \S\ref{sec:analysis} (not part of the headline recipe)
+was likewise iterated on the test set---three wordings, one kept, one
+falsified---mitigated by two independent full-set replications. The context budget
 is forced by the model window (and swept in \S\ref{sec:analysis}); the
 remaining knobs (hot tier $h{=}4$, top-$k{=}5$, gist head lengths) are the
 framework's defaults and were never searched. The full configuration is frozen
@@ -959,7 +968,10 @@ cannot (plans, compiled views, checklists, worksheets), and specialized
 fragments of the instruction cannot replace it. Pre-computed reasoning
 transfers only as a relayed product whose re-emission is itself
 completeness-protected---and that composed relay is the one mechanism that
-beats the single pass (below).}
+beats the single pass (below). The lever itself, however, is serveable: the
+instruction's eliciting component travels through the memory interface,
+prepended to the retrieved context as text or as cached activations, while
+its emission-shaping component does not (below).}
 
 \begin{table}[t]
 \centering
@@ -969,9 +981,11 @@ readers: default\,/\,structured). Same-day replicate noise is $\pm0.5\pp$; the
 tools and loop rows are probed on the \textsc{Software} domain, where the
 mechanisms were hypothesized to matter and whose batch noise is
 $\pm4\pp$---so $+0.7$ reads as $\approx\!0$; both loop rows are same-batch
-against their own control. Only re-retrieval under a weak router helps---the
+against their own control. The protocol rows are measured against same-batch
+\emph{default} anchors on two independent full-set runs (\S the serveable-lever
+paragraph). Only re-retrieval under a weak router helps---the
 one case where the mechanism supplies evidence the selected context is
-missing.}
+missing; the served protocol is the constructive exception the law predicts.}
 \label{tab:reader}
 \small
 \begin{tabular}{lc}
@@ -992,6 +1006,10 @@ Re-retrieval under budget starvation (6k cap, gate fires $19\%$) & $-0.4\pp$ \\
 \midrule
 Requirements checklist appended to the \emph{context} (instruction untouched) & $-1.8\pp$ \\
 Verbatim-evidence worksheet appended (containment guard rejects $74\%$) & $-0.7\pp$ \\
+\midrule
+Answering protocol served in the retrieved context (directives only) & $+2.3$\,/\,$+3.8\pp$ \\
+\quad$+$ two schematic worked examples (question substitution) & $-9.6\pp$ \\
+\quad$+$ hardened emission wording (precedence, length anchor) & $-1.7\pp$ \\
 \midrule
 Re-retrieval under a \emph{weak} (lexical) router & $+1.3\pp$ \\
 \bottomrule
@@ -1084,6 +1102,37 @@ leaves the reply length unmoved ($348\to353$--$379$ chars) and accuracy null
 signature (the containment guard rejects $74\%$ of generated worksheets; the
 served remainder scores $-3\pp$ on its own subset). Content cannot reach the
 emission behavior that one instruction sentence sets.
+
+\paragraph{The lever itself is serveable: an answering protocol in the memory
+channel.}
+The falsifications above share one escape route, and it works. If the
+instruction is the only lever, the one artifact worth serving is the
+instruction itself: we prepend the structured answering protocol---verbatim,
+framed as a memory-service note---to the \emph{front} of the retrieved
+context (in the release, literally part of \texttt{retrieve()}'s return
+value; a fixed-position, query-independent segment, so in KV serving it is
+prefilled once and reused everywhere), while the host's answer instruction
+stays byte-identical to the official default. The protocol transfers most of
+the reader-instruction gain: $+2.3\pp$ $[+0.5,+4.1]$ and $+3.8\pp$
+$[+2.0,+5.5]$ over same-batch default anchors in two independent full-set
+replications ($46\%$ and $85\%$ of their structured gaps; the residual to the
+live position is $+2.8$ $[+1.1,+4.5]$ in one batch and a non-significant
+$+0.7$ $[-1.1,+2.4]$ in the other), with full substitution on its home
+domains (\textsc{Text2SQL} $0.703$ vs structured's $0.683$). The boundary is
+sharp on both sides. The channel carries \emph{directives only}: adding two
+schematic worked examples to the same segment costs $-9.6\pp$
+$[-12.6,-6.6]$, and the failure is caught verbatim---the reader answers the
+exemplar's question instead of the real one (question substitution),
+reprising the content-poisoning signature of the packet's fabricated
+citations. And emission does not travel: protocol replies plateau at
+$\sim\!690$ characters against $\sim\!845$ at the live position in both
+batches, and hardening the remote wording (an explicit precedence clause plus
+a length anchor) moves length not at all while costing $-1.7\pp$
+$[-3.3,-0.1]$---the instruction adjacent to the answer slot owns the reply's
+form; only elicitation travels. Served as literal KV (prefill once, crop-back
+reuse across episodes and queries), the protocol is answer-level identical to
+its text twin under the same judge; token streams diverge under bf16 chunked
+prefill, consistent with \S\ref{sec:eff}'s parity framing.
 
 \paragraph{How much selected context: fill the budget.}
 Within the \emph{routed} context, more is monotonically better up to the
