@@ -1,14 +1,45 @@
-# VeraKV — When Does KV Reuse Work for Agent Memory?
+# VeraKV
 
-*A Controlled Study of Payload Fidelity, Store Conditioning, and Cache Harvesting — with a Reproducible
-State-of-the-Art System.* Code, configurations, prompts, raw predictions and judge outputs for the paper
-[`paper/kvmemory.pdf`](paper/kvmemory.pdf) (source: [`paper/kvmemory.tex`](paper/kvmemory.tex)).
+**Agent memory that hands the model the original lines, and #1 on AMA-Bench when submitted.**
 
-**AMA-Bench leaderboard:** the submitted VeraKV entry was verified at **0.6478** and ranked **#1 as of
-2026-07-15**. A later entry (0.6975, dated 2026-09-09) has since overtaken it; VeraKV ranks **#2** since
-September 2026.
+| AMA-Bench, official harness, all 2,496 questions | Accuracy |
+|---|---|
+| **VeraKV** — verified on the public leaderboard, #1 as of 2026-07-15 | **0.6478** |
+| HybridFocus (leaderboard entry) | 0.6246 |
+| VeraKV, memory only (the harness's default reader) | 0.5954 |
+| AMA-Agent (purpose-built for the benchmark) | 0.5722 |
+| Long-context Qwen3-32B, no memory | 0.52 |
+| MemoRAG | 0.4606 |
+| HippoRAG2 | 0.4480 |
+| MemGPT | 0.3304 |
+| Mem0 | 0.2104 |
 
-## What the paper shows
+- **Wins 5 of 6 AMA-Bench domains** against the purpose-built AMA-Agent.
+- **The memory alone beats AMA-Agent:** 0.5954 vs 0.5722 with the harness's own default reader, before any
+  reader-side change.
+- **Beats dedicated dialogue memory on LOCOMO:** J = 0.704 against Mem0's 0.671 and Zep's 0.660, under
+  LOCOMO's public gpt-4o-mini protocol.
+- **Original lines beat rewritten memory by 8–14 points.** With matched evidence, reader and judge,
+  serving an LLM summary or extracted facts instead of the verbatim step costs 8–14 pp.
+- **First token up to 10.9× faster.** Gathering the selected spans' cached KV instead of re-reading them
+  as text keeps time-to-first-token flat at about 40 ms. The speedup is 1.6× to 10.9× as the evidence
+  grows to 4k tokens, and 32× at 32k. The first token is identical to a full-prefill oracle.
+
+A later leaderboard entry (0.6975, dated 2026-09-09) has since overtaken VeraKV, which now ranks #2.
+Under the gpt-4o-mini judge, prompting LOCOMO's full history scores 0.756. These and the other
+protocol caveats are in the paper and in [Honest-measurement notes](#honest-measurement-notes).
+
+**What it is:** a memory layer for long-running agents. It keeps the raw trajectory, routes each
+question to the steps it needs (lexical overlap plus step-number pins), and serves those steps
+**verbatim** in a filled budget. It can serve them as text, or as their own cached KV at their original
+positions.
+
+This repository has the code, configurations, prompts, raw predictions and judge outputs behind every
+number in the paper, [`paper/kvmemory.pdf`](paper/kvmemory.pdf) (*When Does KV Reuse Work for Agent
+Memory? A Controlled Study of Payload Fidelity, Store Conditioning, and Cache Harvesting — with a
+Reproducible State-of-the-Art System*; source in [`paper/kvmemory.tex`](paper/kvmemory.tex)).
+
+## Findings in detail
 
 - **Payload fidelity, measured on agent trajectories.** Most memory systems keep the raw history; what
   differs is what the reader is served (Mem0's search returns its extracted facts; AMA-Agent's released
