@@ -7,7 +7,7 @@ never-solved-by-any-arm (ceiling / gold-judge candidates).
 import json, re, glob, os
 from collections import Counter, defaultdict
 
-RES = "/Users/bytedance/Downloads/kvmemory-release/results"
+RES = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results")
 TARGET = "HOFTCL"
 
 def nkey(s):

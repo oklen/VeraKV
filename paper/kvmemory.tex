@@ -1,5 +1,5 @@
 \documentclass{article} % For LaTeX2e
-
+\usepackage[OT1]{fontenc} % pdflatex's default; lets XeLaTeX/tectonic set the same Times metrics as arXiv
 \usepackage{iclr2026_conference,times}
 
 \usepackage{hyperref}
@@ -22,69 +22,57 @@
 \newcommand{\pp}{\,\mathrm{pp}}
 \newcommand{\kvm}{VeraKV}
 
-\title{Select, Don't Construct:\\
-Verbatim KV-Memory for Long-Horizon Agents}
+\title{When Does KV Reuse Work for Agent Memory?\\
+\large A Controlled Study of Payload Fidelity, Store Conditioning, and Cache
+Harvesting---with a Reproducible State-of-the-Art System}
 
 \author{Zefeng Cai\\
 \texttt{3294005475a@gmail.com}}
 
-% Preprint using the ICLR 2026 style; not under review.
+% Independent preprint typeset with the ICLR 2026 style file for formatting only.
 \iclrfinalcopy
 
 \begin{document}
 \maketitle
-\lhead{Preprint}
+\lhead{Independent preprint --- July 2026; revised October 2026}
 
 \begin{abstract}
-Long-horizon agents (coding, web, embodied, multi-session chat) accumulate
-interaction histories that overflow any context window. Many deployed memory
-systems answer this by \emph{constructing} a lossy store---extracting atomic
-facts, building knowledge graphs, or summarizing---and retrieving from it; on
-dense, objective agent trajectories this destroys exactly the evidence a
-question needs. \kvm{} takes the opposite route: \emph{construct indices, not
-answer payloads}. It keeps the raw turns, builds only a cheap extractive index
-and overview over them, routes each query to the spans it needs, and rehydrates
-those spans \emph{verbatim}---a small, readable framework (recency-tiered
-verbatim store, pluggable router, verbatim rehydration) for self-hosted
-inference.
+Long-horizon agents accumulate interaction histories that outgrow the context window
+and must be offloaded to an external memory. Most memory systems hand the reader what they constructed---facts, graphs,
+summaries---even when they also keep the raw history, and constructions paraphrase away the exact values and steps that dense agent trajectories
+are queried for; a growing line of work instead serves the raw history from a
+cheap index. What is missing is measurement: \emph{which} property of raw payloads
+carries the benefit, and \emph{when} the trajectory's own KV cache can stand in for
+re-encoded text. This paper is a controlled study of both questions, shipped with a
+reproducible system.
 
-Our central finding is that \emph{payload fidelity}---not memory construction,
-and not router sophistication---is the dominant \emph{memory-side} variable. On
-\textbf{AMA-Bench} (official Qwen3-32B harness, full 2{,}496 QA), under the
-harness's \emph{default} answer prompt, the memory stack alone reaches
-$\mathbf{0.5954}$: above the purpose-built AMA-Agent ($+2.3\pp$), with every
-prior memory system $+10$--$35\pp$ behind. A disclosed, separately ablated
-structured answer instruction---a reader-side variable, not a memory
-effect---brings the end-to-end recipe to $0.6466$ in our run (submitted for
-official leaderboard verification). A same-batch memory$\times$reader
-factorial and matched payload ablations locate the gains: re-encoding the
-\emph{same} selected evidence lossily costs $5$--$14\pp$ (the poison is
-paraphrase, not compression); router sophistication is second-order and
-regime-dependent; and the largest single knob is the \emph{reader} instruction
-($+5.1$--$5.8\pp$ at either router---decomposed below into an
-answer-completeness constant plus a net-zero reasoning trade, and whose
-eliciting half can itself be served from inside the memory's return
-value)---so memory
-comparisons that do not control the reader largely measure reader
-differences. The same
-fidelity-over-lossy-payload pattern holds on \textbf{LOCOMO} and
-\textbf{LongMemEval-S}.
+On payload form, matched-evidence ablations on dense agent trajectories---the same
+cited evidence presented as verbatim spans, original-line extracts, LLM summaries, or
+atomic facts---show that \emph{generative paraphrase} of matched evidence costs
+$8$--$14\pp$, and that in the deployed pipeline deterministic extractive shortening costs about half of what generative re-encoding does,
+extending controlled memory-representation comparisons to agent traces and separating
+paraphrase damage from compression damage. On KV reuse, we distinguish computational
+fidelity from task utility. Within the window, gathering the selected spans'
+cached KV at their original positions is computationally faithful to a
+full-prefill-then-mask oracle and \emph{accuracy-equivalent} to re-prefilling the
+same spans as text---we claim a cost property, not an accuracy advantage: first-token
+latency decouples from evidence size and beats a resident prefix-cache baseline.
+Beyond the window, where no joint prefill exists, independently encoded event stores
+collapse on the official benchmark ($-13\pp$ paired), two known repair families
+recover $72\%$, and two scoped regularities organize the rest: evidence converts to
+accuracy only through joint encoding, and a store's write-time conditioning must
+match what is served, in content and in position---in a six-way selector comparison for the
+fresh-recompute budget, no content signal, including a KEEP-style attention-propagation selector,
+beats recency. Where the agent's own rollout cache survives, harvesting it
+replaces the $5\times$ store-encoding cost at parity (8B/32B, Qwen/Llama,
+AMA-Bench/LOCOMO), and a mixed deployment policy matches the routed-text carrier
+baseline overall---the gain concentrated in the in-window harvest slice, the
+over-window gap left open and stated.
 
-Because the store is verbatim KV, selection is also a \emph{serving} primitive:
-prefill the trajectory once, gather the selected spans' cached KV at their
-original positions, and re-prefill only the question---faithful to a
-full-prefill-then-mask oracle in our tests, and $1.6$--$10.9\times$ faster to
-first token as the selected evidence grows. We scope this precisely: the
-accuracy results above use the text-assembly pipeline; KV sub-selection is its
-serving-layer equivalent, validated for parity on real trajectories (a
-prototype microbenchmark; decode still attends over the selected KV).
-
-The recipe wins when history overflows the window or distractors drown the
-reader; full context can win when it fits, and construction-time extraction can
-win for a weak reader on tiny isolated facts. We map these boundaries and
-release code, configurations, prompts, raw predictions, and judge outputs
-(\url{https://github.com/oklen/VeraKV}) as a reproducible baseline that centers
-payload fidelity over memory construction.
+The findings ship as \kvm{}, a verbatim-first memory stack over self-hosted
+inference: ranked \#1 on the AMA-Bench leaderboard as of 2026-07-15 and competitive
+on LOCOMO and LongMemEval-S, with all code, configurations, prompts, predictions,
+and judge outputs released.\footnote{\url{https://github.com/oklen/VeraKV}}
 \end{abstract}
 
 \section{Introduction}
@@ -96,280 +84,318 @@ model's context window, the agent needs a memory. The prevailing answer is to
 \emph{construct} one---to run an LLM over the trajectory that extracts atomic
 facts (Mem0~\citep{mem0}), writes and links notes (A-Mem~\citep{amem}), distills
 hierarchical summaries (MemoryBank~\citep{memorybank}), or builds a temporal
-knowledge graph (Zep~\citep{zep})---and then retrieve from that constructed,
-lossy store. This is natural for \emph{dialogue} memory, where the salient
+knowledge graph (Zep~\citep{zep})---and then retrieve over what was constructed. Many of these systems keep the raw history as well (Mem0, for one, stores the original messages); what matters is what reaches the reader. Retrieval returns the constructed units---Mem0 returns only its extracted facts---so which details the reader can ever see is fixed at write time, before any question exists.
+This is natural for \emph{dialogue} memory, where the salient
 content is a handful of stable user facts. It is a poor fit for \emph{agent
-trajectories}, where the answer is often an exact value, a step index, a code
-diff, or an SQL filter that a fact-extractor paraphrases away. AMA-Bench
+trajectories}, where the answer is often an exact value or a specific step that a
+fact-extractor paraphrases away. AMA-Bench
 \citep{amabench} makes this concrete: purpose-built dialogue-memory systems
 (Mem0 $0.21$, A-Mem $0.32$, MemGPT $0.33$, MemoryBank $0.34$) all score
 \emph{below} a no-memory long-context baseline ($0.52$) on dense agent
-trajectories---lossy construction is the bottleneck.
+trajectories, and the benchmark's own needle control locates two losses: serving MemoryBank's constructed memory of the answer-bearing turns instead of the turns themselves drops accuracy from $0.46$ to $0.27$ ($-41\%$ relative, BabyAI), and similarity retrieval then misses those turns (HippoRAG2 loses a further $43\%$ end-to-end). What reaches the reader---not whether the raw history was kept---is where these systems lose.
 
-Our claim is a positioning one: for these workloads, a deliberately simple
-alternative to construction is surprisingly strong. A KV cache built over the full
-trajectory is already a usable associative memory of it; the operation we want is
-not to compress it but to \emph{select} which raw spans a query needs and to
-\emph{rehydrate them verbatim}. Algorithmically this is close to query-aware
-raw-chunk retrieval; the contribution is the empirical case that raw-span memory
-beats constructed memory on agent trajectories, plus the systems mechanism that
-makes it cheap. Selection denoises (it drops
-the irrelevant turns that drown the answer) while preserving the exact tokens
-that construction would lose, and it is cheap to deploy on self-hosted inference
-(vLLM~\citep{vllm}, SGLang~\citep{sglang}) because the query-independent part of
-the context is prefilled once and reused. The claim is deliberately
-conditional, and we keep it so throughout: \emph{select verbatim} when the
-history overflows the window or distractors drown the reader; \emph{full
-context} can win when it fits and the reader can exploit it;
-\emph{construction-time extraction} wins only for a weak reader over tiny
-isolated facts (\S\ref{sec:limits}).
+A second line of work already draws the natural conclusion and serves the raw
+history from a cheap index: gist navigation with raw-passage lookup
+(ReadAgent~\citep{readagent}), full-fidelity trace databases indexed by summaries
+(Memex~\citep{memexrl}, HORMA~\citep{horma}), budgeted verbatim evidence capsules
+(EMBER~\citep{ember}), optical indexes with deterministic verbatim return
+(OCR-Memory~\citep{ocrmemory}), and---concurrently with this work---a controlled
+comparison showing verbatim chunks beat extracted artifacts on dialogue benchmarks
+by $16$--$22\pp$~\citep{verbatimchunks}. ``Serve the raw text'' is no longer a
+contrarian stance; it is a design pattern. What the pattern still lacks is
+\emph{attribution} and a \emph{cost map}. Which property of the raw payload carries
+the benefit---and is it paraphrase or mere shortening that does the damage? The
+reader consuming the memory is a separate axis that end-to-end comparisons leave
+entangled with the store~\citep{memdelta}; how much of a system gap is reader
+prompting? And since the trajectory was prefilled once anyway on self-hosted
+inference (vLLM~\citep{vllm}, SGLang~\citep{sglang}), when can the resulting KV
+cache---the model's own reading of the evidence---be \emph{served} in place of
+re-encoded text, and when does that reuse break? Throughout we keep three notions
+separate that are easy to conflate: \emph{source fidelity} (is the payload's text
+unaltered?), \emph{computational fidelity} (does served KV reproduce the
+full-prefill computation?), and \emph{task utility} (does the answer come out
+right?)---the first two never imply the third, and we measure each on its own
+terms. Source fidelity is about \emph{tokens}, not information: a served row's keys and
+values are verbatim those of the original tokens, but because the row was contextualized
+during prefill it can carry causal influence from tokens the query never selected
+(\S\ref{sec:oow}). We therefore say the memory serves selected \emph{rows}, not selected
+\emph{information}, and are careful not to conflate the two.
 
-We build this into \kvm{} (\S\ref{sec:method}) and evaluate it on three benchmark
-families (\S\ref{sec:results}). Our contributions:
-
-\begin{enumerate}[leftmargin=2em,itemsep=2pt]
-\item \textbf{A finding with design consequences: payload fidelity dominates}
-(\S\ref{sec:ama}, \S\ref{sec:analysis}). Selecting raw spans and re-injecting
-them \emph{verbatim} beats every published lossy-construction system by
-$+10$--$35\pp$ cross-system, and matched-evidence ablations make the payload's
-role causal: re-encoding the \emph{same} selected evidence as summaries or
-facts costs $8$--$14\pp$ in a stripped oracle setting and $5$--$6\pp$ inside the
-deployed pipeline, while a deterministic swap to the \emph{original lines} of
-the same steps costs only $2.6\pp$---the cost is paraphrase, not compression.
-\item \textbf{A memory$\times$reader confound audit} (\S\ref{sec:analysis}): a
-same-batch factorial separates memory-side from reader-side gains---routing
-refinements are second-order on AMA (structural pin $+1.7\pp$; a post-hoc
-audit finds the semantic second signal at best neutral) and regime-dependent
-($+4.3\pp$ on LongMemEval, $+12.6\pp$ on LOCOMO) while a
-one-sentence reader instruction is worth $+5.1$--$5.8\pp$ at either
-router---plus a fourteen-mechanism reader-side stress test showing the memory
-side \emph{saturates} once routing reaches $\sim\!100\%$ recall, and its
-constructive corollary: the instruction's \emph{eliciting} half can be served
-from inside the memory's return value ($46$--$85\%$ of the gain across two
-full-set replications, host reader untouched), while its emission-shaping
-half cannot.
-\item \textbf{Results on official harnesses} (\S\ref{sec:ama},
-\S\ref{sec:locomo}, \S\ref{sec:lme}): $\mathbf{0.5954}$ under the AMA-Bench
-\emph{default} reader---the memory-side result, above the purpose-built
-AMA-Agent---and $0.6466$ end-to-end with the separately ablated reader
-instruction, on our run of the official harness over the full 2{,}496 QA
-(above the prior leaderboard best $0.6246$; submitted for official
-verification); competitive LOCOMO ($0.704$ vs Mem0 $0.671$\,/\,Zep $0.660$ under the
-public protocol, positioned as an out-of-domain check); LongMemEval-S within a
-stated regime boundary.
-\item \textbf{A serving mechanism: literal KV sub-selection} (\S\ref{sec:eff}):
-selected spans are served by gathering their cached KV at original positions,
-not re-encoded. It reproduces a full-prefill-then-mask oracle ($100\%$
-first-token argmax on synthetic and real AMA trajectories, and on a non-Qwen
-backbone), is accuracy-neutral vs the text pipeline on real AMA (tied within
-noise under a consistent reader/judge), and runs $1.6$--$10.9\times$ faster to
-first token as selected evidence grows (prototype microbenchmark), on top of
-$\sim$2M prefill tokens saved per full AMA run.
-\item \textbf{A regime map and a forkable baseline} (\S\ref{sec:method},
-\S\ref{sec:limits}): a small, readable framework, plus quantified boundaries
-for the conditional claim above---when selection wins, when full context does,
-when construction does.
-\end{enumerate}
+We answer these questions with controlled experiments organized around \kvm{}, the
+verbatim-first memory stack we build and release (\S\ref{sec:method}); the stack is
+the instrument and the artifact, not a claim of a new memory primitive. Concretely:
+i) \emph{payload-form attribution on dense agent trajectories}: matched-evidence
+ablations in which only the payload form varies show that re-encoding the
+\emph{same} selected evidence generatively costs $8$--$14\pp$ while, in the deployed pipeline, a deterministic
+swap to its original lines costs about half as much as a generative re-encoding ($-2.6$ vs.\ $-5.1$/$-5.9\pp$)---extending controlled
+memory-representation comparisons~\citep{verbatimchunks} from dialogue to agent
+traces and separating \emph{paraphrase} damage from \emph{compression} damage, with
+the effect largest where answers are exact (\S\ref{sec:ama}, \S\ref{sec:analysis});
+ii) \emph{reader--memory separation as measurement discipline}: holding the memory
+fixed, a one-sentence answer-instruction swap moves accuracy more than any of
+fourteen reader-side mechanisms, and the answering protocol can travel inside the
+memory's return value---applying concurrent skill-KV transplantation
+work~\citep{kvnotes} to the agent-memory answering protocol at text-instruction
+parity, then extended to a query-routed skill \emph{library} in which additive per-class
+hints add a further $+6.3\pp$ on routed questions while replacement routing regresses
+(\S\ref{sec:analysis}, \S\ref{sec:reader}); iii) \emph{a validated
+within-window KV serving implementation}: position-preserving gather of selected
+spans reproduces a full-prefill-then-mask oracle (under stated cache/position
+assumptions) and is \emph{accuracy-equivalent} to re-prefilling the same spans as
+text---the benefit we claim is cost, not accuracy: per-query prefill decouples from
+evidence size, beating text re-prefill and a resident prefix-cache baseline on TTFT
+(\S\ref{sec:kvserve},~\S\ref{sec:eff}); iv) \emph{an out-of-window
+characterization}---the study's core: independently encoded event stores collapse
+on the official harness ($-13.2\pp$ paired, $n{=}2431$), repair families adapted
+from RAG-oriented cache splicing recover $72\%$ but their parity claims do not
+transport, two scoped regularities organize the failure (evidence converts to
+accuracy only through joint encoding; write-time conditioning must match serving in
+content and position), no content-signal selector in a six-way comparison---including a KEEP-style
+attention-propagation selector~\citep{keep}---beats recency for the
+fresh-recompute budget, and where the agent's rollout cache survives, harvesting it
+replaces the $5\times$ store-encoding cost at parity across scales (8B/32B),
+benchmark families (AMA-Bench/LOCOMO), and backbones (Qwen/Llama); a mixed
+deployment policy then matches the routed-text carrier baseline overall, its gain
+concentrated in the in-window harvest slice, the over-window gap left open
+(\S\ref{sec:oow}); and v) \emph{a reproducible system}: code, configurations,
+prompts, raw predictions, and judge outputs for every reported run; the memory
+stack alone (fixed default reader) already matches the purpose-built AMA-Agent, and
+the full disclosed system is ranked \#1 on the public AMA-Bench leaderboard as of
+2026-07-15, while remaining competitive on LOCOMO and LongMemEval-S
+(\S\ref{sec:ama}, \S\ref{sec:locomo}, \S\ref{sec:lme}).
 
 \section{Method: \kvm{}}
 \label{sec:method}
 
-\kvm{} is a KV-cache memory manager for self-hosted long-horizon agents. The
-design goal is a \emph{readable} base others can fork: keep raw context as
-reusable KV and select per query, instead of lossily compressing
-(Figure~\ref{fig:arch}). Algorithm~\ref{alg:kvm} gives the build-once /
-retrieve-per-query loop and Table~\ref{tab:config} its default configuration;
-every row of that table is a swap point, and the paragraphs below walk the
-components in turn.
+\kvm{} is a KV-cache memory manager for self-hosted long-horizon agents. It
+realizes one principle---deliver the evidence faithfully, never construct a lossy
+store---through two operations: \emph{select} the raw spans a query needs, and
+\emph{serve} them verbatim. Selection is one layer; \emph{serving} splits into
+three regimes that this paper keeps explicitly distinct (Table~\ref{tab:modes}):
+\emph{text rehydration} (general; produces every headline accuracy number),
+\emph{whole-trajectory KV gather} (exact, only while the trajectory fits the
+positional window), and \emph{per-event anchored KV stores} (the over-window
+regime, approximate by necessity; characterized in \S\ref{sec:oow}). When a result
+below depends on which regime served it, we say so at the point of use, and
+Appendix~\ref{app:ledger} maps every reported number to its pipeline. We make the
+pieces precise below (Fig.~\ref{fig:arch}, Algorithm~\ref{alg:kvm},
+Table~\ref{tab:config}).
 
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}[font=\footnotesize,
-  b/.style={draw, rounded corners, align=center, text width=16mm, minimum height=8mm, inner sep=2pt},
+  b/.style={draw, rounded corners, align=center, text width=15mm, minimum height=8mm, inner sep=2pt},
   L/.style={b, fill=red!7}, G/.style={b, fill=green!8},
+  P/.style={draw, rounded corners, fill=blue!8, align=center, text width=14mm, minimum height=6mm, inner sep=2pt},
   a/.style={-{Latex[length=2mm]}, thick}]
- % Traditional (top)
- \node[b] (t1) at (0,1.5) {Trajectory};
- \node[L] (t2) at (2.5,1.5) {LLM extract / summarize};
- \node[L] (t3) at (5.0,1.5) {facts / graph / summary};
- \node[b] (t4) at (7.5,1.5) {retrieve};
- \node[align=center] at (9.9,1.5) {\textcolor{red!70!black}{$\times$ lossy}\\\textcolor{red!70!black}{payload}};
+ % Prior (top)
+ \node[b] (t1) at (0,1.6) {Trajectory};
+ \node[L] (t2) at (2.4,1.6) {LLM extract / summarize};
+ \node[L] (t3) at (5.0,1.6) {lossy facts / graph};
+ \node[b] (t4) at (7.5,1.6) {retrieve};
+ \node[align=center] at (9.7,1.6) {\textcolor{red!70!black}{$\times$ lossy}\\\textcolor{red!70!black}{payload}};
  \draw[a] (t1)--(t2); \draw[a] (t2)--(t3); \draw[a] (t3)--(t4);
- \node[anchor=east, gray] at (-0.4,1.5) {\textit{prior}};
+ \node[anchor=east, gray] at (-1.15,1.6) {\textit{prior}};
  % Ours (bottom)
  \node[b] (o1) at (0,0) {Trajectory};
- \node[G] (o2) at (2.5,0) {segment + hot/cold tier};
- \node[G] (o3) at (5.0,0) {gist \emph{index} (extractive)};
- \node[b] (o4) at (7.5,0) {route + gather KV};
- \node[G] (o5) at (9.9,0) {verbatim spans (from KV)};
+ \node[G] (o2) at (2.4,0) {prefill once: KV cache $\mathcal{C}$};
+ \node[G] (o3) at (5.0,0) {\textbf{select}\\ route$+$pin $\to\mathcal{S}(q)$};
+ \node[G] (o4) at (7.5,0) {\textbf{serve}\\ gather KV $\to\mathcal{C}_{\mathcal{K}(q)}$};
+ \node[b] (o5) at (9.9,0) {reader};
  \draw[a] (o1)--(o2); \draw[a] (o2)--(o3); \draw[a] (o3)--(o4); \draw[a] (o4)--(o5);
- \node[anchor=east, gray] at (-0.4,0) {\textit{\kvm{}}};
- \node[green!45!black] at (9.9,-0.85) {\checkmark\ verbatim payload};
+ \node[anchor=east, gray] at (-1.15,0) {\textit{\kvm{}}};
+ \node[P] (pi) at (8.7,-1.05) {protocol $\pi$};
+ \draw[a, blue!55] (pi) to[out=0,in=270] (o5);
+ \node[green!45!black, font=\scriptsize] at (5.0,-0.95) {\checkmark\ verbatim, faithful};
 \end{tikzpicture}
-\caption{Prior memory systems \emph{construct} a lossy store (extract/summarize/
-graph) and retrieve from it. \kvm{} keeps raw segments, builds only a cheap
-\emph{extractive} gist index over the cold ones, and at query time routes to and
-\emph{gathers the selected spans' KV} verbatim---gist routes, verbatim answers.}
+\caption{Prior memory serves the reader what it \emph{constructed} at write time---a lossy payload, even when the raw history is also kept.
+\kvm{} prefills the trajectory once into a KV cache, then per query
+\textbf{selects} which spans to keep ($\mathcal{S}(q)$) and \textbf{serves} them
+verbatim by gathering their cached KV at original positions
+($\mathcal{C}_{\mathcal{K}(q)}$); an optional answering protocol $\pi$ rides at
+the front of the returned context. Select decides \emph{which} evidence, KV
+decides \emph{how faithfully} it is carried.}
 \label{fig:arch}
 \end{figure}
 
-\paragraph{Segments and three recency tiers.}
-The trajectory is flattened into \texttt{Segment}s (for agent traces, one per
-turn: \texttt{action}\,/\,\texttt{observation}; for dialogue, one per
-utterance/session with its timestamp). At query time the segments occupy three
-tiers. \textbf{Hot}: the most recent segments, kept \emph{verbatim} (a recency
-prior). \textbf{Warm}: older segments \emph{rehydrated verbatim} when the router
-selects them for the current query. \textbf{Cold}: every other old segment,
-represented by a lightweight \emph{gist}---a cheap \emph{extractive} snippet
-(the head of the action/observation), \emph{not} an LLM summary. The gist plays
-two roles: it is the \emph{routing index}, and in the assembled context each
-un-selected cold turn appears only as its one-line gist inside a recency
-\emph{overview}---navigation scaffolding, so the reader can see the shape of the
-whole trajectory. The answer-bearing content is served \emph{verbatim}: recent
-turns in full, plus the router-selected turns rehydrated in full as an appendix.
-Any turn the query actually needs is thus upgraded to verbatim; a gist is never
-the payload for selected evidence. Even the index is non-generative: we
-\emph{construct for indexing and scaffolding} but \emph{answer from verbatim}.
-The slogan is \emph{gist routes, verbatim answers}. Both halves of this layout
-earn their tokens: cutting the overview collapses narrative-heavy domains
-($-27\pp$ on \textsc{Embodied} in the budget sweep of \S\ref{sec:analysis}),
-while answering \emph{from} lossy re-encodings instead of verbatim spans costs
-$8$--$14\pp$ (Fig.~\ref{fig:payload}).
+\paragraph{Setup.} A trajectory is a sequence of segments (turns)
+$T=(s_1,\dots,s_n)$, where $s_i$ carries a token string $x_i$; write
+$x=x_1\Vert\cdots\Vert x_n$ for their concatenation, $N=\sum_i|x_i|$, and
+$\mathrm{span}(i)=[\ell_i,r_i)$ for the token interval of $s_i$ in $x$
+($\ell_i=\sum_{j<i}|x_j|$). The reader $f_\theta$ is a frozen autoregressive
+transformer with rotary position embeddings (RoPE). Building the memory prefills
+$x$ \emph{once} into a key--value cache
+\[
+  \mathcal{C}=\{(k_t,v_t)\}_{t=1}^{N},\qquad
+  (k_t,v_t)=f_\theta\text{'s key/value at position }t\text{ attending to all }t'\le t,
+\]
+and attaches to each cold segment an extractive gist $g_i=\textsc{Head}(s_i)$ (a
+prefix of its action/observation, not an LLM summary). The memory is
+$M=(\{s_i\},\{g_i\},\mathcal{C},\{\mathrm{span}(i)\})$: the gist is a routing
+index and a reader-facing navigation scaffold, but the \emph{authoritative}
+evidence---what any query is answered from---is always the raw $x_i$.
 
-\paragraph{The router (pluggable; its payoff is regime-dependent).}
-A \texttt{Router.select(query, candidates, k)} interface returns which old
-segments to rehydrate. In order of cost: \textbf{Lexical} (token overlap,
-BM25-like; free, zero-dependency, already strong); \textbf{Embedding} (dense
-retrieval with a lexical pre-filter to bound cost); \textbf{Hybrid}
-(reciprocal-rank fusion of the two, which tops both components); and a
-\textbf{step-pinning} variant that additionally pins the steps a question names
-(``step $N$'', turn references)---a cheap \emph{structural} cue, not a fancier
-scorer. We view step-pinning as a minimal instance of \emph{structural address
-resolution}: agent trajectories are not unstructured documents but event logs
-with stable addresses (step and turn indices, tool-call ids, file paths, URLs),
-and when a query names an address the memory should \emph{dereference} it
-deterministically---reserving content-based routing for the remaining
-budget---rather than force all access through semantic similarity. The address
-inventory is measured, not assumed: $82\%$ of AMA-Bench questions carry at
-least one deterministically dereferenceable address (step/turn indices $73\%$,
-quoted literals $35\%$, code identifiers $10\%$, file paths $6\%$; analysis
-script released), so step indices are the most \emph{common} address type, not
-the only one---our pin implements that type, and its contribution is reported
-separately throughout (\S\ref{sec:analysis}). How much
-router sophistication helps is regime-dependent (\S\ref{sec:analysis}); on
-step-indexed agent trajectories a cheap router already saturates, and the
-verbatim \emph{substrate} does the work.
-
-\paragraph{Verbatim rehydration is the substrate.}
-Selected segments are rehydrated \emph{byte-for-byte}, not summarized. Lossy
-construction destroys dense objective information (exact values, code, IDs);
-verbatim selection avoids that and, by dropping irrelevant turns, also denoises
-relative to dumping the full context (lost-in-the-middle). Under a hard budget, a
-query-focused per-step trim keeps only the query-relevant \emph{lines} of a giant
-observation---a rule/lexical line filter that preserves the original lines
-verbatim (no paraphrase)---letting more of a multi-hop chain fit. This trim
-fires only when a single observation overflows the budget; because it removes
-surrounding lines, it can drop context a question needs (e.g.\ in a stack
-trace, diff, or DOM), a failure mode we flag. ``Verbatim'' therefore means
-\emph{retained evidence is verbatim}, not \emph{the full observation is always
-retained}.
-
-\paragraph{KV reuse by sub-selection (the efficiency claim).}
-Because the store is verbatim KV, selection is a \emph{cache} operation, not a
-prompt operation. We prefill the episode's trajectory once into a key--value
-cache, recording each segment's token span. At query time the router names the
-segments to keep; we \emph{gather their cached KV at the original positions}
-(position-preserving, so RoPE encodes the true inter-span distances---renumbering
-would require re-rotating the stored keys) and decode the question on top,
-\emph{re-prefilling nothing but the question itself}. The selected verbatim spans
-are thus served from the cache, never re-encoded. Because RoPE is relative,
-keeping spans at their original positions is exact for the retained-and-earlier
-tokens: this sub-selected prefill agrees with a full-prefill-then-mask-dropped
-oracle on the first decoded token in our checks (\S\ref{sec:eff}). The
-per-query \emph{prefill} is therefore $O(\text{question})$ rather than
-$O(\text{selected evidence})$---the selected spans are not re-encoded, though the
-decode still attends over their KV---so the more a multi-hop query pulls, the
-larger the prefill saving. Self-hosting gives full control of this reuse;
-a prefix-friendly layout additionally benefits from the prompt-caching that
-production APIs now expose.
-
-\paragraph{Assembly: two modes.}
-The deployed \emph{benchmark (text) pipeline} assembles three blocks,
-$[\,\text{overview}\,\Vert\,\text{selected turns}\,\Vert\,\text{question}\,]$
-(selected warm turns verbatim), where the overview $=$ hot turns verbatim $+$
-every cold turn as its one-line gist. The overview is query-independent
-(identical for every query in an episode, so its KV is prefilled once and
-reused); the evidence appendix and question vary per query. \emph{All headline
-benchmark numbers use this layout}; the budget sweep and gist-only ablations
-(\S\ref{sec:analysis}) probe its two halves. The \emph{compact KV-serving mode}
-evaluated in \S\ref{sec:eff} drops the overview and serves $[\,\text{selected
-turns in temporal order}\,\Vert\,\text{question}\,]$ (hot $+$ router-selected
-warm, all verbatim, no gist), gathering the selected spans' cached KV at their
-original positions. In both modes every turn keeps its explicit \texttt{<step
-$N$>} tag, so the reader reconstructs the timeline from tags rather than
-physical position: selecting a subset in temporal order does not scramble
-temporal reasoning, and the recent (hot) turns are never displaced by older
-selected ones. The cacheable object is \emph{not} a fixed text prefix---the
-selected set varies per query---but the one-time trajectory prefill, from which
-each query gathers its spans' KV at their original positions (\S\ref{sec:eff});
-a hosted API additionally reuses the stable
-$[\,\text{system}\,\Vert\,\text{task}\,]$ header via contiguous-prefix caching.
-
-\paragraph{Answer prompt.}
-The reader answers over the assembled context with a fixed prompt; we evaluate
-both the harness default and a one-sentence structured instruction, and report
-them as a separately ablated \emph{reader-side} variable throughout
+\paragraph{Select: which spans a query needs.} Given a query $q$ and a token
+budget $B$, retrieval forms three tiers. The \emph{hot} set is the last $h$
+turns, $H=\{n{-}h{+}1,\dots,n\}$. The \emph{pin} set is the turns $q$ names by a
+structural address---``step $N$'', ``turns $N$--$M$''---dereferenced
+deterministically, $P(q)=\{i:\mathrm{addr}(q)\ni i\}$. The remaining cold turns
+$\mathcal{I}_{\mathrm{cold}}$ are scored by a pluggable router $R(q,s_i)$ and
+taken greedily under budget, pins ranked first:
+\[
+  \mathcal{S}(q)=\operatorname*{top\text{-}}k_{\,i\,\in\,P(q)\cup\mathcal{I}_{\mathrm{cold}}}\;R(q,s_i)
+  \quad\text{s.t.}\quad \sum_{i\in\mathcal{S}(q)}|x_i|\le B,
+  \qquad \mathcal{K}(q)=H\cup\mathcal{S}(q),
+\]
+with $\mathcal{K}(q)$ kept in temporal order. $R$ ranges over lexical overlap,
+dense cosine (with a lexical pre-filter), and their reciprocal-rank fusion; the
+pin is a structural cue, not a scorer. Agent trajectories are event logs with
+stable addresses (step indices, tool-call ids, file paths), and $82\%$ of
+AMA-Bench questions carry at least one (step indices alone in $73\%$), so the
+memory dereferences a named address deterministically rather than forcing all
+access through similarity. How
+much the router matters is regime-dependent: on step-indexed traces a cheap
+router saturates, while on diffuse dialogue it carries more of the work
 (\S\ref{sec:analysis}).
 
-\paragraph{What it is not.}
-Not a lossy fact/graph/summary memory (we keep raw spans); not a KV
-eviction/compression scheme (we select and rehydrate at full precision); its
-arbitrary-span KV reuse is realized self-hosting, though the prefix-friendly
-layout also benefits hosted prompt-caching.
+\paragraph{Serve: verbatim spans, natively as KV.} The selected spans are served
+verbatim, and their native form is the cache. Rather than re-encode them, we
+\emph{gather} their cached key--values at the original positions,
+\[
+  \mathcal{C}_{\mathcal{K}(q)}=\Big\{(k_t,v_t)\in\mathcal{C}\ :\ t\in\textstyle\bigcup_{i\in\mathcal{K}(q)}\mathrm{span}(i)\Big\},
+\]
+and decode the answer by re-prefilling only $q$ on top of
+$\mathcal{C}_{\mathcal{K}(q)}$. This gather is \emph{exact}: because RoPE makes
+attention depend only on the relative offset $t-t'$, keeping each retained token
+at its original position reproduces a full-prefill-then-mask oracle,
+\[
+  f_\theta\big(\cdot\mid \mathcal{C}_{\mathcal{K}(q)},\,q\big)
+  \;=\;
+  f_\theta^{\mathrm{mask}}\big(\cdot\mid x,\ \mathcal{K}(q),\ q\big),
+\]
+where $f_\theta^{\mathrm{mask}}$ prefills all of $x$ but masks the decode's
+attention to the retained positions $\bigcup_{i\in\mathcal{K}(q)}\mathrm{span}(i)$.
+Crucially each gathered $(k_t,v_t)$ was computed while attending to earlier
+\emph{unselected} turns, so it carries trajectory-conditioned context that a
+compact re-prefill of $x_i$ in isolation cannot reconstruct---\S\ref{sec:analysis}
+measures the residual to the oracle at $\sim\!0.7$ logits, versus $\sim\!13.5$ for
+the isolated re-prefill. The per-query prefill is therefore $O(|q|)$, independent
+of the evidence size $\sum_{i\in\mathcal{S}(q)}|x_i|$, which the text path
+re-prefills in full (\S\ref{sec:eff}). When a single observation overflows the
+budget, a query-focused filter keeps only its query-relevant \emph{lines},
+verbatim; retained evidence is always verbatim, even if not every line of an
+oversized turn is retained.
+
+\paragraph{The answering protocol travels in the return value.}
+\texttt{retrieve()} returns a context the reader consumes, so it can carry more
+than evidence. \kvm{} optionally prepends a fixed, query-independent
+\emph{answering protocol} $\pi$ to that context---framed as a memory-service
+note, with the host reader's instruction untouched. As a fixed prefix, $\pi$ is
+prefilled once at position $0$ and reused, and it recovers most of a reader-side
+instruction's benefit from inside the memory (\S\ref{sec:analysis}). It is off by
+default.
+
+\paragraph{Assembly.} Two modes share the store. The \emph{text pipeline}, which
+produces all headline numbers, returns
+\[
+  C(q)=\big[\,\pi\ \Vert\ O\ \Vert\ (x_i)_{i\in\mathcal{S}(q)}\ \Vert\ q\,\big],
+  \qquad a\sim f_\theta\big(C(q)\big),
+\]
+where the overview $O$ is the hot turns verbatim plus every cold turn's gist and
+is prefilled once per episode. The \emph{KV-serving} mode drops $O$ and serves
+$[(x_i)_{i\in\mathcal{K}(q)}\Vert q]$ through $\mathcal{C}_{\mathcal{K}(q)}$. Both
+keep each turn's explicit \texttt{<step $N$>} tag, so temporal order is read from
+tags, not physical position.
+
+\paragraph{Scope of the cache-native path.} KV gather is exact only when the source
+turns were prefilled within the model's positional window; the text path carries no
+such assumption and is the general path, in particular for the over-window
+trajectories this paper targets---AMA-Bench \textsc{Software} runs $60$--$100$k tokens
+against a $22$k budget. Table~\ref{tab:modes} states the three regimes: text
+rehydration produces every headline number, full-trajectory KV gather is exact only
+within the window (the \S\ref{sec:eff} prototype), and chunked KV gather is a systems
+extension.
+
+\begin{table}[h]
+\centering
+\caption{Three ways to serve the selected evidence, and their scope. Only text
+rehydration produces this paper's accuracy numbers; cache-native serving is a
+within-window prototype.}
+\label{tab:modes}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lccc}
+\toprule
+Serving mode & Over-window? & Global traj.-cond.\ KV? & Headline? \\
+\midrule
+Text rehydration & yes & --- (re-encoded) & \textbf{yes} \\
+Full-trajectory KV gather & only if it fits & yes (exact) & prototype \\
+Chunked KV gather & yes & chunk-local only & future \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{algorithm}[t]
-\caption{\kvm{}: build once, retrieve (and gather KV) per query. In the KV path,
-un-selected turns are \emph{masked from the query's attention}, not re-encoded
-away: the retained spans' KV was computed in their presence, a carryover we
-measure and bound in \S\ref{sec:eff} and \S\ref{sec:limits}.}
+\caption{\kvm{}: build once, then select-and-serve per query. The gather step
+returns the full-prefill KV of the retained positions, so the KV decode
+reproduces $f_\theta^{\mathrm{mask}}$ (\S\ref{sec:method}) while re-prefilling only
+$q$; the text pipeline assembles the same selection with an overview.}
 \label{alg:kvm}
 \begin{algorithmic}[1]
-\Procedure{BuildMemory}{trajectory $T$}
-  \State segment $T$ into turns; store each raw payload $s_i$ (action/observation) \emph{verbatim}
-  \State for each $s_i$: $\mathrm{gist}_i \gets \textsc{ExtractHead}(s_i)$ \Comment{cheap extractive index, not an LLM summary}
-  \State prefill the flattened $T$ once into KV cache $C$; record each $s_i$'s token span
-  \State \Return $(\{s_i\},\{\mathrm{gist}_i\}, C, \mathrm{spans})$
+\Procedure{BuildMemory}{$T=(s_1,\dots,s_n)$}
+  \State $x \gets x_1\Vert\cdots\Vert x_n$;\ \ record $\mathrm{span}(i)=[\ell_i,r_i)$ for each $s_i$
+  \State $g_i \gets \textsc{Head}(s_i)$ for each $s_i$ \Comment{extractive gist; index only, never payload}
+  \If{$N \le$ positional window}
+    \State $\mathcal{C} \gets \textsc{Prefill}_{f_\theta}(x)$ \Comment{one joint prefill: exact KV serving available}
+  \Else
+    \State $\mathcal{C} \gets \{\textsc{EncodeAnchored}_{f_\theta}(s_i)\}_{i=1}^{n}$ \Comment{per-event anchored stores, approximate (\S\ref{sec:oow}); text path needs no $\mathcal{C}$}
+  \EndIf
+  \State \Return $M=(\{s_i\},\{g_i\},\mathcal{C},\{\mathrm{span}(i)\})$
 \EndProcedure
-\Procedure{Retrieve}{query $q$, budget $B$}
-  \State $H \gets$ the $h$ most recent turns (hot tier, kept verbatim)
-  \State $P \gets$ turns named by structural refs in $q$ (``step $N$'', ``turns $N$--$M$'')
-  \State score the remaining (cold) turns by router $R(q,\cdot)$ \Comment{lexical / embedding / RRF hybrid}
-  \State $K \gets$ top-$k$ of $P \cup \mathrm{scored}$ under budget $B$; line-trim oversized turns if needed
-  \State \textbf{gather} $C$'s KV for $H \cup K$ at their \emph{original} positions (position-preserving)
-  \State decode $q$ over $[\,H\,\Vert\,K\,]$ verbatim, re-prefilling only $q$ \Comment{un-selected turns masked, not erased}
+\Statex
+\Procedure{Retrieve}{$M,\ q,\ B$}
+  \State $H \gets \{n{-}h{+}1,\dots,n\}$ \Comment{hot: last $h$ turns}
+  \State $P(q) \gets \{i : \mathrm{addr}(q)\ni i\}$ \Comment{pin: structural addresses in $q$}
+  \State $\mathcal{S}(q) \gets \operatorname*{top\text{-}}k_{\,i\in P(q)\cup\mathcal{I}_{\mathrm{cold}}} R(q,s_i)$\ \ s.t.\ $\textstyle\sum_{i\in\mathcal{S}(q)}|x_i|\le B$
+  \State $\mathcal{K}(q) \gets H\cup\mathcal{S}(q)$ \Comment{keep in temporal order}
+  \If{KV-serving}
+    \State $\mathcal{C}_{\mathcal{K}(q)} \gets \{(k_t,v_t)\in\mathcal{C} : t\in\bigcup_{i\in\mathcal{K}(q)}\mathrm{span}(i)\}$ \Comment{gather at original positions}
+    \State \Return $f_\theta(\cdot \mid \mathcal{C}_{\mathcal{K}(q)},\, q)$ \Comment{re-prefill only $q$}
+  \Else
+    \State $O \gets [\,\text{hot verbatim} \Vert (g_i)_{i\in\mathcal{I}_{\mathrm{cold}}}\,]$ \Comment{overview, per-episode}
+    \State \Return $f_\theta\big(\cdot \mid [\,\pi \Vert O \Vert (x_i)_{i\in\mathcal{S}(q)} \Vert q\,]\big)$
+  \EndIf
 \EndProcedure
 \end{algorithmic}
 \end{algorithm}
 
 \begin{table}[t]
 \centering
-\caption{\kvm{} default configuration (the fork surface; every row is swappable).}
+\caption{\kvm{} default configuration, organized by its two pillars. Every row is
+a swap point. The answer instruction is a separately ablated reader-side variable
+(App.~\ref{app:instr}), not part of the memory.}
 \label{tab:config}
 \footnotesize
 \begin{tabular}{ll}
 \toprule
 Component & Default setting \\
 \midrule
-Hot tier & $h{=}4$ most recent turns, verbatim \\
-Cold gist & extractive head: \texttt{action[:120]} $+$ \texttt{obs[:160]} chars (no LLM) \\
-Lexical router & token overlap (BM25-like) over \texttt{[a-z0-9]+}, zero-dependency \\
-Embedding router & Qwen3-Embedding-0.6B, cosine top-$k$, lexical pre-filter \\
-Hybrid router & RRF fusion; as-deployed \{lexical, model-pick\}, audited $\approx 0$ (\S\ref{sec:analysis}) \\
-Step-pin & regex \texttt{(turn|step)s?\,$N$(--$M$)?}; pin named turns verbatim \\
-Rehydration $k$ & top-$5$ selected turns (budget-bounded) \\
-Context budget & 22k (32k window $-$ 10k thinking reserve); truncate oldest first \\
-Answer prompt & structured: sub-questions $\rightarrow$ cite evidence $\rightarrow$ compose (App.~\ref{app:instr}) \\
-Reader / judge (AMA) & Qwen3-32B (official Track B; LOCOMO/LME: \S\ref{sec:setup}) \\
+\multicolumn{2}{l}{\emph{Store} (build once)} \\
+\quad Hot tier & $h{=}4$ most recent turns, verbatim \\
+\quad Cold gist $g_i$ & extractive head \texttt{action[:120]}$+$\texttt{obs[:160]} (no LLM) \\
+\quad Prefill $\mathcal{C}$ & whole trajectory once into a KV cache \\
+\midrule
+\multicolumn{2}{l}{\emph{Select} $\mathcal{S}(q)$ (per query)} \\
+\quad Router $R$ & lexical / embedding (Qwen3-Emb-0.6B) / RRF hybrid \\
+\quad Step-pin $P(q)$ & regex \texttt{(turn|step)s?\,$N$(--$M$)?}; deref named turns \\
+\quad Budget $B$, top-$k$ & 22k tokens (32k window $-$ thinking reserve); $k{=}5$ \\
+\midrule
+\multicolumn{2}{l}{\emph{Serve} $\mathcal{C}_{\mathcal{K}(q)}$} \\
+\quad Rehydration & selected spans verbatim; KV gathered at original positions \\
+\midrule
+\multicolumn{2}{l}{\emph{Reader}} \\
+\quad Answer prompt & host default; optional protocol $\pi$ (off by default) \\
+\quad Reader / judge & Qwen3-32B (AMA Track B; LOCOMO/LME: \S\ref{sec:setup}) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -378,22 +404,29 @@ Reader / judge (AMA) & Qwen3-32B (official Track B; LOCOMO/LME: \S\ref{sec:setup
 \label{sec:setup}
 
 We evaluate on three long-term-memory families that stress different inputs:
-\textbf{AMA-Bench}~\citep{amabench} (agent execution trajectories),
-\textbf{LOCOMO}~\citep{locomo} (multi-session dialogue), and
-\textbf{LongMemEval-S}~\citep{longmemeval} (long-context chat-assistant
-histories). Unless noted, the reader and the LLM-as-judge are the same model as
-each benchmark's official protocol, and we report each benchmark's own metric.
+\textbf{AMA-Bench}~\citep{amabench} (agent trajectories), \textbf{LOCOMO}~\citep{locomo}
+(multi-session dialogue), and \textbf{LongMemEval-S}~\citep{longmemeval} (long-context
+chat). We follow each benchmark's official protocol---same reader and judge, its own
+metric. For AMA-Bench this is the official \texttt{run.py} harness on the full
+open-ended set, backbone and judge both Qwen3-32B~\citep{qwen3} (``Track B''), 22k
+context, so our numbers drop into the published leaderboard; unless noted, every
+AMA-Bench result uses this default and every ablation contrast is
+same-batch.\footnote{The open-ended set is 208 episodes / 2{,}496 QA over six domains.
+LOCOMO and LongMemEval-S reader/judge protocols are stated where we report them.}
 
-For AMA-Bench we run the \emph{official} \texttt{run.py} harness end to end
-(memory construction $\to$ per-query retrieval $\to$ answer $\to$ LLM-as-judge) on
-the full open-ended set (208 episodes / 2{,}496 QA, six domains), with backbone
-\emph{and} judge both Qwen3-32B~\citep{qwen3} (the official ``Track B''), so our
-numbers drop directly into the published table; context is capped at 22k tokens
-(the 32k window minus the thinking reserve). For LOCOMO we report both the public
-gpt-4o-mini leaderboard protocol (comparable to Mem0/Zep) and a consistent-judge
-regime (reader = judge = Qwen3-32B) that removes the cross-paper judge confound.
-For LongMemEval-S we report only the Qwen3-32B target-reader regime
-(\S\ref{sec:limits} explains the scoping).
+\paragraph{Statistical inference.} Questions within an episode share a trajectory and
+are not independent, so every interval we report is an \emph{episode-clustered}
+bootstrap CI (episodes resampled as clusters; $208$ on the full AMA set), and paired
+McNemar discordant counts are reported as descriptive effect summaries alongside those
+CIs rather than as stand-alone tests. Contrasts fall in three classes, labeled at the
+point of use: \emph{confirmatory} (decision rule fixed before the run, e.g.\ the
+deployment-map evaluation of \S\ref{sec:oow}), \emph{exploratory} (developed
+iteratively on the public set, e.g.\ the leaderboard configuration), and
+\emph{post-hoc mechanism analyses} (the \S\ref{sec:oow} dials); no multiple-testing
+correction is applied to the exploratory class, and we rely on replication---across
+scales, benchmark families, and backbones---rather than corrected $p$-values for the
+mechanism claims. Appendix~\ref{app:ledger} maps every headline number to its
+pipeline, prompt, sample size, and batch.
 
 \section{Results}
 \label{sec:results}
@@ -401,97 +434,58 @@ For LongMemEval-S we report only the Qwen3-32B target-reader regime
 \subsection{AMA-Bench: leading results on agent-trajectory memory}
 \label{sec:ama}
 
-Table~\ref{tab:ama} places \kvm{} on the AMA-Bench leaderboard. With only a
-\emph{free lexical} router, \kvm{} already matches the purpose-built AMA-Agent
-($0.5621$ vs $0.5722$) and beats every other published memory system by $+10$ to
-$+35\pp$---confirming the core thesis that verbatim selection over raw turns is a
-stronger substrate than lossy construction or similarity retrieval. Memory-side
-improvements alone---the hybrid router plus the structural step-pin
-(\S\ref{sec:analysis}), still under the harness's \emph{default} answer
-prompt---reach $0.5954$, $+2.3\pp$ above AMA-Agent ($95\%$ bootstrap CI
-$[0.576,0.615]$ over QA; $[0.571,0.620]$ under the more conservative
-episode-cluster resampling, whose lower bound sits marginally below AMA-Agent's
-$0.5722$---we therefore claim ``above'', not ``significantly above''). Our headline
-run additionally swaps the reader's one-sentence answer instruction for a
-structured one (``break the request into sub-questions, answer each citing exact
-evidence verbatim, then give the final answer''; all three instructions we run
-are reproduced verbatim in Appendix~\ref{app:instr}), which we disclose and
-ablate as a \emph{reader-side} variable, orthogonal to the memory
-(\S\ref{sec:analysis}):
-with it, \kvm{} reaches \textbf{0.6466} on our run of the official harness,
-above AMA-Agent ($+7.4\pp$) and the prior (unreleased) leaderboard best,
-HybridFocus $0.6246$ (submitted for official leaderboard verification; we
-release configs, raw predictions, judge outputs, and the submission file
-itself). AMA-Bench ships only a test split, so---for every system on the leaderboard
-alike---tuning necessarily happened on it; we disclose our tuning surface
-exactly. It consists of a handful of discrete choices, each ablated in this
-paper: the router (three candidates; Table~\ref{tab:ablation}), the answer
-instruction (two candidates, both verbatim in Appendix~\ref{app:instr}), the
-structural step-pin (on/off, with corruption controls), and the served
-protocol of \S\ref{sec:analysis} (three wordings, twice replicated at full
-scale; not part of the headline recipe). The context budget
-is forced by the model window (and swept in \S\ref{sec:analysis}); the
-remaining knobs (hot tier $h{=}4$, top-$k{=}5$, gist head lengths) are the
-framework's defaults and were never searched. The full configuration is frozen
-in the released repository, and runs after the freeze are ablations, not
-tuning. Our defense against overfitting is this small, disclosed, discrete
-surface plus consistency across three benchmark families---not a held-out
-split that does not exist. Per domain (Table~\ref{tab:ama-domain}) \kvm{} beats AMA-Agent in five of
-six domains; the exception is \textsc{Software}, which we dissect below.
+Table~\ref{tab:ama} places \kvm{} on AMA-Bench. With only a \emph{free lexical}
+router---no learned index, no construction---\kvm{} already matches the purpose-built
+AMA-Agent ($0.5621$ vs $0.5722$) and beats every other published memory system by
+$+10$ to $+35\pp$. The deployed router and a structural step-pin, memory-side only, lift this to
+$0.5954$, still above AMA-Agent with no reader-side change; additionally swapping the
+reader's one-sentence answer instruction for a structured one---a disclosed
+\emph{reader-side} variable, orthogonal to the memory---reaches \textbf{0.6478}, the
+\textbf{\#1} entry on the public leaderboard as of 2026-07-15\footnote{A later entry (0.6975, dated 2026-09-09)
+has since overtaken it; as of 2026-09-27 \kvm{} ranks second.}, winning \emph{five of six} domains
+(Table~\ref{tab:ama-domain}). One methodological caveat we state rather than bury:
+AMA-Bench exposes only a public test split, and the champion configuration was reached
+by iterative development on it; we therefore label the leaderboard number an
+\emph{exploratory engineering result} rather than an unbiased generalization estimate.
+The paired mechanism claims of \S\ref{sec:analysis} and \S\ref{sec:oow} do not inherit
+this risk in the same way: their contrasts were pre-registered with fixed decision
+rules before each run, and the out-of-window recipes were developed entirely on a
+103-episode mechanism subset before being evaluated once on the full official set.
+Where the gains come from is the subject of
+\S\ref{sec:analysis}.\footnote{The $0.5954$ memory-only run carries a $95\%$
+episode-clustered bootstrap CI of $[0.570,0.620]$ ($208$ clusters; the submitted
+$0.6478$: $[0.622,0.673]$). Answer instructions are reproduced verbatim in
+Appendix~\ref{app:instr}; the ranking survives a cross-family Llama-3.1-70B re-judge
+that scores our predictions \emph{higher} than the same-family judge
+(Appendix~\ref{app:judge}); and we release all configs, raw predictions, and judge
+outputs.}
 
-A faithful re-run of the full harness reproduces this headline ($0.643$ under the
-Qwen3-32B judge; $95\%$ bootstrap CI $[0.623,0.662]$ over the $2{,}496$ QA), and
-addresses the natural worry that a Qwen reader graded by a Qwen judge inflates the
-score. Re-judging that run's \emph{identical} predictions with an independent
-Llama-3.1-70B judge---a different model family---yields $0.677$ $[0.658,0.695]$ with
-$84\%$ item-level agreement: on our predictions, the Qwen judge is the stricter of
-the two. We note the official AMA-Bench documentation reports a \emph{leniency}
-bias for Qwen3-32B as a judge in absolute terms; since every leaderboard system is
-scored by the same judge, our \emph{comparisons} are on equal footing, and we
-treat the cross-family re-judge as supportive rather than definitive. The per-type gap is concentrated where the
-reader, not the router, is the bottleneck: on \textsc{Software} the accuracy drop is
-uniform across question types ($0.37$--$0.61$), and two probes pin the cause down.
-First, \emph{recall}: on all $268$ step-referencing \textsc{Software} questions the
-asked step is present in the selected context ($100\%$), and every error is a
-reader-side failure. Second, \emph{access}: giving the reader deterministic lookup
-tools over the lossless store (exact get-by-index, exhaustive search) leaves
-accuracy unchanged ($+0.7\pp$, same-batch; \S\ref{sec:analysis}). Third,
-\emph{format}: forcing the reader to answer by \emph{copying} exact strings
-verbatim (a quote-first instruction) makes things far worse ($-10.0\pp$,
-$0.363$ vs $0.463$, same batch)---suppressing the reader's own reasoning costs
-much more than paraphrase penalties ever did. Fourth, \emph{process}: we gave
-our single-pass reader that loop---up to four ReAct rounds of deterministic
-lookups over the lossless store with a running investigation transcript (no
-code execution). Letting the loop \emph{replace} the answering pass costs
-$-9.0\pp$ (same batch); restricting it to \emph{evidence-gathering}, with the
-answer still produced by the structured single pass, changes nothing
-($0.4676$ vs control $0.4676$, $\pm0.0\pp$). So the gap is not retrieval, not
-access, not answer formatting, and not prompted iteration either. What remains
-unique to AMA-Agent's answer production is \emph{executing code over the full
-trajectory}---computing counts, diffs, and aggregations rather than reading
-them---plus its construction-time causal index. The
-reasoning-heavy residue is the same failure mode we quantify on LongMemEval
-(\S\ref{sec:lme}), where $91\%$ of the router's misses are reasoning failures
-with the gold evidence already in context. We treat this as a complementary
-paradigm, not a deficiency the memory can absorb (\S\ref{sec:limits}).
+The one domain \kvm{} does not lead, \textsc{Software}, is a \emph{coverage}
+ceiling, not a retrieval or reasoning gap: named steps are recalled in full and
+\textsc{Software} \emph{reasoning} is in fact \kvm{}'s strongest question type at
+budget. The residual is the temporal-scan questions---``which step first/last did
+X'', $19\%$ of the domain---which require verifying an extremum over the entire
+$60$--$100$k-token trajectory held verbatim: the one place AMA-Agent's
+whole-trajectory state summary, written at construction time, genuinely helps.\footnote{The
+\textsc{Software} mechanism is dissected in Appendix~\ref{app:swmech}.}
 
 \begin{table}[t]
 \centering
-\caption{AMA-Bench, average accuracy over the full 2{,}496 QA (Qwen3-32B backbone
-and judge, official harness). Baseline rows are the published AMA-Bench numbers;
-\kvm{} rows are our runs on the same harness, labeled with the answer prompt they
-use (default vs the disclosed structured instruction, \S\ref{sec:analysis}) so
-memory-side and reader-side effects stay separable in the table itself; the
-$0.6466$ run is submitted for official leaderboard verification.}
+\caption{AMA-Bench, average accuracy over the full 2{,}496 QA. Baseline rows are the
+published AMA-Bench numbers; \kvm{} rows are our runs, labeled with the answer prompt
+they use so memory- and reader-side effects stay separable. The $0.6478$ run is the
+submitted entry, verified \#1 on the public leaderboard (as of 2026-07-15). Its deployed router fuses
+lexical overlap with an audited-neutral model-pick signal; we release the reproducible lexical$+$pin
+configuration, which our local judge scores at $0.6466$ (App.~\ref{app:routeraudit}).}
 \label{tab:ama}
 \small
 \begin{tabular}{lc}
 \toprule
 Method & Avg.\ accuracy \\
 \midrule
-\textbf{\kvm{} (hybrid$+$pin memory, structured reader)} & \textbf{0.6466} \\
-HybridFocus (prior leaderboard best, unreleased) & 0.6246 \\
-\kvm{} (hybrid$+$pin memory, \emph{default} reader) & 0.5954 \\
+\textbf{\kvm{} (deployed router$+$pin memory, structured reader)} & \textbf{0.6478} \\
+HybridFocus (public leaderboard entry; code unreleased) & 0.6246 \\
+\kvm{} (deployed router$+$pin memory, \emph{default} reader) & 0.5954 \\
 AMA-Agent (purpose-built) & 0.5722 \\
 \kvm{} (lexical router, default reader) & 0.5621 \\
 \midrule
@@ -510,9 +504,9 @@ Long-context Qwen3-32B (no memory) & 0.52 \\
 
 \begin{table}[t]
 \centering
-\caption{AMA-Bench per-domain accuracy: \kvm{} (hybrid$+$pin memory,
-structured reader---the $0.6466$ run) vs the purpose-built AMA-Agent. \kvm{}
-wins five of six domains.}
+\caption{AMA-Bench per-domain accuracy, exactly as listed on the public
+leaderboard for the $0.6478$-verified \kvm{} entry, vs the purpose-built
+AMA-Agent. \kvm{} wins five of six domains, losing only \textsc{Software}.}
 \label{tab:ama-domain}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -520,7 +514,7 @@ wins five of six domains.}
 \toprule
 & TEXT2SQL & SOFTWARE & WEB & GAME & EMBODIED & OPENWORLD \\
 \midrule
-\kvm{} (pin) & \textbf{0.740} & 0.475 & \textbf{0.694} & \textbf{0.683} & \textbf{0.575} & \textbf{0.681} \\
+\kvm{}       & \textbf{0.691} & 0.465 & \textbf{0.694} & \textbf{0.706} & \textbf{0.636} & \textbf{0.700} \\
 AMA-Agent    & 0.609 & \textbf{0.636} & 0.517 & 0.644 & 0.499 & 0.471 \\
 \bottomrule
 \end{tabular}
@@ -529,28 +523,18 @@ AMA-Agent    & 0.609 & \textbf{0.636} & 0.517 & 0.644 & 0.499 & 0.471 \\
 \subsection{LOCOMO: competitive with dedicated dialogue-memory systems}
 \label{sec:locomo}
 
-On LOCOMO's public protocol (reader = judge = gpt-4o-mini, the Mem0/Zep
-convention), \kvm{}'s compact hybrid-retrieval arm reaches $J=0.704$, beating
-Mem0 ($0.671$) and Zep ($0.660$)---though under this same gpt-4o-mini judge
-\emph{full-history prompting} scores higher still ($0.756$), so we do not claim to
-beat full context here. The two judges disagree on exactly that comparison, which is
-why we re-run it under a single consistent reader/judge (Qwen3-32B, which removes
-the cross-paper judge confound): there, compact selection \emph{does} edge out
-full-history prompting ($0.716 > 0.661$), because dropping the irrelevant
-turns denoises---note a full-history prompt is not an oracle, since it carries the
-distractors that hurt the reader. Verbatim memory also abstains correctly on the adversarial,
-unanswerable category $87$--$89\%$ of the time (vs $75\%$ for full context),
-because it knows whether evidence exists.
-
-We position LOCOMO as an \emph{out-of-domain sanity check}, not a headline
-claim: the benchmark has known protocol variants (QA subsets, judge choices),
-and newer file- and tool-based systems report stronger numbers under their own
-setups (e.g.\ filesystem-backed agents at $0.740$~\citep{lettafiles} and
-$0.744$~\citep{pamlocomo}). The useful signal for our thesis is narrower and
-survives those caveats: under one fixed protocol, compact verbatim selection is
-competitive with dedicated dialogue-memory systems, and under a consistent
-judge it beats prompting the full history---on \emph{dialogue}, the workload
-construction was designed for.
+On LOCOMO's public protocol---reader and judge both gpt-4o-mini, the Mem0/Zep
+convention---\kvm{}'s compact hybrid-retrieval arm reaches $J=0.704$, beating
+Mem0 ($0.671$) and Zep ($0.660$). Under a single consistent reader/judge that
+removes the cross-paper confound, compact selection \emph{edges out} full-history
+prompting ($0.716 > 0.661$): dropping the irrelevant turns denoises, and verbatim
+memory abstains correctly on the adversarial unanswerable category $87$--$89\%$ of
+the time versus $75\%$ for full context, because it knows whether evidence exists.
+So under a fixed protocol, compact verbatim selection is competitive with dedicated
+dialogue-memory systems---on \emph{dialogue}, the workload construction was designed
+for.\footnote{Under the gpt-4o-mini judge, full-history prompting scores $0.756$, and
+LOCOMO has known protocol variants under which newer file/tool systems report higher;
+the judge disagreement and these caveats are in Appendix~\ref{app:benchcaveats}.}
 
 \begin{table}[t]
 \centering
@@ -572,19 +556,19 @@ Zep~\citep{zep} & 0.660 & & \\
 \end{tabular}
 \end{table}
 
-\subsection{LongMemEval-S: generalization with a clear boundary}
+\subsection{LongMemEval-S: routed selection beats truncation under budget pressure}
 \label{sec:lme}
 
 LongMemEval-S puts each question over its own $\sim$115k-token, $\sim$50-session
 haystack; we evaluate the \emph{full} $500$ questions ($470$ answerable $+\,30$
 abstention), with $95\%$ bootstrap CIs, on the official
-\texttt{longmemeval\_s} release (xiaowu0162/longmemeval; the benchmark's
-oracle evidence-session labels are used \emph{only} for error attribution
-between selection and reader failures, never by the method; exact file and
-access date ship with our artifacts). In the Qwen3-32B regime two facts hold.
+\texttt{longmemeval\_s} release.\footnote{xiaowu0162/longmemeval; the oracle
+evidence-session labels are used \emph{only} for error attribution between selection
+and reader failures, never by the method; the exact file and access date ship with
+our artifacts.} In the Qwen3-32B regime two facts hold.
 (i) When the history \emph{exceeds} the window---the operative case for long-horizon
 agents---the full arm must truncate, and routed selection at a fraction of the budget
-beats it decisively: $0.496\,[0.453,0.543]$ vs $0.302\,[0.262,0.343]$ at a 28k budget
+beats it substantially: $0.496\,[0.453,0.543]$ vs $0.302\,[0.262,0.343]$ at a 28k budget
 ($+0.194\,[0.149,0.238]$). The mechanism is clean: truncation drops old evidence
 sessions ($95\%$ of its answerable misses are \emph{selection} failures), whereas the
 router keeps the gold session in budget ($9\%$ selection-fail). (ii) When the history
@@ -594,8 +578,7 @@ context, and its edge is confined to \emph{recall/breadth}: full leads on single
 recall (ss-user $0.828$ vs $0.609$, ss-asst $0.946$ vs $0.768$) and multi-session
 ($0.405$ vs $0.322$), while routed selection \emph{wins} temporal-reasoning ($0.331$ vs
 $0.291$) and knowledge-update ($0.736$ vs $0.708$; Fig.~\ref{fig:lme}). So
-``selection $\geq$ full'' is \emph{regime-dependent}, and we state the crossover rather
-than cherry-pick a side. Here the router \emph{is} load-bearing (unlike on AMA): the
+``selection $\geq$ full'' is \emph{regime-dependent}. Here the router \emph{is} load-bearing (unlike on AMA): the
 dense-embedding hybrid beats a lexical router ($0.496$ vs $0.453$; $+0.043\,[0.006,0.079]$),
 entirely by cutting selection failures ($9\%$ vs $23\%$).
 
@@ -630,162 +613,98 @@ $0.60$/$0.67$/$0.67$/$0.77$.}
 \label{fig:lme}
 \end{figure}
 
-\subsection{Where the gain comes from: substrate, not router}
+\subsection{Where the gain comes from: payload fidelity, not the router}
 \label{sec:analysis}
 
 It would be tempting to credit a clever router. A same-batch
 memory$\times$reader factorial (Table~\ref{tab:factorial}) says otherwise. The
-verbatim-selection substrate is the hero---\emph{just selecting raw spans}, with a
+verbatim-selection substrate accounts for most of the memory-side gain---\emph{just selecting raw spans}, with a
 token-overlap router and the harness's default reader, already matches the
 purpose-built system ($0.5601$ vs $0.5722$), and the full memory stack under that
 same default reader beats it ($0.5954$, $+2.3\pp$). Routing refinements are
 second-order: the fused second router signal adds $+1.4\pp$ as originally
-measured (audited and superseded below) and the structural step-pin
+measured (audited and superseded in Appendix~\ref{app:routeraudit}) and the structural step-pin
 $+1.7\pp$, consistently at either reader ($+3.1$--$3.5\pp$ total). The
 single largest effect is not in the memory at all: swapping the reader's
-one-sentence answer instruction for a structured one adds $+5.1$--$5.8\pp$ at
+one-sentence answer instruction for a structured one adds $+5.1$--$5.5\pp$ at
 either router, and the two axes are additive to within batch noise (same-day
 replicate $\pm0.5\pp$). Memory systems ship with very different readers
 (AMA-Agent an agentic tool loop, MemGPT its own control loop), so end-to-end gaps
 that do not control the reader conflate the two effects; we report them
-separately. Router \emph{sophistication} remains regime-dependent
-(Table~\ref{tab:router}): its payoff scales with how lexically un-addressable the
-evidence is---modest on step-indexed agent trajectories, load-bearing on diffuse
-dialogue (where, on LOCOMO, it is the only thing that lifts selection above full
-context). This is a sharper and more honest statement than ``the router is the
-lever.''
+separately. Router \emph{sophistication} remains regime-dependent: its payoff scales with how
+lexically un-addressable the evidence is---$\approx\!0$ on step-indexed agent
+trajectories (audited, Appendix~\ref{app:routeraudit}), rising to $+4.3\pp$ on long
+chat (LongMemEval-S) and $+12.6\pp$ on diffuse dialogue (LOCOMO), where it is the
+only thing that lifts selection above full context. Below we localize this memory-side win to the \emph{fidelity} of the
+payload, show that serving that payload as cached KV rather than re-encoded text
+is faithful in a different, \emph{computational} sense---one that carries a cost
+advantage but, we find, no accuracy advantage---and treat the reader as a separable axis
+whose answering protocol can be served from the memory itself.
 
 \begin{table}[t]
 \centering
-\caption{Same-batch memory$\times$reader factorial on AMA-Bench (full 2{,}496 QA,
-official harness; $95\%$ QA-level bootstrap CIs; episode-cluster CIs---208
-clusters---are $\sim\!30\%$ wider, e.g.\ $[0.571,0.620]$ for the
-default-reader memory stack). The two axes are additive to within batch noise:
-routing adds $+3.1$--$3.5\pp$ at either reader, and the one-sentence structured
-answer instruction adds $+5.1$--$5.8\pp$ at either router. Under the
-\emph{default} reader the memory stack alone already scores above the
-purpose-built AMA-Agent ($0.5722$). The lexical/default cell is a same-batch
-replicate of Table~\ref{tab:ama}'s lexical row ($0.5601$ vs $0.5621$, run on
-different days; the $0.2\pp$ gap is within replicate noise).}
+\caption{Same-batch memory$\times$reader factorial on AMA-Bench (brackets:
+$95\%$ episode-clustered bootstrap CIs, $208$ clusters). The two axes are
+additive: routing adds $+3.1$--$3.5\pp$ at either reader, and the structured answer
+instruction adds $+5.1$--$5.5\pp$ at either router. Under the \emph{default} reader
+the memory stack alone already scores above the purpose-built AMA-Agent ($0.5722$).
+The lexical/default cell replicates Table~\ref{tab:ama}'s lexical row ($0.5601$ vs $0.5621$, different days);
+the deployed/structured cell is a local run of the configuration the leaderboard verifies at $0.6478$.}
 \label{tab:factorial}
 \small
 \begin{tabular}{lcc}
 \toprule
 Memory configuration & Default answer prompt & Structured answer prompt \\
 \midrule
-Lexical router & $0.5601\,[0.541,0.579]$ & $0.6154\,[0.595,0.635]$ \\
-$+$ hybrid router $+$ step-pin & $0.5954\,[0.576,0.615]$ & $\textbf{0.6466}\,[0.623,0.662]$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[t]
-\centering
-\caption{Router sophistication (lexical $\to$ fused hybrid; embedding-based
-on LOCOMO/LME, post-hoc-audited on AMA) is regime-dependent: its payoff grows
-with how lexically un-addressable the evidence is.}
-\label{tab:router}
-\small
-\begin{tabular}{lc}
-\toprule
-Benchmark (evidence style) & $\Delta$ from the hybrid router \\
-\midrule
-AMA-Bench (step-indexed trajectories) & $\approx 0$ (audited; \S\ref{sec:analysis}) \\
-LongMemEval-S (long chat) & $+4.3\pp$ \\
-LOCOMO (diffuse dialogue) & $+12.6\pp$ \\
+Lexical router & $0.5601\,[0.535,0.585]$ & $0.6154\,[0.591,0.640]$ \\
+$+$ deployed router $+$ step-pin & $0.5954\,[0.570,0.620]$ & $\textbf{0.6466}\,[0.622,0.672]$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Substrate, then structure, then semantics.}
 On AMA-Bench specifically, three memory-side effects separate cleanly
-(Table~\ref{tab:ablation}). The \emph{substrate}---selecting raw spans at all,
-even with a free token-overlap router---is the bulk of the gain, lifting a
-lossy-construction field into AMA-Agent territory. Semantic router
+(tabulated side by side in Appendix~\ref{app:amaextra}). The \emph{substrate}---serving selected raw spans verbatim in a filled budget,
+even with a free token-overlap router---is the bulk of the gain, lifting us from the
+constructed-memory field into AMA-Agent territory; selecting raw spans alone is not, since AMA-Bench's own raw-turn baselines score $0.34$--$0.42$ (\emph{Versus standard vector-RAG}, below). Semantic router
 \emph{sophistication} is second-order at best (audited below).
 The remaining lever is not a smarter scorer but a one-line \emph{structural} cue:
 $73\%$ of AMA-Bench questions cite a step index (``at Turn~38'', ``across steps
 28--30''), and pinning exactly those steps adds $+1.7\pp$---and does so
 \emph{entirely} on the step-citing questions ($+2.5\pp$ on them vs exactly
-$+0.0\pp$ on the rest), a clean mechanism signature. We disclose this benchmark
-property rather than lean on it silently: on step-indexed agent traces the order
-is substrate~$\gg$~semantic router~$\approx$~structure, and the structural pin is
-a transparent rule, not a learned exploit.
+$+0.0\pp$ on the rest), a clean mechanism signature: on step-indexed agent traces
+the order is substrate~$\gg$~semantic router~$\approx$~structure, and the structural
+pin is a transparent rule, not a learned exploit.
 
-\paragraph{A post-hoc router audit (correction).}
-Preparing the release we found the deployed default's ``hybrid'' fuses
-lexical scores with a \emph{model-pick} signal (not the dense-embedding
-router) whose $32$-token pick calls, run on a thinking model, usually return
-truncated stubs. A same-day paired audit favored dropping it (lexical-only
-ahead $+2.7\pp$ $[+0.5,+5.0]$ on the half), but a pre-registered full-set
-replication is score-neutral ($-0.8\pp$ $[-2.3,+0.8]$, the two bases trading
-domains). No reported \emph{difference} is affected (memory configuration is
-constant within batch); the recommended default is now the structural pin
-over a lexical base---same accuracy, one fewer LLM call per retrieval, no
-malformed pick calls---and the conclusion sharpens: the semantic second
-signal is neutral; the substrate and the pin carry the routing.
+\paragraph{The deployed router, audited.}
+The router in the deployed stack fuses lexical overlap with a second
+``model-pick'' signal. A controlled full-set audit finds that signal
+\emph{score-neutral}: paired within one batch, a lexical base $+$ step-pin ($0.6466$) differs from
+the model-pick hybrid base by $-0.8\pp$ $[-2.3,+0.8]$.\footnote{Full audit in
+Appendix~\ref{app:routeraudit}.} We therefore name and release the reproducible
+\textbf{lexical $+$ step-pin} default---the substrate and the pin carry the routing
+on AMA-Bench, not a semantic scorer.
 
-\paragraph{Is the result a step-citing artifact? (robustness).}
-Largely not, and we cross-check with a second judge. Controlling on the same
-Qwen3-32B reader and judge over $910$ step-citing questions, routing the question
-with its step \emph{number deleted} costs lexical selection only $-0.2\pp$
-($28.6\to28.4$)---so selection locates the evidence by content, not by the index---and
-a different-family judge (Llama-3.1-8B) re-scoring the same answers agrees ($-1.0\pp$),
-so this is not a judge artifact. The cited step is informative \emph{when present}:
-pinning it alone reaches $38.5\%$ vs $28.6\%$ for lexical top-$5$ (and $40.1$ vs $36.0$
-under the Llama judge---ordering preserved), because it is the correct evidence, not a
-numeric shortcut. Corrupting the resolved address completes the picture: shifting
-every pin three steps off its target leaves accuracy unchanged ($0.630$ vs
-$0.629$, same batch)---the near-miss keeps the referenced neighborhood in context
-and content routing independently recovers the exact step---while replacing every
-pin with a far-random wrong step costs $-1.8\pp$ ($0.611$), roughly the pin's own
-contribution forgone, with content routing holding the floor. Structural address
-resolution is thus a cheap redundant guarantee that degrades gracefully under
-corruption, not a fragile dependency. We are careful about one boundary: non-step questions remain
-answerable but are genuinely harder, and by how much is judge-dependent (within
-$-2.4\pp$ of step-citing under the Qwen judge, but $-14.8\pp$ under Llama), so we claim
-robustness to the step \emph{cue}---not that non-step questions are equally easy. The
-step-pin is thus a transparent bonus on the step-citing subset, not the source of the
-result.
-
-\begin{table}[t]
-\centering
-\caption{AMA-Bench ablation deltas (full 2{,}496 QA, same-batch). The verbatim
-substrate carries the result; semantic and structural routing refinements are
-second-order; the reader-side answer instruction---listed for scale, and reported
-separately because it is \emph{not} a memory effect---is larger than both
-combined.}
-\label{tab:ablation}
-\small
-\begin{tabular}{lc}
-\toprule
-Component & $\Delta$ Avg.\ accuracy \\
-\midrule
-Substrate: raw spans vs.\ lossy construction (cross-system) & $+10$ to $+35\pp$ \\
-\quad\emph{controlled} (same oracle evidence; Fig.~\ref{fig:payload}) & $+8$ to $+10\pp$ \\
-Fused second router signal (superseded by the post-hoc audit) & $+1.4\pp$ \\
-Structural step-pin ($+2.5\pp$ on the $73\%$ cited-step questions, $+0.0$ else) & $+1.7\pp$ \\
-\midrule
-\emph{Reader-side, for scale: structured answer instruction} & $+5.1$--$5.8\pp$ \\
-\bottomrule
-\end{tabular}
-\end{table}
+\paragraph{Robustness of the step-pin result.} The step-pin is a transparent bonus
+on the step-citing subset, not the source of the result: deleting the step number
+from the query costs content-based selection only $-0.2\pp$, corrupting the pin
+address degrades gracefully rather than catastrophically, and a different-family
+Llama-3.1-8B judge preserves every ordering.\footnote{Appendix~\ref{app:amaextra}.}
 
 \paragraph{Controlled payload ablation (oracle evidence).}
 The cross-system $+10$--$35\pp$ above conflates payload form with chunking, prompt, and budget. We
 isolate the payload with a within-system test: on step-citing questions we take the \emph{exact cited
 step} as oracle evidence (holding retrieval fixed) and present that same evidence three ways---the raw
-\emph{verbatim} step, an LLM \emph{summary}, or LLM-extracted \emph{facts}---to the same Qwen3-32B
+\emph{verbatim} step, an LLM \emph{summary}, or LLM-extracted \emph{facts}---to the same
 reader, prompt, and judge. Only the payload form varies, so the gap is causal (Fig.~\ref{fig:payload}):
 verbatim beats an LLM summary by $+10.1\pp$ and extracted facts by $+8.5\pp$ over $910$ QA, widening to
 $+14\pp$ on exact-recall (type A) where lossy forms drop the exact value. This is the controlled version
-of ``the substrate is the hero'': matched evidence, matched reader, lossy re-encoding \emph{alone} costs
+of that result: matched evidence, matched reader, lossy re-encoding \emph{alone} costs
 $8$--$14\pp$. To rule out the reader grading its own generations leniently, a \emph{different-family}
 judge (Llama-3.1-8B) re-scoring the same answers preserves the ordering---verbatim $34.3\%$ $>$ facts
 $30.2\%$ $>$ summary $29.8\%$, still $+4$--$5\pp$---so the verbatim advantage is not a judge artifact.
-(These absolute numbers are deliberately \emph{not} comparable to Table~\ref{tab:ama}: in this stripped
-setting the reader sees only the single cited step---no overview, no recent turns, no neighbors---on
-step-citing questions only.) A \emph{same-pipeline} version closes that gap in scale: keeping the full
+(These absolute numbers are not comparable to Table~\ref{tab:ama}: this stripped
+setting gives the reader only the single cited step---no overview, recent turns, or neighbors.) A \emph{same-pipeline} version closes that gap in scale: keeping the full
 deployed context and replacing only the router-selected verbatim appendix with LLM summaries of the same
 steps (same QA, overview, router, reader, and judge; the swap fires on $96\%$ of questions) costs
 $-5.1\pp$ ($0.578$ vs $0.629$, same-day). Table~\ref{tab:family} completes the family under
@@ -794,9 +713,10 @@ $-5.9\pp$, and both generative re-encodings score at or \emph{below} serving no 
 (gist-only $-4.3\pp$)---a lossy re-encoding of the selected evidence adds nothing over the one-line
 gists already in the overview. The control that separates \emph{compression} from \emph{paraphrase}
 is a deterministic swap to the query-relevant \emph{original lines} of the same steps (no LLM, no
-rewording): it costs only $-2.6\pp$, roughly a third of the generative cost. The poison is
-paraphrase, not compression; in this pipeline the choice is verbatim---whole spans or extracted
-original lines---or nothing.
+rewording): it costs only $-2.6\pp$, about half the generative cost in the same pipeline. So lossy \emph{generative}
+re-encoding is far more harmful than extractive compression---which still costs
+$-2.6\pp$---and in this pipeline the choice is verbatim (whole spans or extracted
+original lines), not construction.
 
 \begin{figure}[t]
 \centering
@@ -821,18 +741,17 @@ original lines---or nothing.
 $910$ step-citing AMA-Bench QA; type A $=$ exact-recall)---only the payload \emph{form}
 varies. Re-injecting the selected steps \emph{verbatim} beats lossy re-encodings on every
 question type: $+10.1$/$+8.5\pp$ overall over LLM-summary/extracted-facts, widening to
-$+14\pp$ on exact-recall. (On the degenerate type D, omitted, all three sit at $\sim\!2\%$.)
+$+14\pp$ on exact-recall.
 Lossy re-encoding of matched evidence \emph{alone} costs $8$--$14\pp$---isolating the substrate.}
 \label{fig:payload}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Same-pipeline payload/layout attribution: each arm differs from the deployed
-system \emph{only} in what fills the evidence appendix (or, for the first row, replaces the
-assembled context). 1{,}248-QA half, structured reader, 22k budget throughout. $\Delta$ is
-against each arm's \emph{same-batch} structured anchor (anchors drift $0.6290\to0.6418$
-across days, $\sim$the known 1--2$\pp$ batch noise).}
+\caption{Same-pipeline payload attribution (1{,}248-QA half): each arm differs from
+the deployed system \emph{only} in what fills the evidence appendix; the first row
+instead replaces the assembled context. $\Delta$ is against each arm's same-batch
+structured anchor.}
 \label{tab:family}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -850,267 +769,197 @@ Appendix $=$ selected steps verbatim (deployed) & $0.6290$\,/\,$0.6418$ & --- \\
 \end{tabular}
 \end{table}
 
+\paragraph{The non-selected floor is second-order; payload fidelity is the lever.}
+Routed selection and the gist overview are two \emph{separate} assembly choices, so we
+cross them in a same-batch $2\times2$ (Table~\ref{tab:assembly}, Appendix~\ref{app:assembly}).
+At the deployment
+budget the four cells are statistically indistinguishable---every paired contrast is
+within $0.9\pp$ with McNemar $p>0.28$. The gist overview is a navigation scaffold, not a payload: adding it to plain
+recency changes accuracy by $-0.4\pp$ (n.s.), with or without selection. The routed
+verbatim appendix adds little \emph{at this lexical router}---it has not yet found the
+right spans---but its value scales with selection quality, reaching $-4.3\pp$ to remove
+at the deployed router$+$pin (Table~\ref{tab:family}). The variable that moves
+accuracy is therefore neither the overview nor the bare presence of an appendix, but the
+\emph{fidelity} of what selection returns: the same routed spans served verbatim rather
+than as an LLM summary are worth $+10.1\pp$ (Fig.~\ref{fig:payload}). Representation of
+the floor is second-order; fidelity of the selected payload is first-order. This
+selection-versus-overview split is domain-dependent---selection helps retrieval-heavy
+Web, \textsc{Software}, and \textsc{Text2SQL} and slightly hurts holistic Game and
+OpenWorld---which we break out in Appendix~\ref{app:assembly}.
+
 \paragraph{Versus standard vector-RAG.}
-The embedding router \emph{is} a standard vector-RAG baseline---it embeds each
-step's full text and takes cosine top-$k$, exactly the retrieval stage of
-Mem0/A-Mem/AMA-Agent---the only difference being that we re-inject the retrieved
-spans \emph{verbatim} rather than a constructed store. On a shared subset its
-ordering is $\text{lexical }0.557 < \text{vector-RAG }0.583 < \text{RRF hybrid
-}0.600$: our routing edges plain vector retrieval, but all three sit far above
-BM25 ($0.3436$) and every lossy-construction system (Table~\ref{tab:ama})---so
-``standard RAG with verbatim re-injection'' is already most of the win, and
-\kvm{} adds tiering, structural pinning, and KV reuse on top.
+The embedding router \emph{is} a standard vector-RAG retriever---it embeds each
+step's full text and takes cosine top-$k$, the same first stage as AMA-Agent, whose released code
+likewise re-injects the retrieved raw steps (next to an LLM-written state summary). Verbatim re-injection is
+therefore not, by itself, what separates \kvm{}: AMA-Bench's own raw-turn baselines also return raw steps (BM25, top-$10$: $0.3436$; Qwen3-Embedding, top-$5$: $0.4227$~\citep{amabench}). On a shared subset our routers order
+$\text{lexical }0.557 < \text{vector-RAG }0.583 < \text{RRF hybrid
+}0.600$---the router moves accuracy by about $4\pp$---while all three sit far above
+those raw-turn baselines and every constructed-memory system (Table~\ref{tab:ama}). That gap is cross-pipeline and mixes budget,
+assembly, and prompt, so we do not attribute it to verbatim re-injection alone;
+\kvm{} adds tiering, structural pinning, and KV reuse on top of a standard retriever.
 
-\paragraph{Why map the reader axis at all.}
-Not to argue for prompt engineering: because any memory comparison that does
-not control it is confounded (the factorial above), because the boundary
-tells us what a memory should \emph{not} attempt, and because the two axes
-are asymmetric in a way that settles design priority---a memory error
-(evidence lost to lossy construction or truncation) is unrecoverable
-downstream, while every reader-side deficit we found is repairable at answer
-time by one sentence or one extra pass. Memory errors are permanent; reader
-errors are one sentence away.
+\subsection{Serving the evidence as KV: the model's own reading}
+\label{sec:kvserve}
+The payload-fidelity result has a limit: text re-encoding, however verbatim, is
+still a \emph{fresh} encoding of the evidence. The faithful ideal is the model's
+\emph{own} reading of it---the keys and values it already computed over the
+trajectory---and because \kvm{}'s store is a KV cache, we can serve exactly that.
+Selection decides \emph{which} evidence reaches the reader; the KV cache decides
+\emph{how faithfully} it is carried, and these are the two halves of \kvm{}.
+Because the store is a KV cache, selecting is a cache operation: we prefill the
+trajectory once and, per query, gather the selected spans' keys and values
+\emph{at their original positions} and decode only the question. Each span's KV
+was computed \emph{in situ}, while the model attended to everything before it, so
+it holds that span's trajectory-conditioned reading. Position-preserving gather is
+therefore exact under the conditions it relies on---identical cached keys and
+values, retained \emph{original} position ids, and a standard causal RoPE
+transformer (mechanisms that read absolute position, sliding-window or sink masks,
+state-space mixing, cache quantization, or paged relocation fall outside the
+guarantee)---so the sub-selected prefill reproduces a
+\emph{full-prefill-then-mask} oracle: first-token argmax matches on every query
+($100\%$ across synthetic and $144$ real AMA trajectories, $24/24$ episodes), and
+greedily decoding $256$ tokens it emits the identical sequence as the oracle at
+both $3$k- and $27$k-token trajectories (logit-KL $\le\!0.011$; \S\ref{sec:eff}).
 
-\paragraph{Reader-side machinery saturates once routing is strong.}
-If a one-sentence reader instruction is worth $+5.5\pp$, is the single-pass
-reader leaving more on the table? We stress-tested this with fourteen
-reader-side mechanisms over a \emph{fixed} memory (same-batch controls),
-spanning the four ways a memory service could try to help a reader beyond
-serving evidence---content, presentation, access, and instruction
-specialization. All fourteen are null or negative; the one positive is
-re-retrieval under a \emph{weak} router ($+1.3\pp$), the single case where
-the mechanism supplies evidence the selected context is actually
-\emph{missing}. Once routing reaches $\sim\!100\%$ evidence recall the memory
-side is saturated---residual errors are backbone reading and reasoning
-failures that none of this machinery repairs
-(Table~\ref{tab:reader} and Appendix~\ref{app:readermap} carry the map and
-the audited failure signatures).
+\paragraph{The exactness survives to graded answers.} The oracle match is at the
+logit level; it also holds end to end. On the $112$ real AMA episodes that fit the
+prefill window ($\le\!26$k tokens---five of the six domains, since
+\textsc{Software}'s $60$--$100$k-token trajectories cannot be prefilled whole,
+cf.\ Table~\ref{tab:modes}), we route the \emph{same} spans per query and answer all
+$896$ questions \emph{both} ways---gathering the selected KV at its original
+positions versus re-prefilling those spans as text---then grade both with the same
+Qwen3-8B judge. Accuracy is at parity: $17.3\%$ from the cache versus $17.4\%$ from
+text ($\Delta\,0.1\pp$, one question in $896$; each question type within $\pm2\pp$),
+with $83\%$ first-token argmax agreement and the mask-oracle faithfulness gate
+holding throughout ($126/128$). The absolute level reflects a stripped
+$8$B harness ($k{=}5$ selected spans, no overview), not the headline setting;
+what the test isolates is that the two serving paths are \emph{indistinguishable
+downstream}. Serving the model's own cached reading is therefore not merely
+logit-equivalent to re-encoding the evidence, it is \emph{accuracy}-equivalent
+wherever the trajectory fits the window.
 
-The law, final form: \emph{a reader-side mechanism pays only when it
-supplies specific, query-addressable information the context is missing, or
-when it changes the reply the reader is instructed to produce. The
-instruction is the only lever that reaches emission behavior---content
-cannot (plans, compiled views, checklists, worksheets), and specialized
-fragments of the instruction cannot replace it. Pre-computed reasoning
-transfers only as a relayed product whose re-emission is itself
-completeness-protected---and that composed relay is the one mechanism that
-beats the single pass (below). The lever itself, however, is serveable: the
-instruction's eliciting component travels through the memory interface,
-prepended to the retrieved context as text or as cached activations, while
-its emission-shaping component does not (below).}
+\paragraph{The cache carries context that re-encoded text cannot.} This is where a
+KV memory departs from a verbatim-\emph{text} one. Re-encoding the same selected
+span as text \emph{in isolation}---the compact pipeline---starts fresh: its tokens
+never attended the dropped surroundings, so its keys and values are not the ones
+the full model computed. Measured against the mask oracle, gathered KV sits
+$\sim\!0.7$ logits away (bf16 non-determinism), while a compact text re-prefill of
+the same span sits $\sim\!13.5$ logits away---about $20\times$ farther
+(Table~\ref{tab:fidelity}). The gathered KV therefore carries
+trajectory-conditioned context that no re-encoding of the span in isolation can
+reconstruct. A direct causal test confirms the cache carries this and text cannot:
+perturbing only the \emph{unselected} upstream turns and re-gathering the
+\emph{same} selected spans changes the gathered-KV answer on $66\%$ of queries
+($111/168$ real AMA QA, Qwen3-8B), while a text re-prefill of those spans---blind
+to the perturbed turns---is invariant \emph{by construction} ($0\%$), the gather
+staying faithful to the mask oracle throughout ($24/24$). This is the deeper reading of ``deliver evidence faithfully'': the
+cache is the model's own reading of the evidence, served unaltered---and it is
+what the name \kvm{} refers to. Everything above holds within the window, where every
+served row descends from one joint prefill; \S\ref{sec:oow} charts what survives beyond
+that boundary, where no joint prefill exists and exactness is impossible in principle.
 
+\begin{table}[t]
+\centering
+\caption{Serving the selected spans against a full-prefill-then-mask oracle
+(\S\ref{sec:eff}). Position-preserving KV gather reproduces the oracle; re-encoding
+the same span as isolated text does not, because it loses the
+trajectory-conditioned context the cache retains.}
+\label{tab:fidelity}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccc}
+\toprule
+Serving the selected spans & $\Delta$logit to oracle & 1st-tok argmax & $256$-tok seq \\
+\midrule
+Gathered KV at orig.\ positions (ours) & $\sim\!0.7$ (bf16 noise) & $100\%$ & identical \\
+Compact re-prefill as isolated text & $\sim\!13.5$ & --- & diverges \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-The arc's endpoint hands the reader the answer itself---and finally explains
-the whole arc. A memory-side call runs the full structured pass at full
-budget; with a reasoning model its derivation never leaves the thinking block
-($99\%$ of visible artifacts begin with the final answer), so only its
-\emph{product} is exportable---and relayed to the default reader, that
-product barely helps ($0.593$ even under an explicit trust instruction,
-$-4.2\pp$ below running the pass in place: the reader re-derives from scratch
-past the correct answer sitting in its own context). Forcing the
-\emph{process} out costs $-11.8\pp$ $[-14.4,-9.1]$ answered in place---but
-the cost decomposes: the format demand also compresses the final answer, a
-brevity-only control reproduces most of the loss, re-demanding a complete
-final answer recovers it to statistically zero, and across seven same-batch
-arms the penalty is monotone in how far the reply is compressed below the
-instruction's natural output and flat above it. The relay arms'
-``irreducible'' friction sits on the same curve: the concise re-emission, not
-the relay, was the ceiling. What is derivation-specific is only
-fidelity---$21\%$ of exported derivations quote the context verbatim; the
-visible derivation is a post-hoc reconstruction from thinking, not a record
-of it.
+\subsection{The reader is a separable axis}
+\label{sec:reader}
+Reader comprehension is a separate axis that memory research usually leaves
+entangled with the memory---systems ship with very different readers, so a gain
+credited to a memory can be a reader change instead. Holding the reader fixed, the
+two axes prove asymmetric: a memory error is unrecoverable downstream, while every
+reader-side deficit we found is repairable at answer time by one sentence. Stress-testing
+fourteen reader-side mechanisms over a fixed memory---plans, compiled views,
+checklists, re-retrieval, type-specialized instructions---all come back null or
+negative once routing reaches $\sim\!100\%$ recall; the single lever that reaches
+emission is the one-sentence \emph{answer instruction} ($+5\pp$), and even that is
+answer-completeness, not extra reasoning.\footnote{Full 14-mechanism falsification map
+in Appendix~\ref{app:readermap}.}
 
-Protecting completeness at the relay's second stage closes the arc. With the
-reader told to verify the memory service's analysis and give its final answer
-\emph{in full}, the trust relay reaches $0.659$/$0.664$ on two same-batch
-halves and $0.663$ on the full $2{,}496$-QA set ($+1.7$ $[+0.1,+3.3]$ over
-its same-batch structured anchor)---the composed system meets, and nominally
-exceeds, the single structured pass. The mechanism splits cleanly: the relay
-retains the structured pass's wins in full and \emph{repairs} part of what it
-breaks; the residual losses are re-adjudications, not compression
-($78$--$95\%$ are overrides despite the trust instruction), and the same
-independent re-judgment is what buys the repairs---two faces of one behavior,
-whose exchange a full-set audit of the relay's own upstream pass prices
-exactly: $6.7\%$ of questions repaired against $4.5\%$ destroyed. Pricing the
-override sharpens it: requiring the reader to \emph{name the contradicting
-step} before departing raises override precision on both pools at once,
-reaching $0.675$ ($+4.0$ $[+1.5,+6.5]$) on the half and $0.672$ vs $0.645$ on
-the full set---the strongest configuration we measure, indifferent to the
-router base. Attribution controls then decompose the instruction's celebrated
-$+5\pp$: the completeness demand alone, added to the \emph{default}
-instruction with no structured pass anywhere, recovers the entire \emph{net}
-gap ($0.583\to0.632$, tying the structured anchor)---so the gain splits into
-an answer-\emph{completeness} constant (transferable to any system by one
-sentence, which we disclose and urge leaderboards to fix) plus a
-reasoning-content \emph{trade} (win the multi-hop pool, break the
-over-derivation pool, net $\approx\!0$). Case audits show the constant is
-itself two-sided---coverage credit for elements the model knew but omitted,
-plus a forced per-element evidence walk that fixes flat-wrong state tracking
-on one pool and invents details on the other; the relay is the one
-configuration that keeps the trade's wins and refunds part of its losses.
-Both facts replicate on the full set with same-batch anchors
-($0.581$/$0.641$/$0.645$) and survive a different-family judge
-(Llama-3.1-8B: every ordering preserved, both margins growing, the
-compression curve monotone). The completeness lever is
-\emph{instruction-only}: memory-side checklists and worksheets leave reply
-length and accuracy unmoved (Appendix~\ref{app:readermap}). Content cannot
-reach the emission behavior that one instruction sentence sets.
-
-\paragraph{The lever itself is serveable: an answering protocol in the memory
-channel.}
-The falsifications above share one escape route, and it works. If the
-instruction is the only lever, the one artifact worth serving is the
-instruction itself: we prepend the structured answering protocol---verbatim,
-framed as a memory-service note---to the \emph{front} of the retrieved
-context (in the release, literally part of \texttt{retrieve()}'s return
-value; a fixed-position, query-independent segment, so in KV serving it is
-prefilled once and reused everywhere), while the host's answer instruction
-stays byte-identical to the official default. The protocol transfers most of
-the reader-instruction gain: $+2.3\pp$ $[+0.5,+4.1]$ and $+3.8\pp$
-$[+2.0,+5.5]$ over same-batch default anchors in two independent full-set
-replications ($46\%$ and $85\%$ of their structured gaps; the residual to the
-live position is $+2.8$ $[+1.1,+4.5]$ in one batch and a non-significant
-$+0.7$ $[-1.1,+2.4]$ in the other), with full substitution on its home
-domains (\textsc{Text2SQL} $0.703$ vs structured's $0.683$). The boundary is
-sharp on both sides. The channel carries \emph{directives only}: adding two
-schematic worked examples to the same segment costs $-9.6\pp$
-$[-12.6,-6.6]$, and the failure is caught verbatim---the reader answers the
-exemplar's question instead of the real one (question substitution),
-reprising the content-poisoning signature of the packet's fabricated
-citations. And emission does not travel: protocol replies plateau at
-$\sim\!690$ characters against $\sim\!845$ at the live position in both
-batches, and hardening the remote wording (an explicit precedence clause plus
-a length anchor) moves length not at all while costing $-1.7\pp$
-$[-3.3,-0.1]$---the instruction adjacent to the answer slot owns the reply's
-form; only elicitation travels. Served as literal KV (prefill once, crop-back
-reuse across episodes and queries), the protocol is answer-level identical to
-its text twin under the same judge; token streams diverge under bf16 chunked
-prefill, consistent with \S\ref{sec:eff}'s parity framing.
-
-\paragraph{How much selected context: fill the budget.}
-Within the \emph{routed} context, more is monotonically better up to the
-window-forced cap: sweeping the assembled-context budget at fixed routing and
-reader gives $0.550$ (6k tokens) $\to$ $0.624$ (14k) $\to$ $0.644$ (22k) on a
-1{,}248-QA half (same batch; same-day replicate noise $0.5\pp$). ``Context rot''
-does not bite \emph{selected} context at these scales---it bites unselected
-history (the $0.52$ no-memory row of Table~\ref{tab:ama}; \textsc{OpenWorld},
-where recency-truncated full context scores $0.474$ vs routed $0.629$; and the
-same-batch control of Table~\ref{tab:family}, where the raw trajectory
-recency-truncated to the \emph{same} 22k budget costs $-8.4\pp$, a larger loss
-than any payload degradation)---so the
-rule is: select first, then fill the window with what was selected. The
-recency$+$gist overview earns its tokens (cutting to 6k costs $-27\pp$ on
-\textsc{Embodied} and $-23\pp$ on \textsc{Web}); the one exception is
-\textsc{Text2SQL}, which \emph{prefers} compact context ($+1$--$3\pp$ at smaller
-budgets), pointing to budget-adaptive routing as an open lever. The converse
-ablation removes query-time selection instead: answering from the recency
-$+$gist overview \emph{alone} (no verbatim appendix) costs $-4.3\pp$
-($0.5865$ vs $0.6290$, same-day)---notably still above every constructed-memory
-system, but the routed verbatim appendix clearly earns its keep. Both halves of
-the assembled context are load-bearing.
+That one lever is itself \emph{serveable}: prepending the structured answering
+protocol to the front of the retrieved context---a fixed-position segment prefilled
+once under KV serving, leaving the host instruction untouched---transfers most of the
+gain ($+2.3$ to $+3.8\pp$ over same-batch anchors). In the out-of-window store regime
+(\S\ref{sec:oow}) the transfer becomes exact: the instruction encoded \emph{once} as a
+global skill block (no episode content) and spliced per query with zero forward
+passes---its keys RoPE-rotated to sit contiguously before the question---ties the text
+instruction on both the anchored-store and the harvested-cache bases ($-0.4\pp$,
+$p{=}0.86$; $+0.1\pp$, $p{=}1.0$; full $+4.5$/$+8.1\pp$ lift transmitted; the parity
+replicates on LOCOMO at 8B and 32B, \S\ref{sec:oow}), while the same
+block frozen at a far position transmits only a fraction of it. The transplantation
+mechanism itself---precompiled KV made position-portable by RoPE
+repositioning---is established concurrently by \citet{kvnotes} across twelve models;
+what we add is the memory-side characterization: the protocol travels as a
+retrievable object of the same store that serves the evidence, at answer-accuracy
+parity on official-scale memory QA. The deployed system holds a \emph{single} fixed protocol
+block per benchmark. Whether a query-routed \emph{library} of blocks beats that single
+block is a question the same splice answers directly, and we now run it: eleven skill
+blocks, regex-routed per question with the universal structured answer protocol as fallback,
+served as rotated KV. It resolves the routing question our falsification map had left
+open. The \emph{replacement} form still fails---swapping the universal instruction for
+type-specialized fragments regresses $-3.0\pp$ with ten collateral losses per targeted
+fix (App.~\ref{app:readermap}). But the \emph{additive} form wins: a per-class hint
+appended to the intact protocol lifts accuracy $+2.1\pp$ overall ($p{=}0.009$,
+$n{=}800$) and $+6.3\pp$ on the $34\%$ of questions where a rule fires (up to $+10.8\pp$
+on the largest routed class, $n{=}130$; per-class figures are descriptive, from a single
+fixed rule set rather than a swept design), whereas replacement over the same rules stays a
+wash ($+3.7\pp$ routed, $p{=}0.27$) and double-edged ($+12.5\pp$ on one class, $-15\pp$ on
+another). Served as KV the blocks show no detectable gap from their text form across all
+three variants ($|d|{\le}1.8\pp$, all $p{\ge}0.25$)---an absence of a detected difference,
+not a formal equivalence---so the library precompiles into the same store, though the
+KV-carried additive gain is only directional at this scale ($+0.8\pp$, $p{=}0.46$), leaving
+the text carrier the demonstrated lever.
+The store's answering skill is therefore not a fixed constant but a routed, extensible
+object of the memory: additive routing a real headroom lever, replacement a trap. Placement, not context,
+is what a skill needs: it never attended the evidence and works at full strength---the
+mirror image of evidence blocks, which demand native positions and context-conditioned
+encoding.
 
 \subsection{Efficiency: KV sub-selection decouples cost from evidence}
 \label{sec:eff}
 
-Serving the selected spans from the cache instead of re-encoding them decouples
-per-query cost from how much evidence a query selects. We position this section
-as a \emph{prototype microbenchmark}---single-request, HF eager/SDPA kernels, no
-production serving-stack integration---establishing the mechanism, not a
-deployment result. We prefill a trajectory
-once and, per query, compare re-prefilling the header plus the selected spans (the
-text path) against gathering their cached KV and decoding only the question
-(sub-selection). Two facts hold across a dense Qwen3-8B and a 0.6B reader. First,
-sub-selection is \emph{faithful to the oracle it computes and empirically
-accuracy-neutral}. The gathered KV is exactly the frozen model's key/value for the
-selected turns at their original positions, so sub-selection reproduces a
-\emph{full-prefill-then-mask-dropped} oracle---\emph{not} a re-prefill of the
-selected text alone, whose kept tokens would never have attended the dropped
-context (we measure that difference as a $\sim\!13.5$ logit gap to a compact
-re-prefill, $\sim\!20\times$ the residual below). Against the mask oracle the first
-decoded token matches on every query---$100\%$ first-token argmax on synthetic
-\emph{and} on $144$ real AMA-Bench QA ($24/24$ episodes)---at a $\sim\!0.7$ residual
-logit gap that is the usual bf16 split-vs-joint-prefill non-determinism. The
-agreement is sequence-level and distributional, not just first-token: greedy-decoding
-$256$ tokens, sub-selection and the mask oracle emit the \emph{identical full sequence}
-on every query at both a $3.2$k- and a $27$k-token trajectory, at first-position
-logit-KL $\le\!0.011$ to the oracle (median $0$; vs $\sim\!0.28$ to a compact
-re-prefill)---and the oracle's
-top-1-minus-top-2 answer margin averages $7.7$ (min $0.25$), so these are not
-knife-edge decisions. This full-sequence match survives the settings a reviewer would
-stress: it holds at $256$-token generations (not just short answers), under an
-\emph{eager} attention kernel as well as SDPA ($6/6$), and under a $4\times$ YaRN RoPE
-extension (first-position logit-KL to the oracle $\le\!0.008$, argmax $5$--$6/6$)---as
-expected, since position-preserving gather is exact for RoPE regardless of the base
-frequency. A batched (ragged) gather we leave to future work. End-to-end, KV sub-selection and the deployed text pipeline are
-tied within noise on real AMA under a consistent reader/judge ($-0.7\pp$, one QA of
-$144$)---as expected, since position-preserving reuse is a different computation from
-a compact re-prefill (the $86\%$ first-token agreement between the two paths on that
-real-data run reflects that difference, not a defect). A larger stratified run
-confirms this at $n{=}576$ QA over $72$ episodes across five domains (episodes
-$\le$26k tokens; same 8B backbone, same stripped microbenchmark reader): the
-mask-oracle gate holds at $24/24$, and the two paths remain accuracy-tied with
-KV marginally ahead under both the same-model judge ($0.175$ vs $0.165$,
-$+1.0\pp$) and an independent Qwen3-32B re-grade ($+0.7\pp$), at $81\%$
-first-token agreement. The same holds when the KV arm serves the
-\emph{deployed} layout rather than the compact one: the recency$+$gist
-overview is prefilled once per episode as a post-trajectory block (fixed
-positions, so its KV is itself per-episode cacheable), the router-selected
-spans are gathered from the trajectory cache, and only the question is fresh
-per query. On a 576-QA re-run ($\le$24k, four domains) the mask-oracle gate is
-again $24/24$ and the arms are tied within noise ($0.222$ vs $0.240$,
-$-1.7\pp$ with near-disjoint answer strings, $\pm5\pp$ binomial band;
-first-token agreement $90\%$)---the two arms necessarily differ in block
-\emph{order} (the text pipeline puts the overview first; position-preserving
-gather keeps evidence at trajectory positions, overview after), so this is
-parity between the deployed text pipeline and its cache-native serving
-equivalent, not a byte-identical prompt. Notably the overview lifts
-\emph{both} arms by $\sim\!5$ points over the compact microbenchmark---the
-serving primitive covers the layout the headline numbers actually use, and is
-not tied to the stripped assembly. Absolute levels are low by construction---this
-microbenchmark reader is not the deployed pipeline---so the claim is arm
-\emph{parity}, not absolute accuracy; \textsc{OpenWorld} and most
-\textsc{Software} episodes exceed the size filter and are under-represented.
-Second, because the sub-selected decode
-re-processes only the question, its time-to-first-token is \emph{flat} while the
-text path grows with the selected evidence (Fig.~\ref{fig:eff}, Table~\ref{tab:eff}):
-the speedup rises from $1.6\times$ to $10.9\times$ as per-query evidence grows from
-$\sim$0.6k to $\sim$4.4k tokens, break-even is $\sim$1.5 queries per episode, and
-the one-time trajectory prefill saves $\sim$1.98M prefill tokens over a full
-open-ended AMA run. This flat TTFT is a \emph{prefill} saving---the decode tokens
-still attend over the selected KV, so the win is avoiding re-encoding of the evidence,
-not eliminating attention over it. Pushing the selected-KV $7\times$ beyond
-Table~\ref{tab:eff} confirms both sides: at $4$k/$16$k/$32$k selected tokens the
-sub-selected TTFT stays flat ($\sim\!80$--$140$\,ms) while the text path grows
-$0.4\!\to\!4.5$\,s (speedup $4\times\!\to\!32\times$), decode throughput stays
-$\sim$flat ($\sim\!28$ tok/s), and---as we flag---\emph{peak memory grows with the
-resident KV} ($30\!\to\!37$\,GB on an 80\,GB A100), at a KV storage cost of
-$0.144$\,MB/token ($9.4$\,GB for a $64$k-token episode). A like-for-like comparison
-against production paged-attention/serving stacks needs a serving-system integration
-and is left to future work. The reuse itself applies to a
-frozen/processed corpus queried many times and to frozen early history reused
-across later turns; a continuously growing trajectory benefits from the same
-mechanism incrementally.
+Serving spans from the cache rather than re-encoding them is correct by
+construction---position-preserving gather reproduces the full-prefill computation,
+an equivalence that holds across attention kernels, a $4\times$ YaRN extension, and a
+non-Qwen backbone.\footnote{Correctness gauntlet and end-to-end accuracy-neutrality
+against the text pipeline in Appendix~\ref{app:kvcorrect}.} We measure its
+\emph{cost} as a single-request microbenchmark. Because the sub-selected decode
+re-prefills only the question, its time-to-first-token is \emph{flat} while the text
+path grows with the selected evidence (Fig.~\ref{fig:eff}): on a dense Qwen3-8B the
+per-query speedup rises from $1.6\times$ to $10.9\times$ as evidence grows to
+$\sim\!4$k tokens, reaching $32\times$ at $32$k, and the one-time trajectory prefill
+saves $\sim\!2$M prefill tokens over a full AMA run. The decoupling is a property of
+the gather, not the weights---a Llama-3.1-8B backbone shows the same flat TTFT.
 
-\paragraph{What a gathered KV block is (and is not).}
-A selected KV block is a richer object than a copied text span: its keys/values
-were produced when the frozen reader processed the span \emph{in situ}, inside
-the original trajectory, so gathered evidence carries the model's
-trajectory-conditioned interpretation of those tokens---context that a re-prefill
-of the span in isolation would not reconstruct (the $\sim\!13.5$ logit gap above
-\emph{is} that difference, measured). We view this \emph{contextual carryover} as
-a property of activation-level memory, and we bound the claim in both directions.
-It is a statement about \emph{fidelity} to the full-prefill computation, not a
-measured accuracy advantage (the two paths are tied within noise end-to-end
-across the three parity runs above; the headline benchmark numbers come from
-the deployed \emph{text} pipeline, with KV sub-selection validated as its
-serving-layer equivalent). And it cuts against a naive privacy reading: because
-selected KV is contextualized by \emph{unselected} history, dropping a cold turn
-removes its text from the reader's context but not necessarily its influence from
-downstream cached KV (quantified in \S\ref{sec:limits}: a planted-secret probe
-finds no \emph{extractable} leakage, though we treat erasure as requiring
-downstream invalidation regardless). Serving cost likewise still includes
-selected-KV residency, gather/copy, and decode attention over the selected
-tokens---sub-selection removes the per-query \emph{re-encode}, nothing else.
+Two fairness notes on this comparison. First, the speedups are measured against
+re-prefilling the selected evidence as text; the strongest within-window alternative is
+a \emph{resident full-trajectory prefix cache} (standard prefix caching), which also
+re-prefills only the question---against it, sub-selection's saving is not the prefill
+but the attention context (every question and decode token attends $E$ selected tokens
+rather than all $N$), plus the option to evict unselected rows; measured on the same
+protocol ($N{\approx}14$k resident rows, $K{=}2$--$12$), the sub-selected question
+reaches first token in $40$--$48$\,ms versus $79$\,ms over the resident full cache
+($1.4$--$1.9\times$) and $140$--$369$\,ms for text re-prefill, decodes $26\%$ faster
+per token ($32.7$ vs.\ $41.2$\,ms/token), and the gather itself costs $3$--$6$\,ms. Second,
+the saving is in the \emph{prefill}, and it is bought with memory: the resident KV
+grows at $0.144$\,MB/token ($9.4$\,GB for a $64$k-token episode). A like-for-like
+comparison against production paged-attention stacks needs a serving-system
+integration, which we leave to future work.
 
 \begin{figure}[t]
 \centering
@@ -1146,43 +995,319 @@ question and stays flat ($\sim\!40$\,ms); the widening gap is the per-query spee
 \label{fig:eff}
 \end{figure}
 
+\section{Out of the window: when can agent memory reuse {KV} caches?}
+\label{sec:oow}
+
+Within the window the cache path is exact because every served row descends from one joint
+prefill (\S\ref{sec:kvserve}). Beyond it, exactness is impossible in principle: once the
+history outgrows the window, events must be encoded without their future and often without
+most of their past, and any such store is a different computation from the full reading.
+This section charts what survives the crossing. Throughout, arms are paired per question
+(exact McNemar tests, episode-clustered bootstrap CIs), all arms see the same routed
+evidence unless the contrast itself is evidence visibility, and the pipeline is
+deterministic---the deployed configuration reproduced byte-identically nineteen times across
+independently written harnesses.
+
+\paragraph{Stores, and the repair.} Each event (agent step span) is encoded offline into a
+per-event KV store and a query selects $K$ of them (\S\ref{sec:method}); the stored rows are
+assembled at their \emph{original} positions behind the shared header and the question is
+decoded over them. The text path (\emph{tx}) re-prefills the same routed evidence as text.
+The naive store (\emph{iso}) encodes each event in isolation. The repaired store
+(\emph{anchored+tail}) instantiates two known repair families as agent-memory write/serve
+operations---we adapt and characterize here; the primitives and their combination are prior
+art. At write time, \emph{anchored encoding}~\citep{star}: each event is encoded as
+[header; episode opening ($w{=}4096$ tokens, truncated at the event start, at its native
+positions); event], keeping only the event rows. At query time, \emph{selective
+recomputation}~\citep{cacheblend,epic}: the opening's rows not covered by selected events
+are served alongside, and the last two events are recomputed freshly over the assembled
+cache before the question.
+
 \begin{table}[t]
 \centering
-\caption{KV sub-selection (``ours'') decouples the per-query \emph{prefill} from
-the selected-evidence size: the sub-selected decode re-prefills only the question
-(flat TTFT), while the text path re-prefills the evidence every query. Dense
-Qwen3-8B; first-token argmax matches the full-prefill oracle at every row, and
-end-to-end answers match the text path on this controlled synthetic set.}
-\label{tab:eff}
-\small
-\begin{tabular}{lccc c}
+\caption{Out-of-window portability on the official AMA-Bench harness (Qwen3-32B reader,
+official judge, paired; $n{=}2431$ at $K{=}12$, $2403$ at $K{=}5$). Isolated event stores
+collapse; the repaired store recovers $72\%$, and at the lean budget the paired difference
+is statistically indistinguishable from zero, with a CI that excludes regressions
+approaching the naive failure (the margin was not pre-registered). tx here is the
+routed-text \emph{carrier} baseline under the serving-cell protocol (fixed $K$ retrieval,
+no overview; Appendix~\ref{app:ledger})---\emph{not} the full deployed pipeline of
+Table~\ref{tab:ama}; any within-window cache-vs-text edge elsewhere is evidence-matched or
+re-attributed per the matched-evidence audit.}
+\label{tab:oow}
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llcc}
 \toprule
-Selected / context (tok) & text tok/q & ours tok/q & TTFT (text $\to$ ours) & speedup \\
+budget & serving & score & paired vs.\ tx \\
 \midrule
-0.6k / 3.2k  & 575  & 20 & $66\,\text{ms} \to 41\,\text{ms}$  & $1.6\times$ \\
-1.9k / 4.3k  & 1916 & 20 & $189\,\text{ms} \to 40\,\text{ms}$ & $4.7\times$ \\
-3.0k / 8.1k  & 3008 & 20 & $295\,\text{ms} \to 41\,\text{ms}$ & $7.2\times$ \\
-4.4k / 13.5k & 4387 & 20 & $448\,\text{ms} \to 41\,\text{ms}$ & $10.9\times$ \\
+$K{=}12$ & re-prefill routed text (tx) & $.397$ & --- \\
+ & isolated stores (iso) & $.265$ & $-13.2\pp$, $p{=}10^{-38}$ \\
+ & anchored+tail & $.360$ & $-3.7\pp$ ($p{=}10^{-4}$): recovers $72\%$ of the drop \\
+\midrule
+$K{=}5$ & re-prefill routed text (tx) & $.368$ & --- \\
+ & anchored+tail & $.360$ & $-0.8\pp$, clustered $95\%$ CI $[-3.0,+1.4]\pp$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Cross-backbone robustness (non-Qwen).}
-Position-preserving KV reuse is a property of the gather, not the weights, so we
-expect it to hold on any RoPE model; we check one non-Qwen backbone rather than
-claim architecture-independence outright. Re-running the correctness/efficiency
-harness on \textbf{Llama-3.1-8B-Instruct}---a different architecture and
-vendor---reproduces the guarantees on our test set: GATE-A/B first-token argmax
-$6/6$ across $48$--$200$-step trajectories (residual $|\Delta\text{logit}|\le0.35$,
-in fact \emph{tighter} than Qwen's $\sim\!0.7$), end-to-end match with text
-re-prefill on all $6$ probes, and a \emph{flat} $\sim\!42$\,ms sub-select TTFT while
-the trajectory grows $3.1$k$\to$$13$k tokens (the one-time prefill grows
-$0.13\to0.52$\,s but amortizes), i.e.\ $2.8\times$ faster to first token at a fixed
-selection. These are small-$n$ probes, not a broad multi-model study; the
-per-query prefill decoupling from trajectory length holds on both
-backbones we tested; the framework's \emph{accuracy} contribution is separately
-evidenced across three benchmark families (\S\ref{sec:ama},
-\S\ref{sec:locomo}, \S\ref{sec:lme}) rather than a single backbone.
+\paragraph{Failure, repair, and the budget.} Table~\ref{tab:oow} is the headline. Isolated
+stores lose $13.2\pp$ against text re-prefill of the same evidence---to our knowledge the
+first large-sample \emph{paired} quantification on the official harness, though the
+phenomenon itself is established~\citep{sparsex}, and our failing object is
+construction-time independent encoding, not transplanted prefixes. The repaired store
+recovers $72\%$ at $K{=}12$; at the matched lean budget $K{=}5$ the paired difference is
+statistically indistinguishable from zero ($-0.8\pp$, CI $[-3.0,+1.4]$)---we do not call
+this non-inferiority, since the margin such a claim needs was not pre-registered; what
+the CI does exclude is anything resembling the naive failure. Beyond the window, where the text path must
+re-prefill everything it serves, the cache path reaches parity at $12$--$18\%$ of the text
+path's per-query fresh tokens. Costs are stated honestly: writing stores costs
+${\sim}5\times$ one episode prefill (offline, event-parallel), repaid over-window and under
+reuse, not within one episode's own questions; in-window TTFT is $1.4$--$2.3\times$ faster
+but decode is ${\sim}29\%$ slower under the scattered layout, so end-to-end latency inverts
+for answers longer than ${\sim}20$ tokens---the claim is \emph{reduces TTFT}, never
+\emph{answers faster}.
+
+\paragraph{Matched evidence, and the ceiling.} Two audits discipline the wins. First, the
+cache path's within-window edge over routed text ($+5.6\pp$ at 8B) is \emph{not} a carrier
+effect: served anchor rows are extra evidence, and giving the text path the same rows
+(tx\textsubscript{plus}) recovers most of the gap ($+4.3\pp$, $p{=}0.001$ at 8B; $+5.5\pp$,
+$p{=}0.004$ at 32B); at matched evidence the two carriers are at parity at both scales. The
+episode opening is simply cheap evidence that $K$-routing systematically misses---the cache
+gets it structurally, text must buy it with tokens. Second, against \emph{complete} reading:
+at 8B the repaired store \emph{ties} a full re-prefill of the entire episode ($.221$ vs.\
+$.220$, $p{=}1.0$) at ${\sim}22\%$ of its query cost---while rows \emph{gathered} from that
+same full prefill score far below it ($.175$): exact rows minus answer-time global attention
+lose what approximate-but-repaired stores reconstruct. Gathering itself is not the culprit:
+give the gathered rows the same opening-region rows---all free from the same cache---and the
+harvest path reaches statistical parity with the repaired store ($-1.1\pp$, $p{=}0.37$),
+\emph{with no fresh tail at all} (the tail, worth $+3.9\pp$ on isolated stores, buys exactly
+nothing on harvested rows, which already carry full-context integration). Where a rollout
+cache exists, then, a \emph{zero-write} memory---gather routed spans plus the opening from
+the agent's own run cache---matches the $5\times$-write recipe: exactly so at 32B
+($.3313{=}.3313$, $+57/{-}57$ discordants, both the identical $5.3\pp$ below the strong
+reader's full-reading ceiling), and robustly to prompt mismatch (harvesting from a cache
+built under an agent-style system prompt costs $+0.1\pp$, n.s.). The pattern also crosses
+benchmark families and scales: on LOCOMO ($n{=}1150$ paired, sessions as events) the
+zero-write harvest exactly ties the text path at 8B ($+0.1\pp$, $p{=}1.0$) and sits
+at-or-above the repaired store ($+2.0\pp$, clustered CI $[-0.1,+4.2]$), spending $40$
+question-only fresh tokens per query against the text path's ${\sim}9$k; at 32B, where
+the repaired store's published edge over text replicates to the decimal ($+3.9\pp$, CI
+$[+1.9,+6.0]$, $p{=}8{\times}10^{-4}$), the harvest inherits it ($+3.4\pp$ over text,
+$p{=}0.004$; $-0.5\pp$ vs.\ the store, $p{=}0.64$), and the answer instruction carried
+as a rotated skill block matches its text-carried control at both scales ($+0.1\pp$
+$p{=}1.0$; $+1.0\pp$ $p{=}0.24$). It also crosses backbones: on Llama-3.1-8B-Instruct
+the full cell replicates---unrepaired global holes fall below the store ($-2.2\pp$),
+the opening-repaired harvest sits at-or-above it ($+1.8\pp$, CI $[-0.2,+3.9]$), and the
+fresh tail again buys nothing on harvested rows ($+0.2\pp$/$-0.5\pp$, n.s.).
+What the write buys is the
+over-window regime, where a live run truncates and no full-context cache ever exists. The
+tie is reader-scoped: a 32B
+reader keeps converting complete context into accuracy ($+9.1\pp$ over routed text,
+$p{=}10^{-5}$), leaving every budget-limited serving---cache and text alike---below it and
+at parity with each other. The residual is not degeneracy: in the official losses the cache
+path's answers are $98\%$ fluent with wrong precise details (zero garbles; degenerate
+outputs are equally rare in both paths), and distributionally the cached serving sits
+\emph{closer} to the full-reading distribution than routed text does (median first-token
+KL $0.005$ vs.\ $0.031$ nats)---losses are near-tied argmax flips, which is also why no
+cheap per-question fallback trigger exists (six signal families, including running both
+paths and voting, all fail to beat chance).
+
+\paragraph{Regularity I: evidence converts to accuracy only through joint encoding.}
+(Both regularities are empirical and scoped: one model family, this benchmark family,
+these budgets.) Raising the
+routing budget $K{=}5{\to}12$ moves the two carriers oppositely: text gains $+2.8\pp$
+($p{=}0.0015$) while the cache is \emph{exactly} flat ($.3593{=}.3593$)---not insensitive
+but self-cancelling ($+199/{-}199$ flipped answers). A within-episode factorial sharpens
+this into the paper's cleanest controlled statement: handing the \emph{same} three extra
+events to both paths, text gains $+2.6\pp$ while the cache \emph{loses} $-1.8\pp$
+(difference-in-differences $+4.4\pp$, clustered CI $[+1.5,+7.3]$), and for the cache
+\emph{any} extension hurts (random: $-1.65\pp$, $p{=}0.029$). Freshly re-read text is
+jointly re-encoded with the question and the rest of the evidence; pre-encoded blocks that
+never attended each other add retrievable-but-isolated facts plus attention dilution, and
+the two cancel. Deployment follows: serve the cache \emph{lean} ($K{=}5$ serves ${\sim}40\%$
+of the $K{=}12$ volume for free), and to close the residual add fresh computation or reader
+scale, not served rows.
+
+\paragraph{Regularity II: write-time conditioning must match what is served---in content
+and in position.} Why does the anchor work? Not by injecting content: with serving matched and
+equal-length conditioners, a true-episode prefix beats no conditioner by $+3.3\pp$
+($p{=}0.009$), but another episode's text or even a \emph{shuffled} prefix performs
+similarly, while degenerate fillers (a repeated token, a generated digest) score \emph{below}
+no conditioner---the anchor primarily repairs the encoding boundary state (sink placement,
+positional posture), and a wrong conditioner is worse than none. A \emph{note-transplant}
+reading of this repair---prefill parks derived conclusions on delimiter/aggregator tokens,
+and serving those rows would deliver them~\citep{kvnotes}---fails a direct test: serving
+only the anchor region's delimiter rows does no better than matched random rows
+($-0.7$/$+0.4\pp$ at $K{=}64$/$256$, both n.s.), both trail serving \emph{nothing} at
+$K{=}64$, and the region's $+4.5\pp$ value ($p{=}3{\times}10^{-4}$) appears only as the
+near-complete contiguous block---a scaffold-and-coverage effect, not sparse conclusion
+notes; sparse rows spliced into an assembled cache make holes, they do not carry
+conclusions. Two controlled dials then
+bound the remaining semantic and geometric components. \emph{Content}: freezing one global
+conditioner for all episodes---which would make writes prefix-cacheable, collapsing write
+cost $5\times{\to}1\times$---costs $-3.4\pp$ ($p{=}0.007$): the same-episode content
+contributes a real $2$--$3.4\pp$. \emph{Position}: sliding the anchor adjacent to the event
+(the contiguous layout every splice-and-repair pipeline assumes) costs $-2.8\pp$
+($p{=}0.0008$), while pushing the event $8$k tokens \emph{farther} away costs almost
+nothing ($-1.7\pp$, n.s.), and distance mutes neither the benefit nor the poison of the
+conditioner. The store works best when its write-time worldview matches the serve-time
+layout---the opening at its true position, the hole between them real, the served anchor
+rows the ones the store was conditioned on. Query-time token repair cannot substitute for
+this write-time conditioning: an EPIC-style static boundary recompute~\citep{epic} at its
+published budget is a null in this regime ($k{=}16$: $+0.2\pp$, n.s.), and even equipped
+with our served anchor rows and fresh tail it trails the anchored store by $5.2\pp$
+($p{<}10^{-4}$)---in agent traces the isolation damage is distributed over the whole
+event's rows, not concentrated at its boundary. Nor does a \emph{smarter} conditioner
+help: replacing the opening with each event's top dependency-graph upstream events
+(budget-matched, native positions, their rows served) loses $-2.9\pp$ ($p{=}0.022$) and is
+no better than random prior events---while serving the conditioner's own rows helps for
+\emph{every} conditioner family ($+2.8$ to $+3.4\pp$), generalizing the consistency law.
+The opening wins because, alone among the six write-side alternatives we tested, it is simultaneously natural text
+(boundary repair), same-episode content, truthful geometry, the evidence block routing
+systematically misses, and a constant fully-serveable block; the six write-side
+alternatives we tested all lose to it.
+
+\paragraph{The fresh budget: six selectors tested, recency stands.} The one query-time degree of freedom is
+where the two-event fresh recomputation goes. At fixed evidence the tail helps immediately
+and saturates ($+2.1\pp$ at two events, flat at six), and its value is not query relevance:
+under matched evidence and budget, six selectors---recency, a signature-co-occurrence
+dependency graph, query$\to$cache attention mass, a KEEP-style query-conditioned
+attention propagation over events (the group-recompute selector of \citet{keep},
+instantiated at our event granularity), query relevance, random---leave recency tied or
+ahead. The propagation selector lands exactly on the random floor ($+0.2\pp$ vs.\ random,
+$p{=}0.89$) and significantly below recency ($-2.1\pp$, clustered CI $[-3.5,-0.7]$,
+$p{=}0.016$), despite spontaneously agreeing with recency on $1.2$ of its $2$ picks;
+query-selected excerpts are marginally \emph{worse} (third replication of that null). The
+selectors do pick different events; the differences do not pay. Recency is not a lazy
+default but the causally downstream integration point, and the operating point is thereby
+six-way validated rather than assumed.
+
+\paragraph{Deployment map.} The recipe splits by \emph{where the rows come from}, not by
+what is served. In-window, where the agent's own rollout cache survives, harvest it: no
+store encoding, no fresh tail, robust to the run-vs-review prompt mismatch, at exact
+parity with the re-encoding recipe at both scales (\S above). Over-window, a live run
+truncates and no full-context cache ever exists---there, and only there, the $5\times$
+write buys anchored stores that are window-independent. In both regimes the reader's
+answering protocol travels as a rotated skill block from a global store
+(\S\ref{sec:reader}), and the two memory content types obey mirrored serving rules:
+evidence rows are position-preserving and context-hungry; skill rows are
+position-independent, query-adjacent, and context-free. Route by domain, not per
+question: on the official judge the
+cache path wins \textsc{Embodied} outright at both budgets ($.19$--$.21$ vs.\
+$.12$--$.13$) and text keeps \textsc{OpenWorld}; with domain routing the
+indistinguishable-at-$K{=}5$ headline becomes a win where traces are dense
+state--action loops. Reader capacity
+moderates everything: on LOCOMO the repaired cache beats text by $+3.9\pp$ at 32B
+(conversation-clustered CI $[+1.9,+6.0]$) while 8B regresses on single-hop near-details;
+$77\%$ of those regressions are answered correctly at 32B under the same protocol and
+memory content. The end-to-end deployment-map system---harvest$+$skill in-window,
+anchored stores$+$skill over-window---was then run once on the full official harness
+against the pre-registered paired contrasts: over $n{=}2431$ paired questions it scores
+$.397$ against the anchored-store recipe's $.360$ ($+3.6\pp$, clustered CI $[+1.7,+5.6]$,
+$+304/{-}216$ discordants, $p{=}1.3{\times}10^{-4}$) and \emph{exactly ties} the
+routed-text carrier baseline of Table~\ref{tab:oow} ($.397$ vs.\ $.397$, $+285/{-}287$
+discordants, $p{=}0.97$)---the serving-cell gap closes; the full deployed pipeline
+(different protocol, Table~\ref{tab:ama}) is not the comparator here. The gain lives on the in-window slice ($43\%$ of
+questions, $+6.4\pp$, $p{=}9{\times}10^{-5}$), where the zero-write harvest serves the
+rows and the skill block delivers the answering protocol; there the KV-carried skill
+also matches its text-carried control ($+1.6\pp$, n.s.), and the over-window slice is
+unchanged ($+1.5\pp$, n.s.).
+
+\paragraph{Four synthetic probes of what a served row carries.} The regularities above are
+attribution claims about a served row---what computation it still embodies once detached
+from its origin. Four controlled probes make the mechanism direct (Qwen3-8B, synthetic
+register-tracking traces after RULER variable tracking~\citep{ruler}, exact-match scored,
+arms paired), spanning the four ways a row is produced: one continuous prefill
+(\emph{full}), one joint prefill then \emph{gather} the wanted rows (\emph{harvest}),
+independent per-event encoding $[\text{header};E_i]$ (\emph{iso}), and a rolling anchored
+write $[\text{header};\text{opening};E_i]$ (\emph{anchor}). \textbf{(1)~Phantom conclusions.} Two equal-length prefixes carry opposite states; the
+\emph{same} event text (``the status from step~1 was copied into the report'') is
+teacher-forced after each, and we serve \emph{only} that event's rows---identical token
+IDs, positions, header, and row count across the two arms, so only the invisible donor
+differs. Across $72$ such donor pairs, both arms separate in their donor's polarity
+direction in $64\%$ of pairs (each arm alone follows its own donor $81\%$ of the time)
+against an $8\%$ no-donor floor, while the donor's \emph{exact} token is reproduced only
+$10\%$ of the time (significance taken over the $72$ pairs, not the $144$ arms)---a served
+row is a lossy carrier of the \emph{conclusions} its prefix induced, not merely a cache of
+its own visible tokens (attention-mediated memoized inference~\citep{kvnotes}, measured).
+\textbf{(2)~Erasure boundary.} That carry is not \emph{unconditional} leakage. Deleting a
+numeric value's source rows from a joint prefill and then querying the current state, the
+model answers ``not specified'' exactly as an oracle that never saw the value ($0/96$; an
+overwriting event cleanly supersedes, $96/96$): no \emph{detectable} behavioral leakage
+under explicit overwrite and current-state queries. We claim only that---$0/96$ bounds the
+leakage rate below ${\sim}4\%$ and says nothing about logit-level residue, arbitrary
+queries, or exact state-equivalence to a fresh prefill (\S\ref{sec:limits}). Read with~(1),
+the picture is selective: a prefix's influence surfaces when the model formed a
+task-relevant conclusion in the suffix \emph{and} the query reads it, not whenever the
+prefix was present. \textbf{(3)~Sink versus dependency.} On a three-event register chain a shared header lifts
+multi-hop resolution from $0.20$ to $0.48$ ($p{=}2{\times}10^{-11}$) but leaves it short of
+full context's $0.72$ ($p{=}6{\times}10^{-8}$); single-fact retrieval shows no improvement
+($0.18$ vs.\ $0.14$, both far under full's $1.00$---a retrieval floor under independent
+encoding, not a null interaction). A shared prefix therefore substantially but only partially
+restores cross-event reasoning over independently encoded rows; it does not \emph{store} the
+cross-event edge, the residual to full being the cost of the missing joint encoding, which is
+why sharing a prefix (Star-style~\citep{star}) addresses repeated-sink placement yet not the
+missing inter-event conditioning. What in the header carries this---sink normalization and
+positional posture versus the variable and instruction semantics it also supplies---we do not
+separate here; an equal-length sink-only header would, and we leave that open.
+\textbf{(4)~Where the harvest gain comes from.} A four-arm decomposition on the same
+trajectory-spanning chains settles the attribution (max sequence $589$ tokens, so full's
+failure is distraction, not truncation; exact- and number-recall scoring agree to the digit).
+Serving only the gold chain reaches $0.98$--$1.00$ however it is carried---fresh compact text
+($1.00$), independently encoded rows ($1.00$), or rows harvested from one joint prefill of the
+full trajectory ($0.98$)---while full context sits at $0.04$. The whole gap is
+\emph{routing/denoising}: selected-text $-$ full $={+}0.96$ ($+368/{-}0$, $p{<}10^{-100}$).
+\emph{Pre-digestion} is null---harvest does not beat a clean re-encode of the same chain
+($-1.8\pp$, if anything slightly worse for having attended the distractors)---and
+\emph{joint conditioning} is null on the routed chain---harvest ties independent encoding
+($-1.8\pp$), because once only the relevant events are co-served the reader re-derives the
+chain at serve time regardless of carrier. So under \emph{complete} routing harvest buys
+\emph{cost}, not computation: a near-lossless carrier of the selected rows (within $2\pp$ of
+fresh text), the accuracy lever being distraction removal, which any selective serving
+delivers. Its globally computed rows out-earn a fresh re-encode only in one narrow
+corner---when routing is \emph{incomplete} and the missing content is a coarse, explicitly
+copied label. Dropping the step that introduces the target and serving only a later row that
+copied it: a binary state survives almost perfectly---but our first two measurements of that
+cell were both wrong in instructive ways, and the corrected chain is worth stating. The
+original design drew the served decoy as the gold label's negation; at $K{=}2$, ``recall the
+memoized value'' and ``answer the opposite of the served decoy'' are indistinguishable, and
+the arm read harvest $0.99$ against $0.00$ for independent encoding. Redrawing the decoy
+\emph{independently} ($n{=}256$) exposes fresh text and independent KV as pure decoy
+echoers---both score ${\approx}0.5$, exactly the rate at which an independent decoy happens
+to coincide with the gold---and puts elimination-free recall at $r{\approx}0.80$. That $0.80$
+was in turn a \emph{readout} limit, not a storage limit: naming the two candidate labels in
+the question lifts recall to $0.934$--$0.984$ across three runs ($n{=}256$ each), the
+cleanest being a cell with \emph{no} state word served anywhere---nothing to echo, nothing to
+eliminate---where harvest scores $0.984$ against $0.54$ for both re-read text and independent
+KV (coin flips, as they carry nothing). Entropy still closes the channel, and the menu
+defends the boundary rather than dissolving it: with candidates named and decoys independent,
+a four-way label sits at chance ($0.223$ vs.\ $0.25$; $92\%$ of answers echo the served
+decoy), an eight-way label likewise ($0.156$ vs.\ $0.125$), and an exact three-digit value
+never survives ($0/128$). A verdict that must be \emph{computed} rather than copied is not
+pre-stored either ($0.48$, at chance under the same menu-style readout---though the model
+derives it fine when the source \emph{is} served). The failure mode is uniform: when the row
+cannot supply the answer, the reader echoes whatever label is served, which is also why
+harvest is not uniformly better---on the subset where the independent decoy coincides with
+the gold, the echoers score a lucky $1.00$ while harvest's residual recall failures cost it
+($0.803$, $p{=}3{\times}10^{-8}$). What a row inherits also turns out to be sharply
+\emph{local to its own predicate}, not a side channel for whatever preceded it: with a
+verdict explicitly stated upstream and then dropped, a semantically neutral later row
+(``checkpoint saved for the sensor review'') carries nothing ($0.47$, chance), and neither
+does a row \emph{about} the verdict (``the outcome of the check was archived'', $0.52$)---but
+a row whose own predicate \emph{binds} a state to that verdict (``the status flag was set
+according to the check result'') carries it at $0.94$ ($n{=}256$ each, McNemar
+$p{=}3{\times}10^{-33}$, identical upstream and question). A served row thus carries the
+resolved value of the state its own predicate binds---roughly one bit of it---and nothing it
+merely mentions, neighbors, or follows; mirroring probe~(1)'s polarity-yes / exact-token-no
+split, now with a task payoff, while higher-entropy specifics and derived facts still require
+their source rows. This is why the deployed harvest ties rather than beats re-encoded text
+(\S\ref{sec:oow}): agent answers are usually exact values and derived facts, precisely the
+content sparse serving cannot carry without its source. It is also a construction rule for
+write-time notes: a note memoizes a conclusion only if its own predicate binds it (a paired
+in-trajectory note reading ``determine the threshold verdict now and record it here''---no
+answer, no operands---lifts post-drop recovery of a \emph{computed} verdict from $0.54$ to
+$0.70$, $n{=}192$, $p{=}0.005$, while the same note leaves a three-digit value at exactly
+$0$), whereas a note that merely refers to a conclusion stores nothing.
 
 \section{Related work}
 \label{sec:related}
@@ -1190,33 +1315,46 @@ evidenced across three benchmark families (\S\ref{sec:ama},
 \paragraph{Agent-memory systems.}
 The systems we compare to---AMA-Agent, Mem0~\citep{mem0},
 MemoryBank~\citep{memorybank}, A-Mem~\citep{amem}, MemGPT~\citep{memgpt},
-Zep~\citep{zep}, MemoRAG~\citep{memorag}, HippoRAG~\citep{hipporag}---share a
-trait: they \emph{construct} memory at write time (extract facts, summarize, or
-build graphs) and retrieve from that lossy store. AMA-Bench's own needle ablation
-shows the cost: $-41\pp$ from lossy construction. Two precedents are closest to us.
+Zep~\citep{zep}, MemoRAG~\citep{memorag}, HippoRAG~\citep{hipporag}---all
+\emph{construct} something at write time with an LLM (facts, notes, summaries, graphs, a compressed global memory), and most also keep the raw history; they differ in what the reader is served. Mem0 retrieves only its extracted facts; MemoRAG and HippoRAG use their constructed memory or graph to retrieve raw passages;
+AMA-Agent's released code serves its top-$5$ raw turns by embedding similarity together with an LLM-written state summary, and falls back to keyword search over the raw trace. AMA-Bench's own needle control
+prices serving the constructed form: replacing the raw answer-bearing turns with MemoryBank's constructed memory drops accuracy from $0.46$ to $0.27$ ($-41\%$ relative, BabyAI). Two precedents are closest to us.
 \emph{Generative Agents}~\citep{genagents} retrieves by recency-importance-relevance
 over a stream that mixes verbatim observations with summarized reflections, but
 gives no verbatim-rehydration guarantee. \emph{MemGPT}~\citep{memgpt} pages
 verbatim context via LLM tool calls but recursively summarizes overflow rather
-than keeping it exactly rehydratable. \kvm{} differs by keeping raw spans as the
-authoritative payload, routing to them, and serving gists only as a one-line
+than keeping it exactly rehydratable. \kvm{} differs by constructing no LLM-written memory at all: raw spans are the only evidence
+payload, routed to by a cheap index, with extractive gists serving only as a one-line
 index and overview scaffold---never as a substitute for evidence a query needs,
 which is always rehydrated verbatim.
-Crucially, all of these are query-aware, so query-awareness is not the novelty;
-the combination of \emph{verbatim payload} $+$ \emph{cheap routing} $+$
+Crucially, all of these are query-aware, so query-awareness is not the novelty, and neither is serving raw spans as such (AMA-Agent does too);
+the combination of a \emph{verbatim-only payload} $+$ \emph{cheap routing} $+$
 \emph{gist-as-index} is.
 
-\paragraph{File- and transcript-based memory.}
-A recent line of practice keeps raw history as-is and lets an agent search it
-with tools: filesystem-backed agents over stored transcripts report strong
-LOCOMO numbers~\citep{lettafiles,pamlocomo}, and AMA-Agent's tool loop over the
-full trajectory JSON is the same idea on agent traces. These systems are
-\emph{consistent} with our thesis---they, too, refuse to compress the
-payload---and we do not claim priority on ``keep the raw text.'' Our
-contribution relative to them is the controlled attribution (payload-fidelity
-causality, the memory$\times$reader confound, structural addressing as a
-separate channel) and the serving primitive (position-preserving KV
-sub-selection), which text-file replay does not provide.
+\paragraph{Raw-history memory: an established design pattern.}
+Serving the raw history from a cheap index is by now a settled pattern, and we
+claim no priority on it. ReadAgent~\citep{readagent} navigates by gists and looks
+up original passages on demand; Memex~\citep{memexrl} and HORMA~\citep{horma} keep
+full-fidelity traces in databases indexed by summaries (with RL-trained retrieval);
+EMBER~\citep{ember} retains budgeted verbatim evidence capsules;
+OCR-Memory~\citep{ocrmemory} predicts segment indexes optically and returns the
+original text deterministically; EM-LLM~\citep{emllm} segments streams into
+episodic events at the KV level; filesystem-backed agents search stored transcripts
+with tools~\citep{lettafiles,pamlocomo}, as does AMA-Agent's tool loop on agent
+traces. Closest of all, and concurrent, \citet{verbatimchunks} run the controlled
+comparison directly---fixed pipeline, verbatim chunks vs.\ LLM-extracted typed
+artifacts---and report $15.9$/$22.0\pp$ gaps on LOCOMO/LongMemEval-S. Our Part I is
+therefore an \emph{extension and a decomposition}, not a discovery claim: we bring
+the controlled comparison to dense \emph{agent trajectories}, add the
+original-line control that separates \emph{generative paraphrase} from
+\emph{extractive shortening} (the artifact-vs-chunk contrast conflates them), add
+an oracle-evidence variant and a different-family judge control, and pair it with
+the memory--reader decoupling. Concurrently,
+MemDelta~\citep{memdelta} makes the confound-control case for agent-memory
+\emph{evaluation}---varying one pipeline component at a time on LongMemEval and
+showing rankings reverse; our matched-evidence protocol is the payload-form
+instance of the same discipline, and we adopt their recommendation to report
+memory-only and end-to-end numbers separately (\S\ref{sec:ama}).
 
 \paragraph{Retrieval-augmented generation and agent frameworks.}
 Classic RAG retrieves external passages and conditions the reader on
@@ -1234,9 +1372,18 @@ drop-in, verbatim-first alternative to those summary/vector defaults.
 A systems line reuses KV caches for latency---prefix caching in
 vLLM~\citep{vllm} and SGLang~\citep{sglang}---which \kvm{} sits on top of. A
 compression line removes tokens via eviction (e.g.\ H2O~\citep{h2o}) or learned
-summarization (RECOMP~\citep{recomp}); these optimize the cache or the prompt,
-not the \emph{selection-quality} memory question that determines whether a
-multi-hop answer survives. A parallel architecture line compresses or retrieves
+summarization (RECOMP~\citep{recomp}); IntentKV~\citep{intentkv} prunes agent
+KV across turns with a learned intent signal; these optimize the cache or the
+prompt, not the \emph{selection-quality} memory question that determines whether a
+multi-hop answer survives. Reuse of rollout KV also appears beyond language
+agents---WorldKV~\citep{worldkv} re-inserts evicted cache chunks into the native
+attention window of a video world model without re-encoding---and, concurrently
+with this work, \citet{kvnotes} show precompiled \emph{skills} are
+position-portable: RoPE-repositioned KV splices are near-indistinguishable from
+full recompute across twelve models. Our skill-block result (\S\ref{sec:reader})
+is an application of that transplantation idea to the agent-memory answering
+protocol, validated at answer-accuracy parity on official-scale memory QA; the
+mechanism is theirs, the memory-side characterization ours. A parallel architecture line compresses or retrieves
 \emph{past activations} inside the model---Compressive
 Transformer~\citep{compressivetransformer}, Memorizing
 Transformer~\citep{memorizingtransformer}---whereas \kvm{} sits one level up, as a
@@ -1246,79 +1393,146 @@ matched training-free, query-free budget), extractive retention is already at
 least as good as generative summary---so the lever is selection, not harder
 compression.
 
+\paragraph{Position-independent KV caching.}
+A recent serving line moves beyond prefix caching toward reusing recurring
+\emph{spans}---documents, code files, retrieved chunks---even when they appear at
+different prompt positions, which standard prefix caching cannot do (it reuses KV
+only across an identical shared prefix, and only in the prefill).
+EPIC~\citep{epic} formalizes position-independent caching and recovers accuracy
+near segment boundaries; MiniPIC~\citep{minipic} supports it in a minimal vLLM
+substrate by storing \emph{position-free} keys and applying RoPE at attention time
+under per-request logical positions; MEPIC~\citep{mepic} makes reused chunk blocks
+shareable across positions and requests to cut HBM; and HYPIC~\citep{hypic}
+extends the idea to hybrid-attention models. Earlier, Prompt
+Cache~\citep{promptcache} reused modular attention states and
+CacheBlend~\citep{cacheblend} showed that non-prefix chunk KV must be partially
+recomputed to stay faithful. \kvm{} is complementary and \emph{upstream}: these
+systems assume the reusable spans are given and optimize their serving, whereas
+\kvm{} decides \emph{which} spans of a long agent trajectory to select and shows a
+verbatim payload beats a lossily constructed one. Our KV serving is also
+deliberately restricted---it is \emph{position-preserving} (spans stay at their
+original trajectory positions, exact for RoPE) rather than position-independent,
+so it does not compact the resident KV; a memory-compact version that relocates
+spans would need exactly the PIC mechanisms above (position-free keys, logical
+positions, block/page sharing), which we do not claim to contribute.
+
+\paragraph{Repairing spliced caches.}
+When chunks are encoded independently and later spliced, a repair family restores
+quality: anchor-block conditioning (Star Attention~\citep{star}), partial recomputation
+of high-deviation or boundary tokens (CacheBlend~\citep{cacheblend}, EPIC~\citep{epic}),
+and sparse-query selection with recency fallbacks over segment-level reuse
+(SparseX~\citep{sparsex}, the nearest neighbor to \S\ref{sec:oow}; it also reports the
+naive-reuse failure and a repair on memory benchmarks); KEEP~\citep{keep} moves
+group-level recompute selection by query-conditioned attention propagation into an
+embodied-planning memory system. In RAG-style regimes---
+self-contained chunks, all chunks served---this family reports repair~$\approx$~full
+re-prefill. \S\ref{sec:oow} instantiates the anchor and recompute families as
+agent-memory operations under routed serving and finds the parity claims do not
+transport: the boundary-recompute budget that suffices for RAG chunks is a null on agent
+events, whose isolation damage is distributed across the whole event
+(\S\ref{sec:oow}, Regularity II), and KEEP's propagation selector, run same-harness at
+matched budget, lands on the random floor below recency. Our contribution relative to this family is the paired
+official-benchmark characterization and the two regularities, not the primitives or their
+combination.
+
 \section{Limitations: when does verbatim selection win?}
 \label{sec:limits}
 
-\kvm{} defers answer-extraction to the reader at inference time. This is ideal
-for a capable, self-hosted reader and for dense/long-horizon evidence---where it
-wins (AMA-Bench, LOCOMO). It has two boundaries. First, \emph{scope}: the
-strongest form of our efficiency claim---position-preserving KV sub-selection of
-arbitrary spans---needs self-hosting; hosted APIs expose only contiguous-prefix
-prompt-caching, which our prefix-friendly layout still benefits from but which
-cannot gather arbitrary spans. Second, \emph{reader capacity}: for a \emph{weak} reader over a
-benchmark whose answers are tiny isolated facts, systems that extract atomic
-facts at construction time can present an easier context---the gap is a matter of
-reader capacity, not retrieval (our router surfaces the evidence $94\%$ of the
-time). This is also why we report LongMemEval-S only in the strong-reader
-(Qwen3-32B) regime: a scoping choice, testing the settings the claim is
-about---capable self-hosted readers.
+\kvm{} defers answer-extraction to the reader at inference time, which draws a
+clear regime boundary we chart rather than hide. Verbatim selection wins when the
+answer is an \emph{exact, objective span buried in dense history} and the history
+either overflows the window or drowns the reader in distractors---the setting of
+AMA-Bench and, on dialogue, LOCOMO. It does not dominate everywhere: when the
+whole history \emph{fits} the window and the reader can exploit it, full context
+can win (LongMemEval-S at 128k, $+6.8\pp$ at $4.5\times$ the budget); when the
+reader is \emph{weak} and the answers are tiny isolated facts, systems that
+extract atomic facts at construction time can present an easier context. Both
+crossovers are in our results (\S\ref{sec:lme}), and both are about reader
+capacity and history length, not retrieval---on LongMemEval-S only $9\%$ of the routed
+arm's answerable misses are selection failures (\S\ref{sec:lme}).
 
-Third, \emph{once routing is strong, the reader is the residual bottleneck---and a
-different answer-production paradigm owns one domain}. On AMA-Bench
-\textsc{Software}, selection achieves $100\%$ recall of the asked steps, yet
-AMA-Agent leads by $+17\pp$. The dissection in \S\ref{sec:ama} eliminates
-retrieval, tool access, output format, and prompted iteration in turn; what
-our reader lacks is the \emph{computational} step---code executed over the raw
-trajectory to compute counts, diffs, and aggregations---plus AMA-Agent's
-construction-time causal index. That is a genuinely complementary design, not
-a retrieval gap, and our ablations indicate it cannot be absorbed by bolting
-machinery onto a single-pass reader.
+The two pillars have distinct boundaries. The \emph{KV} pillar's strongest
+form---position-preserving sub-selection of arbitrary spans---needs a self-hosted
+reader; hosted APIs expose only contiguous-prefix prompt-caching, which our
+prefix-friendly layout still benefits from but which cannot gather arbitrary
+spans. We therefore report the KV serving as a scoped prototype (\S\ref{sec:eff}; its
+serving regimes and their trajectory-length limits are in Table~\ref{tab:modes}),
+and report LongMemEval-S only in the strong-reader (Qwen3-32B) regime---a scoping
+choice, testing the settings the claim is about.
 
-Fourth, \emph{verbatim storage has governance costs}. Unlike lossy construction,
-the store retains raw history: PII persists verbatim and must be handled by
+The \emph{select} pillar's boundary is a \emph{coverage} ceiling, visible in one
+domain. On AMA-Bench \textsc{Software}, selection achieves $100\%$ recall of the
+\emph{named} steps yet AMA-Agent leads by $+17\pp$; the dissection in
+Appendix~\ref{app:swmech} eliminates retrieval, tool access,
+output format, and prompted iteration, and localizes the residual to
+\emph{temporal-scan} questions whose answer step is unnamed and must be proven
+extremal over the whole trajectory---so even supplied verbatim it caps a reader at
+$\sim\!0.12$. Verifying an extremum needs the entire $60$--$100$k-token trajectory,
+which AMA-Agent's construction-time state summary covers and a fixed retrieval
+budget cannot. That is genuinely complementary, and our ablations indicate it
+cannot be absorbed by bolting machinery onto a single-pass reader.
+
+Finally, verbatim storage carries governance costs, as does any system that also keeps the raw history---which many constructed memories do.
+The store retains raw history: PII persists verbatim and must be handled by
 policy outside the memory (encryption at rest, retention windows, write-time
-injection scanning---verbatim text stored is verbatim text replayed to the
-reader). Deletion semantics differ by layer. In the \emph{text} substrate,
-dropping a turn's segment is exact: the next assembly simply no longer contains
-it, with no derived summaries or graph edges to chase down. In the \emph{KV}
-layer it is not: cached keys/values are \emph{contextualized}, so the KV of
-tokens \emph{after} an erased turn was computed while attending to it, and exact
-erasure requires invalidating or recomputing the downstream blocks (bounded, in
-our per-episode caches, by the episode length). We measured whether that
-residue is \emph{extractable}: plant a secret credential at one step, erase
-that step, and serve only later steps---either as KV gathered from the
-full-trajectory prefill (carryover present) or as a compact re-prefill of the
-same selected text (the secret information-theoretically absent). Asked
-directly for the secret (Qwen3-8B, greedy, $40$ trials per condition), the
-gathered-KV arm emitted it in $0/120$ trials at gap distances of $1/3/10$
-steps, and the secret's first-token log-probability sat at the re-prefill
-arm's noise floor ($\approx\!-31$ nats, within $1.1$ nats of an arm that never
-saw the secret); a positive control that restates the secret in a
-\emph{selected} step leaks in both arms ($120/120$ vs.\ $83/120$), so the
-probe is sensitive. In this non-adversarial probe, carryover that is
-measurable at the logit level did not surface erased content in
-generation---but we still treat exact KV-layer erasure as requiring downstream
-invalidation, make no claim under adversarial extraction, and have not
-evaluated redaction pipelines.
+scanning). Deletion semantics differ by layer. In the \emph{text} substrate,
+dropping a turn is exact---the next assembly simply omits it. In the \emph{KV}
+layer it is not: cached keys/values are contextualized, so the KV of tokens
+\emph{after} an erased turn was computed while attending to it, and exact erasure
+requires invalidating or recomputing the downstream blocks (bounded, in our
+per-episode caches, by the episode length), or learned steering states that localize
+the edit without a full recompute~\citep{kveraser}. We measured whether that residue is
+\emph{extractable}: planting a secret at one step, erasing it, and serving only
+later steps, the gathered-KV arm emitted the secret in $0/120$ trials and its
+first-token log-probability sat at the noise floor of an arm that never saw it
+($\approx\!-31$ nats), while a positive control leaks ($120/120$)---so the
+carryover is measurable at the logit level but did not surface erased content in
+generation; a functional-erasure probe (\S\ref{sec:oow}) shows the same for state, not
+just secrecy---with a deleted value's rows removed, generation matches an oracle that
+never saw it ($0/96$). We still treat exact KV-layer erasure as requiring downstream
+invalidation, make no claim under adversarial extraction, and have not evaluated
+redaction pipelines.
+
+The out-of-window study (\S\ref{sec:oow}) carries its own scope. Its conditioner and
+geometry dials and fresh-selector comparisons are 8B-only ($n{=}824$) and presumed, not
+shown, to transfer to 32B (the evidence-matching audit, the harvest cell, and the skill
+block do replicate at 32B and on LOCOMO, and the harvest cell also on a Llama
+backbone); the non-inferiority margin was
+not pre-registered; the within-window 32B edge has a clustered CI touching zero; results
+beyond those replications cover one model family (Qwen3) and uncompacted
+position-preserving stores whose
+per-token storage economics we do not measure; and end-to-end latency inverts for long
+answers, so the cache path claims reduced TTFT only.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
 For a long-horizon agent whose answers are exact, objective, and buried in a
 dense trajectory---and whose history overflows the window or drowns the reader
-in distractors---the right memory operation is to \emph{construct indices, not
-answer payloads}: keep the raw history as reusable KV, index and scaffold it
-cheaply, and rehydrate verbatim the spans a query needs. When the history fits
-and the reader can exploit it, full context can win; when the reader is weak
-and the facts are tiny, construction can win; we state both boundaries. Within
-its regime, a small framework built on this principle leads our runs of
-AMA-Bench (submitted for official verification), is competitive with dedicated
+in distractors---the right memory operation is to \emph{deliver evidence
+faithfully}: construct indices, not answer payloads. \kvm{} keeps the raw
+history as reusable KV, indexes and scaffolds it cheaply, selects the spans a
+query needs, and serves them verbatim---within the window, from their cached KV,
+a carrier computationally faithful to the model's own full-prefill reading and
+accuracy-equivalent to re-encoded text at lower first-token cost. When the
+history fits and the reader can exploit
+it, full context can win; when the reader is weak and the facts are tiny,
+construction can win; we state both boundaries. Within its regime, a small
+framework built on this principle leads our runs of AMA-Bench (submitted and
+leaderboard-verified as the top entry, \#1 as of 2026-07-15), is competitive with dedicated
 dialogue-memory systems on LOCOMO, and traces the selection-vs-full-context
-crossover on LongMemEval-S, with the win driven by payload fidelity rather
-than router sophistication, reader-side effects measured and reported
-separately, and the cost amortized by KV reuse.
-The recipe is simple enough to fork, and we offer it, with configurations and
-predictions released, as a reproducible baseline that centers payload fidelity
+crossover on LongMemEval-S---with the win driven by payload fidelity rather than
+router sophistication, the reader treated as a separable axis whose answering
+protocol the memory can itself serve, and the cost amortized by KV reuse.
+Beyond the window the same principle survives in a weakened, priced form: stores must be
+written with a conditioning that matches how they will be served---the true opening, at
+its true position---and served lean with a small fresh tail; what cannot be bought back
+at any serving budget is the joint re-encoding a strong reader performs when it re-reads.
+And where the agent's own rollout cache survives, even the write is unnecessary: the
+memory harvested from that cache, with the answering protocol riding along as a rotated
+skill block, ties the deployed text pipeline on the full official harness.
+The recipe is simple enough to fork, and we release it, with configurations and
+predictions included, as a reproducible baseline that centers payload fidelity
 over memory construction.
 
 \section*{Reproducibility statement}
@@ -1337,6 +1551,73 @@ disclosed and ablated in \S\ref{sec:analysis}.
 \bibliography{kvmemory_refs}
 
 \appendix
+\section{Protocol ledger: every headline number, its pipeline, and its batch}
+\label{app:ledger}
+
+The paper reports numbers from \emph{four} distinct pipelines (deployed text,
+within-window KV gather, out-of-window stores, mixed deployment) and several
+same-batch subsets. Table~\ref{tab:ledger} maps each headline number to its exact
+protocol so that no cross-pipeline comparison can be made by accident; the notes
+below resolve the specific pairings a careful reader will ask about.
+
+\begin{table}[h]
+\centering
+\caption{Ledger of headline numbers. ``Text'' = deployed text pipeline
+(\S\ref{sec:method}); ``cell'' = the out-of-window serving-cell protocol (fixed-$K$
+retrieval, no overview, official default answer prompt, official judge); reader is
+Qwen3-32B unless stated. CIs where shown are episode-clustered.}
+\label{tab:ledger}
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{llllll}
+\toprule
+Number & What & Pipeline & Answer prompt & $n$ (clusters) & Run tag / locus \\
+\midrule
+$0.6478$ & submitted entry, leaderboard \#1 (as of 07-15) & text & structured & $2496$ ($208$) & FLSA$+$B; Tab.~\ref{tab:ama} \\
+$0.6466$ & deployed router$+$pin, local run; lexical$+$pin, run separately, scores the same & text & structured & $2496$ ($208$) & RESTRF3, Tab.~\ref{tab:factorial}; RESTRLEXF, App.~\ref{app:routeraudit} \\
+$0.6410$ & model-pick hybrid base $+$ pin (audit) & text & structured & $2496$ ($208$) & App.~\ref{app:routeraudit} \\
+$0.5954$ & memory-only headline (CI $[.570,.620]$) & text & default & $2496$ ($208$) & FPA$+$B \\
+$0.5601$/$0.6154$ & factorial lexical cells & text & default/struct. & $2496$ ($208$) & R0/R1 \\
+$0.6290$/$0.6418$ & tab:\ref{tab:family} same-day anchors & text & structured & $1248$ ($104$) & two half-set batches \\
+$0.5577$ & no-memory recency-truncated arm & text & structured & $1248$ ($104$) & Tab.~\ref{tab:family} \\
+$.397/.265/.360$ & serving cell, $K{=}12$ & cell & official default & $2431$ ($208$) & Tab.~\ref{tab:oow} \\
+$.368/.360$ & serving cell, $K{=}5$ & cell & official default & $2403$ ($208$) & Tab.~\ref{tab:oow} \\
+$.3965$ & deployment map (gsk) & mixed & protocol-as-skill & $2431$ paired & \S\ref{sec:oow} \\
+$.2209$ etc. & mechanism subset dials & cell (8B) & stripped, 64 tok & $824$ ($103$) & \S\ref{sec:oow} \\
+$17.3/17.4\%$ & KV-vs-text end-to-end parity & gather (8B) & stripped & $896$ ($112$) & \S\ref{sec:kvserve} \\
+LOCOMO $.47$--$.64$ & KV cell, sessions as events & cell (8B/32B) & short-answer & $1150$ ($10$) & \S\ref{sec:oow} \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\paragraph{Notes.}
+(a)~\emph{The champion family.} $0.6478$ is the submitted entry as self-scored and
+subsequently leaderboard-verified. Re-runs of the submitted configuration (deployed
+router $+$ step-pin) span $0.6454$--$0.6538$, consistent with the stated
+$\pm0.5\pp$ same-day replicate noise plus cross-day drift, and $0.6410$ after a serving-stack
+upgrade; one re-run scores $0.6466$. The released lexical$+$pin default, run separately,
+also scores $0.6466$, the number we quote for it. The submitted entry's base router fused a
+model-pick signal that the audit (App.~\ref{app:routeraudit}) finds score-neutral;
+the $+1.4\pp$ attributed to it in early development was measured before that audit
+and is superseded by it.
+(b)~\emph{Serving-cell denominators.} $n{=}2431$ at $K{=}12$ (and $2403$ at $K{=}5$)
+is the three-arm \emph{judged intersection}: the remaining questions of the
+$2{,}496$ belong to episodes lost to out-of-memory failures in at least one arm's
+serving run and are excluded from \emph{all} arms symmetrically; the deployment-map
+evaluation pairs against exactly the same $2431$-question set.
+(c)~\emph{The serving cell is not the deployed pipeline.} It uses fixed-$K$
+retrieval, no overview, and the official default answer prompt, so its text arm
+($.397$) is a routed-text \emph{carrier} baseline, some $25\pp$ below the deployed
+pipeline of Table~\ref{tab:ama}---the two must never be compared across protocols.
+(d)~\emph{Half-set anchors.} Table~\ref{tab:family} reports two same-day anchor
+batches ($0.6290$/$0.6418$); every $\Delta$ in that table is computed within its own
+batch, never across.
+(e)~\emph{Mechanism subset.} All \S\ref{sec:oow} dial experiments run on a fixed
+$103$-episode subset ($n{=}824$) with a stripped 8B harness; these episodes are
+contained in the full official set, so full-set evaluations that follow subset-driven
+development are labeled accordingly (\S\ref{sec:setup}).
+
 \section{The three answer instructions, verbatim}
 \label{app:instr}
 
@@ -1348,7 +1629,7 @@ For auditability we reproduce all three instructions exactly as run.
 Provide a direct and concise answer.
 \end{quote}
 
-\paragraph{Structured (ours; $+5.1$--$5.8\pp$ at either router).}
+\paragraph{Structured (ours; $+5.1$--$5.5\pp$ at either router).}
 \begin{quote}\small
 Answer using ONLY the context above. Break the request into sub-questions if
 needed, answer each citing exact evidence (values, step indices, outcomes)
@@ -1377,8 +1658,8 @@ emphasis it shares with a losing variant.
 \section{The reader-side falsification map}
 \label{app:readermap}
 
-This appendix carries the mechanism-level evidence behind the saturation law
-of \S\ref{sec:analysis}; Table~\ref{tab:reader} tabulates all fourteen
+This appendix carries the mechanism-level evidence behind the reader-saturation
+finding of \S\ref{sec:analysis}; Table~\ref{tab:reader} tabulates all fourteen
 mechanisms. On the flagship memory we tested: letting the model compress the
 selected evidence before answering; a sufficiency gate fused into the answer
 prompt that can trigger re-retrieval; the same gate as a separate call; a
@@ -1389,7 +1670,7 @@ exact: the fused gate's $-1.6\pp$ splits into $-2.6\pp$ from the escape
 clause perturbing the answer prompt and $+0.4\pp$ from the re-retrieval
 action itself.
 
-Four further probes sharpen the law.
+Four further probes sharpen this picture.
 \emph{First, the instruction's content cannot be pre-computed.} If a
 one-sentence instruction that elicits sub-question reasoning is worth
 $+5\pp$, can the memory service cache that reasoning---produce an evidence
@@ -1450,6 +1731,21 @@ $-9.5\pp$ gap), a separate sufficiency gate fires on $19\%$ of questions yet
 recovers nothing ($-0.4\pp$)---the budget cut removes the overview, and
 fetching more individual steps does not restore breadth.
 
+\paragraph{The trust relay: repair versus override.}
+The one composed mechanism that meets the single structured pass reuses the memory
+service's own structured analysis: the reader is told to verify that analysis and
+answer \emph{in full}, reaching $0.663$ on the full $2{,}496$-QA set ($+1.7$
+$[+0.1,+3.3]$ over its same-batch structured anchor). It retains the structured
+pass's wins and \emph{repairs} part of what that pass breaks; the residual losses
+are independent re-adjudications, not compression ($78$--$95\%$ are overrides
+despite the trust instruction), and the same re-judgment buys the repairs---a
+full-set audit prices the exchange at $6.7\%$ of questions repaired against $4.5\%$
+destroyed. Requiring the reader to \emph{name the contradicting step} before
+overriding raises override precision to $0.672$ (vs $0.645$; $0.675$ on the half,
+$+4.0$ $[+1.5,+6.5]$)---the strongest configuration we measure, indifferent to the
+router base. It sits above the submitted single-pass system but is an internal
+exploration, not part of the leaderboard entry.
+
 \begin{table}[h]
 \centering
 \caption{Reader-side mechanisms over a \emph{fixed} flagship memory (AMA-Bench,
@@ -1462,7 +1758,7 @@ against their own control. The protocol rows are measured against same-batch
 \emph{default} anchors on two independent full-set runs (\S the serveable-lever
 paragraph). Only re-retrieval under a weak router helps---the
 one case where the mechanism supplies evidence the selected context is
-missing; the served protocol is the constructive exception the law predicts.}
+missing; the served protocol is the constructive exception this pattern predicts.}
 \label{tab:reader}
 \small
 \begin{tabular}{lc}
@@ -1492,5 +1788,316 @@ Re-retrieval under a \emph{weak} (lexical) router & $+1.3\pp$ \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+
+\section{Memory assembly: per-domain selection-vs-overview split}
+\label{app:assembly}
+
+\begin{table}[h]
+\centering
+\caption{\textbf{Memory assembly is second-order at fixed budget.} Crossing routed
+verbatim \emph{selection} $\times$ a one-line \emph{gist overview} of the non-selected
+turns, same batch (AMA-Bench \texttt{openend}, $n{=}2496$, Qwen3-32B, structured reader,
+lexical router, 22k budget). All four cells lie within $0.9\pp$ and are pairwise
+indistinguishable (paired McNemar $p>0.28$). The overview is a navigation scaffold:
+adding it to recency moves accuracy by $-0.4\pp$ (n.s.), with or without selection. The
+routed appendix adds little \emph{at this weak router}; its value grows with selection
+quality ($-4.3\pp$ to remove at the deployed router$+$pin, Table~\ref{tab:family}).}
+\label{tab:assembly}
+\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{cccc}
+\toprule
+Routed verbatim selection & Gist overview & Overall & \textsc{Software} \\
+\midrule
+--          & --          & $0.610$ & $0.454$ \\
+--          & \checkmark  & $0.604$ & $0.438$ \\
+\checkmark  & --          & $0.611$ & $0.482$ \\
+\checkmark  & \checkmark  & $0.613$ & $0.479$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The $2\times2$ of Table~\ref{tab:assembly} is near-neutral \emph{on average}, but the two
+non-trivial arms trade domains rather than tie everywhere. Table~\ref{tab:assemblydom}
+breaks the selection-only ($\mathrm{retrieval}$) minus overview-only ($\mathrm{gist}$)
+contrast by domain (both at the lexical router, structured reader, same batch,
+$n{=}2496$). Routed verbatim selection helps the retrieval-heavy domains---\textsc{Software}
+($+4.4\pp$), Web ($+3.2\pp$), \textsc{Text2SQL} ($+2.0\pp$)---where the answer lives in a
+few locatable steps and a one-line gist of them loses the needed detail. It \emph{loses}
+on the holistic domains, Game ($-5.3\pp$) and OpenWorld ($-2.5\pp$), where the question
+ranges over the whole trajectory and a complete (if lossy) overview beats a handful of
+verbatim steps. This is the same regime axis as the router and Limitations analyses:
+selection wins when the evidence is addressable, a broad overview wins when it is diffuse.
+The deployed system keeps both precisely because the win is domain-dependent.
+
+\begin{table}[h]
+\centering
+\caption{Selection-only minus overview-only ($\mathrm{retrieval}-\mathrm{gist}$) by
+domain (lexical router, structured reader, same batch, $n{=}2496$). Positive $=$ routed
+verbatim selection beats a full gist overview.}
+\label{tab:assemblydom}
+\small
+\begin{tabular}{lccc}
+\toprule
+Domain & Overview-only & Selection-only & $\Delta$ \\
+\midrule
+\textsc{Software}   & $0.438$ & $0.482$ & $+4.4\pp$ \\
+Web                 & $0.661$ & $0.694$ & $+3.2\pp$ \\
+\textsc{Text2SQL}   & $0.652$ & $0.672$ & $+2.0\pp$ \\
+Embodied\,AI        & $0.626$ & $0.629$ & $+0.3\pp$ \\
+OpenWorld\,QA       & $0.658$ & $0.633$ & $-2.5\pp$ \\
+Game                & $0.589$ & $0.536$ & $-5.3\pp$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Software temporal-scan: a coverage ceiling, isolated}
+\label{app:swmech}
+\textsc{Software} is the one domain \kvm{} trails (Table~\ref{tab:ama}), and its
+failures concentrate in \emph{temporal-scan} questions---``which step \emph{first}
+/ \emph{last} did X''---which are $19\%$ of the domain and where \emph{every} memory
+configuration scores $\sim\!0.15$ (routed selection, plain recency, and a full
+gist overview alike; the overview is in fact worst, $0.06$, because one-line gists
+lose the detail needed to pin an occurrence). This is not a failure on \emph{named}
+evidence: when a question names its step, selection recalls it ($100\%$ of asked
+steps) and adding deterministic lookup tools over the lossless store leaves accuracy
+unchanged ($+0.7\pp$)---the residual is a different kind of question. To separate
+retrieval from reasoning
+we hold the reader fixed and vary only the evidence, on the $74$ temporal-scan
+questions whose gold answer names a clean step (Table~\ref{tab:swmech}): the
+deployed \emph{selection}; selection \emph{plus the gold step} verbatim; and a
+complete one-line \emph{index of every step} plus the gold step verbatim. Two facts
+fix the cause. First, the answer-bearing step reaches the reader only $5.4\%$ of the
+time under budget-limited selection---identical at both reader sizes, because it is
+a property of the router, not the reader. Second, \emph{supplying}
+that step verbatim lifts accuracy only to $\sim\!0.12$ on \emph{both} an $8$B and a
+$32$B reader, and a complete (lossy) index does not help further. So retrieval is
+not the bottleneck and neither is reader capacity: answering ``which step first''
+requires confirming that \emph{no other} step qualifies---the entire
+$60$--$100$k-token trajectory (median $94$ steps) held verbatim, which exceeds any
+fixed budget. The residual is a coverage/verification ceiling, consistent with
+AMA-Agent's edge here coming from retaining more of the raw trajectory rather than
+from executable reasoning. (Absolute levels here sit below the deployed
+\textsc{Software} numbers of Table~\ref{tab:ama} because this is the pure
+clean-gold temporal-scan subset under a plain answer prompt; the cross-condition
+contrast, not the level, is the finding.)
+
+\begin{table}[h]
+\centering
+\caption{Software temporal-scan mechanism: reader fixed, evidence varied, $74$
+first/last questions with a clean gold step. Supplying the gold step verbatim caps
+at $\sim\!0.12$ on both readers---retrieval is not the bottleneck; verifying an
+extremum needs the whole trajectory.}
+\label{tab:swmech}
+\small
+\begin{tabular}{lcc}
+\toprule
+Evidence given to the (fixed) reader & Qwen3-8B & Qwen3-32B \\
+\midrule
+Deployed selection (recent $+$ routed) & $0.014$ & $0.081$ \\
+\quad $+$ gold step verbatim & $0.122$ & $0.122$ \\
+\quad $+$ complete 1-line index $+$ gold verbatim & $0.162$ & $0.135$ \\
+\midrule
+gold step already present in the selection & \multicolumn{2}{c}{$5.4\%$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{The deployed router: a post-hoc audit}
+\label{app:routeraudit}
+
+Preparing the release we found that the ``hybrid'' router in the deployed
+configuration fuses lexical overlap with a second \emph{model-pick} signal (a short
+LLM call that names likely-relevant turns)---\emph{not} the dense-embedding router
+used on LOCOMO and LongMemEval-S. Run on a thinking model, its $32$-token pick calls
+usually return truncated stubs, so we audited whether the signal contributes at all.
+
+It does not. A same-day paired audit on the half set put a plain lexical base
+\emph{ahead} ($+2.7\pp$ $[+0.5,+5.0]$); a pre-registered full-set replication is
+score-neutral ($-0.8\pp$ $[-2.3,+0.8]$, the two bases trading domains; the lexical run scores $0.6466$).
+A further full-set run of the model-pick hybrid base $+$ step-pin, made a day later on an
+upgraded serving stack and therefore not paired with these, scores $0.6410$, $0.56\pp$ below
+the lexical run and within the run-to-run spread of about $1\pp$.
+No reported \emph{difference} depends on the signal (memory configuration is
+held constant within each same-batch table). We therefore name, recommend, and
+release the reproducible \textbf{lexical $+$ step-pin} default: identical accuracy,
+one fewer LLM call per retrieval, no malformed pick calls. This sharpens the
+conclusion of \S\ref{sec:analysis}---on AMA-Bench the substrate and the structural
+pin carry the routing, not a semantic scorer---and it is why we release
+``lexical$+$pin'' as the default, while the tables report the deployed router the runs used.
+
+\section{Additional AMA-Bench robustness and ablations}
+\label{app:amaextra}
+
+Table~\ref{tab:ablation} collects the three memory-side deltas of \S\ref{sec:analysis}
+side by side, with the reader-side answer instruction listed for scale (and reported
+separately because it is \emph{not} a memory effect).
+
+\begin{table}[h]
+\centering
+\caption{AMA-Bench ablation deltas (full 2{,}496 QA, same-batch). The verbatim
+substrate carries the result; semantic and structural routing refinements are
+second-order; the reader-side answer instruction---listed for scale, and reported
+separately because it is \emph{not} a memory effect---is larger than both
+combined.}
+\label{tab:ablation}
+\small
+\begin{tabular}{lc}
+\toprule
+Component & $\Delta$ Avg.\ accuracy \\
+\midrule
+Substrate: raw spans vs.\ constructed memory (cross-system, confounded) & $+10$ to $+35\pp$ \\
+\quad\emph{controlled} (same oracle evidence; Fig.~\ref{fig:payload}) & $+8$ to $+10\pp$ \\
+Fused second router signal (superseded by the post-hoc audit) & $+1.4\pp$ \\
+Structural step-pin ($+2.5\pp$ on the $73\%$ cited-step questions, $+0.0$ else) & $+1.7\pp$ \\
+\midrule
+\emph{Reader-side, for scale: structured answer instruction} & $+5.1$--$5.5\pp$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Is the step-pin result a step-citing artifact?}
+Largely not, and we cross-check with a second judge. Controlling on the same
+Qwen3-32B reader and judge over $910$ step-citing questions, routing the question
+with its step \emph{number deleted} costs lexical selection only $-0.2\pp$
+($28.6\to28.4$)---so selection locates the evidence by content, not by the
+index---and a different-family judge (Llama-3.1-8B) re-scoring the same answers
+agrees ($-1.0\pp$), so this is not a judge artifact. The cited step is informative
+\emph{when present}: pinning it alone reaches $38.5\%$ vs $28.6\%$ for lexical
+top-$5$ (and $40.1$ vs $36.0$ under the Llama judge---ordering preserved), because
+it is the correct evidence, not a numeric shortcut. Corrupting the resolved address
+completes the picture: shifting every pin three steps off its target leaves accuracy
+unchanged ($0.630$ vs $0.629$, same batch)---the near-miss keeps the referenced
+neighborhood in context and content routing independently recovers the exact
+step---while replacing every pin with a far-random wrong step costs $-1.8\pp$
+($0.611$), roughly the pin's own contribution forgone, with content routing holding
+the floor. Structural address resolution is thus a cheap redundant guarantee that
+degrades gracefully under corruption, not a fragile dependency. We are careful about
+one boundary: non-step questions remain answerable but are genuinely harder, and by
+how much is judge-dependent (within $-2.4\pp$ of step-citing under the Qwen judge,
+but $-14.8\pp$ under Llama), so we claim robustness to the step \emph{cue}---not
+that non-step questions are equally easy.
+
+\paragraph{Selected-context budget sweep.}
+Within the \emph{routed} context, more is monotonically better up to the
+window-forced cap: sweeping the assembled-context budget at fixed routing and
+reader gives $0.550$ (6k tokens) $\to$ $0.624$ (14k) $\to$ $0.644$ (22k) on a
+1{,}248-QA half (same batch; same-day replicate noise $0.5\pp$). ``Context rot''
+does not bite \emph{selected} context at these scales---it bites unselected history
+(the $0.52$ no-memory row of Table~\ref{tab:ama}; \textsc{OpenWorld}, where
+recency-truncated full context scores $0.474$ vs routed $0.629$; and the same-batch
+control of Table~\ref{tab:family}, where the raw trajectory recency-truncated to the
+\emph{same} 22k budget costs $-8.4\pp$, a larger loss than any payload
+degradation)---so the rule is: select first, then fill the window with what was
+selected. The recency$+$gist overview earns its tokens (cutting to 6k costs
+$-27\pp$ on \textsc{Embodied} and $-23\pp$ on \textsc{Web}); the one exception is
+\textsc{Text2SQL}, which \emph{prefers} compact context ($+1$--$3\pp$ at smaller
+budgets), pointing to budget-adaptive routing as an open lever. The converse
+ablation removes query-time selection instead: answering from the recency
+$+$gist overview \emph{alone} (no verbatim appendix) costs $-4.3\pp$ ($0.5865$ vs
+$0.6290$, same-day)---notably still above every constructed-memory system (the
+\emph{extractive} overview already beats generative construction), but the routed
+verbatim appendix clearly earns its keep.
+
+\section{KV-serving correctness}
+\label{app:kvcorrect}
+
+This appendix substantiates the identity used in \S\ref{sec:method},
+\S\ref{sec:analysis}, and \S\ref{sec:eff}: position-preserving KV gather
+reproduces the full-prefill-then-mask oracle, so serving the selected spans from
+the cache is the same computation as reading them inside the full trajectory---not
+a re-prefill of them in isolation. Unless noted, the reader is a frozen dense
+Qwen3-8B.
+
+\paragraph{The mask-oracle gate.} The gathered KV is exactly the frozen model's
+key/value for the selected turns at their original positions, so sub-selection
+reproduces the full-prefill-then-mask oracle rather than a re-prefill of the
+selected text alone (whose kept tokens would never have attended the dropped
+context---a difference we measure as a $\sim\!13.5$-logit gap to a compact
+re-prefill, $\sim\!20\times$ the residual below). Against the mask oracle the
+first decoded token matches on every query: $100\%$ first-token argmax on
+synthetic probes and on $144$ real AMA-Bench QA ($24/24$ episodes), at a
+$\sim\!0.7$ residual logit gap that is the usual bf16 split-vs-joint-prefill
+non-determinism.
+
+\paragraph{Sequence-level, not just first-token.} Greedily decoding $256$ tokens,
+sub-selection and the mask oracle emit the \emph{identical} full sequence on every
+query at both a $3.2$k- and a $27$k-token trajectory, at first-position logit-KL
+$\le\!0.011$ to the oracle (median $0$; versus $\sim\!0.28$ to a compact
+re-prefill). The oracle's top-1-minus-top-2 answer margin averages $7.7$ (min
+$0.25$), so these are not knife-edge decisions.
+
+\paragraph{Robustness to kernel and RoPE extension.} The match holds under an
+\emph{eager} attention kernel as well as SDPA ($6/6$), and under a $4\times$ YaRN
+RoPE extension (first-position logit-KL $\le\!0.008$, argmax $5$--$6/6$)---as
+expected, since position-preserving gather is exact for RoPE regardless of the
+base frequency.
+
+\paragraph{End-to-end parity, compact layout.} On real AMA under a consistent
+reader/judge, KV sub-selection and the deployed text pipeline are tied within
+noise ($-0.7\pp$, one QA of $144$). A stratified run confirms this at $n{=}576$ QA
+over $72$ episodes across five domains (episodes $\le26$k tokens): the gate holds
+at $24/24$, and the two paths remain accuracy-tied with KV marginally ahead under
+both the same-model judge ($0.175$ vs $0.165$, $+1.0\pp$) and an independent
+Qwen3-32B re-grade ($+0.7\pp$), at $81\%$ first-token agreement between the two
+\emph{different} computations.
+
+\paragraph{End-to-end parity, deployed layout.} The same holds when the KV arm
+serves the \emph{deployed} layout: the recency$+$gist overview is prefilled once
+per episode as a post-trajectory block (fixed positions, per-episode cacheable),
+the selected spans are gathered from the trajectory cache, and only the question
+is fresh. On a $576$-QA re-run ($\le24$k, four domains) the gate is again $24/24$
+and the arms are tied ($0.222$ vs $0.240$, $-1.7\pp$, $\pm5\pp$ binomial band;
+first-token agreement $90\%$). The two arms differ in block \emph{order}, so this
+is parity between the deployed text pipeline and its cache-native equivalent, not
+a byte-identical prompt; notably the overview lifts \emph{both} arms by $\sim\!5$
+points, so the primitive covers the layout the headline numbers use.
+
+\paragraph{Cross-backbone.} Re-running the harness on
+\textbf{Llama-3.1-8B-Instruct}---a different architecture and vendor---reproduces
+the guarantees: first-token argmax $6/6$ across $48$--$200$-step trajectories
+(residual $|\Delta\text{logit}|\le0.35$, tighter than Qwen's $\sim\!0.7$) and
+end-to-end match with the text re-prefill on all $6$ probes.
+
+
+\section{Judge robustness}
+\label{app:judge}
+
+Our AMA-Bench reader is Qwen3-32B and the official harness scores it with a
+Qwen3-32B judge, which raises the natural worry that a same-family judge inflates
+the score. Two checks bound it.
+
+First, the headline reproduces. A faithful re-run of the full official harness
+scores $0.643$ under the Qwen3-32B judge ($95\%$ bootstrap CI $[0.623,0.662]$ over
+the $2{,}496$ QA), within noise of the leaderboard-verified $0.6478$.
+
+Second, the score survives a change of judge \emph{family}. Re-judging that run's
+\emph{identical} predictions with an independent Llama-3.1-70B judge yields
+$0.677$ $[0.658,0.695]$ at $84\%$ item-level agreement---higher than the Qwen
+judge, so on our predictions the Qwen3-32B judge is the \emph{stricter} of the
+two, not the more lenient. This is consistent with the official AMA-Bench
+documentation, which reports a leniency bias for Qwen3-32B as a judge in
+\emph{absolute} terms: because every leaderboard system is scored by that same
+judge, our \emph{comparisons} sit on equal footing regardless of the absolute
+level. We treat the cross-family re-judge as supportive rather than
+definitive---it removes the same-family-inflation worry for our predictions
+without our needing the absolute number to be judge-invariant.
+
+\section{LOCOMO: protocol notes}
+\label{app:benchcaveats}
+We position LOCOMO as an \emph{out-of-domain} check rather than a headline claim, and
+record the caveats here. Under the public gpt-4o-mini judge, full-history prompting
+scores $0.756$---above \kvm{}'s $0.704$---while under a consistent Qwen3-32B judge the
+comparison flips ($0.716 > 0.661$); the two judges disagree on exactly this
+full-vs-selection comparison, which is why we report both and treat the
+consistent-judge result as the cleaner one (a full-history prompt is not an oracle: it
+carries the distractors that hurt the reader). The benchmark also has known protocol
+variants (QA subsets, judge choices), and newer file- and tool-based systems report
+stronger numbers under their own setups (e.g.\ filesystem-backed agents at
+$0.740$~\citep{lettafiles} and $0.744$~\citep{pamlocomo}). The signal we draw is
+narrower and survives these caveats: under one fixed protocol, compact verbatim
+selection is competitive with dedicated dialogue-memory systems and, under a
+consistent judge, beats prompting the full history.
 
 \end{document}

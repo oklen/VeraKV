@@ -8,7 +8,7 @@
 """
 import json, re, random, os, collections
 
-BASE = "/home/tiger/"
+BASE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results") + os.sep
 
 def norm(s):
     return re.sub(r"\s+", " ", (s or "")).strip()

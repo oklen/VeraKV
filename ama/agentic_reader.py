@@ -18,7 +18,7 @@ CODE_TIMEOUT = int(os.environ.get("AMA_AGENTIC_TIMEOUT", "8"))
 CTX_CHARS = int(os.environ.get("AMA_AGENTIC_CTXCHARS", "96000"))   # ~24k tokens
 COMP_TOK = int(os.environ.get("AMA_AGENTIC_COMP", "2048"))
 # worker /tmp is per-login-container (not shared) -> write debug to shared CephFS so it's readable.
-LOGBASE = os.environ.get("AMA_AGENTIC_LOG", "/tmp/sel")
+LOGBASE = os.environ.get("AMA_AGENTIC_LOG", "./out/sel")
 
 def _cap(c):
     return c if len(c) <= CTX_CHARS else (c[:CTX_CHARS] + "\n...[evidence truncated]")

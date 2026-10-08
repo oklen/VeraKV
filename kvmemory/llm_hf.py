@@ -32,10 +32,31 @@ def _iter_cache_kv(cache):
 
 
 class HFBackend:
-    def __init__(self, model_path: str | None = None, dtype=torch.bfloat16, max_ctx: int | None = None):
-        model_path = model_path or os.environ.get(
-            "SPRAG_MODEL_PATH", "/tmp/Qwen3-30B-A3B-Instruct-2507"
-        )
+    def __init__(self, model_path: str | None = None, dtype=None, max_ctx: int | None = None):
+        # SPRAG_DTYPE: env-gated like SPRAG_ATTN_IMPL, default UNCHANGED (bfloat16).
+        # Needed for Tesla V100 (sm70), which has no memory-efficient attention kernel for
+        # bfloat16 -- torch reports "Expected query, key and value to all be of dtype:
+        # {Half, Float}. Got BFloat16" and silently falls back to the O(n^2) math backend:
+        # measured 18.76 GB of extra memory for an 8k-token attention and OOM at 16k, versus
+        # 0.06 GB for fp16 through EFFICIENT_ATTENTION. So on sm70 fp16 is forced by the
+        # hardware, not chosen. It IS a numerics change on a paired estimand (harv splices KV
+        # from a long prefill, iso re-encodes in isolation; fp16 has a 5-bit exponent against
+        # bfloat16's 8), so any fp16 run must be declared and cross-checked, never silently
+        # substituted. Ampere and later keep bfloat16 by default.
+        if dtype is None:
+            _dt = (os.environ.get("SPRAG_DTYPE") or "bfloat16").lower()
+            dtype = {"bfloat16": torch.bfloat16, "bf16": torch.bfloat16,
+                     "float16": torch.float16, "fp16": torch.float16,
+                     "float32": torch.float32, "fp32": torch.float32}.get(_dt)
+            if dtype is None:
+                raise ValueError("SPRAG_DTYPE=%r not recognised (bfloat16|float16|float32)" % _dt)
+        self.dtype = dtype
+        model_path = model_path or os.environ.get("SPRAG_MODEL_PATH")
+        if not model_path:
+            raise RuntimeError(
+                "Set SPRAG_MODEL_PATH to a local HuggingFace model directory "
+                "(the paper uses Qwen3-8B, Ministral-3-8B, Gemma-4-12B, Llama-3.1-8B)."
+            )
         # context cap (truncation_side='left' drops OLD turns first); raise via SPRAG_MAX_CTX for the
         # big SOFTWARE/OPENWORLD episodes (Qwen3-A3B supports long context natively).
         max_ctx = max_ctx or int(os.environ.get("SPRAG_MAX_CTX", "30000"))
@@ -68,14 +89,31 @@ class HFBackend:
             except Exception:
                 pass
             _kw["config"] = _cfg
+        # SPRAG_DEVICE_MAP=auto shards a big model (e.g. 32B) across all visible GPUs; default
+        # {"":0} keeps the single-GPU placement the KV-gather path relies on.
+        _dm = os.environ.get("SPRAG_DEVICE_MAP")
+        _device_map = _dm if _dm else {"": 0}
+        def _load(cls):
+            def _fp(**extra):
+                try:
+                    return cls.from_pretrained(model_path, torch_dtype=dtype,
+                                               trust_remote_code=True, **_kw, **extra)
+                except TypeError:   # transformers 5.x renamed torch_dtype -> dtype
+                    return cls.from_pretrained(model_path, dtype=dtype,
+                                               trust_remote_code=True, **_kw, **extra)
+            try:
+                return _fp(device_map=_device_map).eval()
+            except (ValueError, ImportError):   # no `accelerate`: load on CPU then move
+                return _fp().to("cuda:0").eval()
+
         try:
-            self.model = AutoModelForCausalLM.from_pretrained(
-                model_path, torch_dtype=dtype, device_map={"": 0}, trust_remote_code=True, **_kw
-            ).eval()
-        except (ValueError, ImportError):   # no `accelerate` in this env: load on CPU then move
-            self.model = AutoModelForCausalLM.from_pretrained(
-                model_path, torch_dtype=dtype, trust_remote_code=True, **_kw
-            ).to("cuda:0").eval()
+            self.model = _load(AutoModelForCausalLM)
+        except (ValueError, KeyError):
+            # 2026 unified multimodal checkpoints (Qwen3_5/Gemma4Unified/Mistral3
+            # *ForConditionalGeneration) are not mapped under AutoModelForCausalLM;
+            # text-only usage through the wrapper is equivalent (vision paths idle).
+            from transformers import AutoModelForImageTextToText
+            self.model = _load(AutoModelForImageTextToText)
         self.max_ctx = max_ctx
         self.device = self.model.device
         gc = getattr(self.model, "generation_config", None)
@@ -217,7 +255,7 @@ class HFBackend:
             else (n * Lp + sum(self.count_tok(s) for s in suffixes)),
         }
 
-    # ---- KV sub-selection: real cache reuse for selected spans (IMPL_PLAN_B) ----
+    # ---- KV sub-selection: real cache reuse for selected spans ----
 
     @torch.no_grad()
     def _greedy_pos(self, cache: DynamicCache, kept_positions: torch.Tensor,

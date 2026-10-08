@@ -1,0 +1,1426 @@
+{
+  "cond": {
+    "selection": [
+      74,
+      1
+    ],
+    "sel+goldstep": [
+      74,
+      9
+    ],
+    "fullindex+gold": [
+      74,
+      12
+    ]
+  },
+  "gold_in_selection": 4,
+  "n": 74,
+  "rows": [
+    {
+      "ep": 141,
+      "G": 77,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 76"
+        ],
+        "sel+goldstep": [
+          1,
+          "step 77"
+        ],
+        "fullindex+gold": [
+          1,
+          "step 77"
+        ]
+      }
+    },
+    {
+      "ep": 141,
+      "G": 5,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step where the test results showed any failures was"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step where the test results showed any failures was"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step where the test results showed any failures was"
+        ]
+      }
+    },
+    {
+      "ep": 141,
+      "G": 76,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the successful resolution of the double quote escaping issue"
+        ],
+        "sel+goldstep": [
+          0,
+          "the successful resolution of the double quote escaping issue"
+        ],
+        "fullindex+gold": [
+          1,
+          "step 76 caused the successful resolution of the double quote"
+        ]
+      }
+    },
+    {
+      "ep": 142,
+      "G": 71,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 104"
+        ],
+        "sel+goldstep": [
+          1,
+          "step 71"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 49"
+        ]
+      }
+    },
+    {
+      "ep": 142,
+      "G": 132,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the test code was modified is step 133, w"
+        ],
+        "sel+goldstep": [
+          1,
+          "the last step when the test code was modified was step 132, "
+        ],
+        "fullindex+gold": [
+          0,
+          "at step 85, the last step when the test code was modified wa"
+        ]
+      }
+    },
+    {
+      "ep": 143,
+      "G": 28,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the step that caused the `--skip-checks` option to appear in"
+        ],
+        "sel+goldstep": [
+          0,
+          "the step that caused the `--skip-checks` option to appear in"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 33 caused the `--skip-checks` option to appear in the h"
+        ]
+      }
+    },
+    {
+      "ep": 143,
+      "G": 30,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the `basecommand` class structure was cha"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the `basecommand` class structure was cha"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the basecommand class structure was chang"
+        ]
+      }
+    },
+    {
+      "ep": 144,
+      "G": 59,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 20"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 20"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 17"
+        ]
+      }
+    },
+    {
+      "ep": 145,
+      "G": 95,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 39"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 94"
+        ],
+        "fullindex+gold": [
+          1,
+          "step 95"
+        ]
+      }
+    },
+    {
+      "ep": 145,
+      "G": 95,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "at step 95, the last step when the truncdate and trunctime m"
+        ],
+        "sel+goldstep": [
+          0,
+          "at step 95, the last step when the truncdate and trunctime m"
+        ],
+        "fullindex+gold": [
+          1,
+          "at step 95, the last step when the truncdate and trunctime m"
+        ]
+      }
+    },
+    {
+      "ep": 146,
+      "G": 50,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 15 caused the agent to identify that the issue was rela"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 31"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 15 caused the agent to identify that the issue was rela"
+        ]
+      }
+    },
+    {
+      "ep": 146,
+      "G": 54,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the query class's __setstate__ method was"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the query class's __setstate__ method was"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the query class's `__setstate__` method w"
+        ]
+      }
+    },
+    {
+      "ep": 146,
+      "G": 54,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 101 caused the agent to realize that the original test "
+        ],
+        "sel+goldstep": [
+          0,
+          "step 101 caused the agent to realize that the original test "
+        ],
+        "fullindex+gold": [
+          0,
+          "step 95 caused the agent to realize that the original test s"
+        ]
+      }
+    },
+    {
+      "ep": 147,
+      "G": 47,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 55 caused the password reset token validation behavior "
+        ],
+        "sel+goldstep": [
+          0,
+          "step 55, where the `_make_hash_value` method in `django/cont"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 32"
+        ]
+      }
+    },
+    {
+      "ep": 147,
+      "G": 49,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the token validation behavior changed fro"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the token validation behavior changed fro"
+        ],
+        "fullindex+gold": [
+          0,
+          "at step 59, the last step when the token validation behavior"
+        ]
+      }
+    },
+    {
+      "ep": 147,
+      "G": 64,
+      "gold_in_sel": 1,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the agent ran comprehensive tests to veri"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the agent ran comprehensive tests to veri"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the agent ran comprehensive tests to veri"
+        ]
+      }
+    },
+    {
+      "ep": 148,
+      "G": 48,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the step that caused the modelchoicefield error message temp"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 32"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 33"
+        ]
+      }
+    },
+    {
+      "ep": 148,
+      "G": 50,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the modelchoicefield's validationerror ca"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the modelchoicefield's validationerror ca"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the modelchoicefield's validationerror ca"
+        ]
+      }
+    },
+    {
+      "ep": 149,
+      "G": 8,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "none of the steps explicitly mention or indicate that the ag"
+        ],
+        "sel+goldstep": [
+          1,
+          "step 8"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 11"
+        ]
+      }
+    },
+    {
+      "ep": 149,
+      "G": 97,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the deferred fields behavior was modified"
+        ],
+        "sel+goldstep": [
+          0,
+          "at step 131, the last step when the deferred fields behavior"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the deferred fields behavior was modified"
+        ]
+      }
+    },
+    {
+      "ep": 150,
+      "G": 29,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "<step 50>"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 50"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 17"
+        ]
+      }
+    },
+    {
+      "ep": 150,
+      "G": 68,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the agent's test results changed from sho"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the agent's test results changed from sho"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 85"
+        ]
+      }
+    },
+    {
+      "ep": 151,
+      "G": 19,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 44"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 10 caused the agent to understand that the `_alter_fiel"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 21"
+        ]
+      }
+    },
+    {
+      "ep": 151,
+      "G": 43,
+      "gold_in_sel": 1,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the agent's test verification approach ch"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the agent's test verification approach ch"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 44"
+        ]
+      }
+    },
+    {
+      "ep": 152,
+      "G": 87,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step where the agent's understanding of the slice h"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step where the agent's understanding of the slice h"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 101"
+        ]
+      }
+    },
+    {
+      "ep": 152,
+      "G": 87,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 63"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 63"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 108"
+        ]
+      }
+    },
+    {
+      "ep": 153,
+      "G": 17,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 117"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 117"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 104"
+        ]
+      }
+    },
+    {
+      "ep": 153,
+      "G": 31,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 68"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 68"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 119"
+        ]
+      }
+    },
+    {
+      "ep": 154,
+      "G": 67,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the actual source code of `usercreationfo"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the actual source code of `usercreationfo"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the actual source code of `usercreationfo"
+        ]
+      }
+    },
+    {
+      "ep": 154,
+      "G": 56,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 38"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 8"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 38"
+        ]
+      }
+    },
+    {
+      "ep": 155,
+      "G": 35,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 102 caused the show_save_as_new permission check to be "
+        ],
+        "sel+goldstep": [
+          0,
+          "step 102 caused the show_save_as_new permission check to be "
+        ],
+        "fullindex+gold": [
+          0,
+          "step 26"
+        ]
+      }
+    },
+    {
+      "ep": 155,
+      "G": 35,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the `admin_modify.py` file was actually m"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the `admin_modify.py` file was actually m"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the `admin_modify.py` file was actually m"
+        ]
+      }
+    },
+    {
+      "ep": 155,
+      "G": 16,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 23 caused the original security vulnerability to be ide"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 23 caused the original security vulnerability to be ide"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 86"
+        ]
+      }
+    },
+    {
+      "ep": 156,
+      "G": 35,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "phase 2. running"
+        ],
+        "sel+goldstep": [
+          0,
+          "phase 2 (running) caused the agent to identify the core prob"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 20"
+        ]
+      }
+    },
+    {
+      "ep": 156,
+      "G": 40,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the agent's understanding of the root cau"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the agent's understanding of the root cau"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the agent's understanding of the root cau"
+        ]
+      }
+    },
+    {
+      "ep": 157,
+      "G": 41,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 53"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 23"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 41"
+        ]
+      }
+    },
+    {
+      "ep": 157,
+      "G": 60,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step where the loglocator.nonsingular method's sour"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step where the loglocator.nonsingular method's sour"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step where the `loglocator.nonsingular` method's so"
+        ]
+      }
+    },
+    {
+      "ep": 158,
+      "G": 10,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 13"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 10"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 10"
+        ]
+      }
+    },
+    {
+      "ep": 158,
+      "G": 91,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the cla() method implementation was modif"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the cla() method implementation was modif"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the `cla()` method implementation was mod"
+        ]
+      }
+    },
+    {
+      "ep": 159,
+      "G": 5,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 59"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 59"
+        ],
+        "fullindex+gold": [
+          1,
+          "step 5"
+        ]
+      }
+    },
+    {
+      "ep": 159,
+      "G": 7,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step where the agent's approach to reproducing the "
+        ],
+        "sel+goldstep": [
+          1,
+          "the last step where the agent's approach to reproducing the "
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step where the agent's approach to reproducing the "
+        ]
+      }
+    },
+    {
+      "ep": 160,
+      "G": 15,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 34"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 34"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 35"
+        ]
+      }
+    },
+    {
+      "ep": 160,
+      "G": 17,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "at step 21, the agent's understanding of the solution approa"
+        ],
+        "sel+goldstep": [
+          0,
+          "at step 21, the agent's understanding of the solution approa"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 21"
+        ]
+      }
+    },
+    {
+      "ep": 161,
+      "G": 15,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 20"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 14"
+        ],
+        "fullindex+gold": [
+          1,
+          "step 15"
+        ]
+      }
+    },
+    {
+      "ep": 161,
+      "G": 29,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the blueprint validation logic was change"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the blueprint validation logic was change"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the blueprint validation logic was change"
+        ]
+      }
+    },
+    {
+      "ep": 161,
+      "G": 29,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 40"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 20"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 21 caused the validation logic to be placed after the e"
+        ]
+      }
+    },
+    {
+      "ep": 162,
+      "G": 35,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 15"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 15"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 15"
+        ]
+      }
+    },
+    {
+      "ep": 162,
+      "G": 57,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the `prepare_content_length` method's log"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the `prepare_content_length` method's log"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the prepare_content_length method's logic"
+        ]
+      }
+    },
+    {
+      "ep": 163,
+      "G": 45,
+      "gold_in_sel": 1,
+      "res": {
+        "selection": [
+          0,
+          "the last step where the agent's understanding of the problem"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step where the agent's understanding of the problem"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step where the agent's understanding of the problem"
+        ]
+      }
+    },
+    {
+      "ep": 164,
+      "G": 25,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 26"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 26"
+        ],
+        "fullindex+gold": [
+          1,
+          "step 25"
+        ]
+      }
+    },
+    {
+      "ep": 164,
+      "G": 85,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the agent's understanding of the ignore p"
+        ],
+        "sel+goldstep": [
+          1,
+          "the last step when the agent's understanding of the ignore p"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the agent's understanding of the ignore p"
+        ]
+      }
+    },
+    {
+      "ep": 164,
+      "G": 105,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 29"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 29"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 32"
+        ]
+      }
+    },
+    {
+      "ep": 165,
+      "G": 95,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the agent's implementation approach signi"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the agent's implementation approach signi"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the agent's implementation approach signi"
+        ]
+      }
+    },
+    {
+      "ep": 165,
+      "G": 85,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 44 caused the agent to transition from exploration phas"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 44 caused the agent to transition from exploration phas"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 44"
+        ]
+      }
+    },
+    {
+      "ep": 166,
+      "G": 47,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 58"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 58"
+        ],
+        "fullindex+gold": [
+          1,
+          "step 47 caused the threshold values to be properly constrain"
+        ]
+      }
+    },
+    {
+      "ep": 166,
+      "G": 47,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step where the `roc_curve` function behavior was de"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step where the `roc_curve` function behavior was de"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step where the `roc_curve` function behavior was de"
+        ]
+      }
+    },
+    {
+      "ep": 167,
+      "G": 9,
+      "gold_in_sel": 1,
+      "res": {
+        "selection": [
+          1,
+          "step 9"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 8"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 92"
+        ]
+      }
+    },
+    {
+      "ep": 167,
+      "G": 9,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step where the agent's exploration strategy changed"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step where the agent's exploration strategy changed"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step where the agent's exploration strategy changed"
+        ]
+      }
+    },
+    {
+      "ep": 168,
+      "G": 88,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the codebase state changed to fix the glo"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the codebase state changed to fix the glo"
+        ],
+        "fullindex+gold": [
+          1,
+          "the last step when the codebase state changed to fix the glo"
+        ]
+      }
+    },
+    {
+      "ep": 168,
+      "G": 86,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 93"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 93"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 82 caused the cross-reference resolution to maintain ba"
+        ]
+      }
+    },
+    {
+      "ep": 169,
+      "G": 2,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step where the agent's working directory was explic"
+        ],
+        "sel+goldstep": [
+          1,
+          "the last step where the agent's working directory was explic"
+        ],
+        "fullindex+gold": [
+          1,
+          "the last step where the agent's working directory was explic"
+        ]
+      }
+    },
+    {
+      "ep": 170,
+      "G": 20,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 43"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 21"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 17"
+        ]
+      }
+    },
+    {
+      "ep": 170,
+      "G": 38,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the agent's understanding of the bug loca"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the agent's understanding of the bug loca"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the agent's understanding of the bug loca"
+        ]
+      }
+    },
+    {
+      "ep": 171,
+      "G": 7,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 35"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 35"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 33"
+        ]
+      }
+    },
+    {
+      "ep": 171,
+      "G": 8,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 6"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 9"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 9"
+        ]
+      }
+    },
+    {
+      "ep": 172,
+      "G": 5,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 13"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 6"
+        ],
+        "fullindex+gold": [
+          1,
+          "step 5"
+        ]
+      }
+    },
+    {
+      "ep": 172,
+      "G": 35,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step where the agent's approach changed from explor"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step where the agent's approach changed from explor"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step where the agent's approach to fixing polylog c"
+        ]
+      }
+    },
+    {
+      "ep": 173,
+      "G": 6,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "phase 3"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 7"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 7"
+        ]
+      }
+    },
+    {
+      "ep": 173,
+      "G": 88,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step where the agent modified the continuous distri"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step where the agent modified the continuous distri"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step where the agent modified the continuous distri"
+        ]
+      }
+    },
+    {
+      "ep": 174,
+      "G": 95,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 201 caused the c function signature generation to be fi"
+        ],
+        "sel+goldstep": [
+          1,
+          "step 95 caused the c function signature generation to be fix"
+        ],
+        "fullindex+gold": [
+          1,
+          "the step that caused the c function signature generation to "
+        ]
+      }
+    },
+    {
+      "ep": 174,
+      "G": 95,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the codegen.py file was modified was step"
+        ],
+        "sel+goldstep": [
+          1,
+          "at step 95, the codegen.py file was modified."
+        ],
+        "fullindex+gold": [
+          0,
+          "at step 207, the last step when the codegen.py file was modi"
+        ]
+      }
+    },
+    {
+      "ep": 175,
+      "G": 74,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 46"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 46"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 16"
+        ]
+      }
+    },
+    {
+      "ep": 175,
+      "G": 83,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "the last step when the core hnf algorithm logic was modified"
+        ],
+        "sel+goldstep": [
+          0,
+          "the last step when the core hnf algorithm logic was modified"
+        ],
+        "fullindex+gold": [
+          0,
+          "the last step when the core hnf algorithm logic was modified"
+        ]
+      }
+    },
+    {
+      "ep": 175,
+      "G": 38,
+      "gold_in_sel": 0,
+      "res": {
+        "selection": [
+          0,
+          "step 14"
+        ],
+        "sel+goldstep": [
+          0,
+          "step 14"
+        ],
+        "fullindex+gold": [
+          0,
+          "step 17"
+        ]
+      }
+    }
+  ]
+}

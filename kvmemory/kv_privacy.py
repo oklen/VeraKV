@@ -12,8 +12,8 @@ text store; the downstream cached KV was not recomputed."
 Conditions: distance d = gap between the secret step and the first selected step; with/without a
 downstream RESTATEMENT step that paraphrases the secret (positive control -- text should leak too).
 
-    SPRAG_MODEL_PATH=/tmp/Qwen3-8B PYTHONPATH=/home/tiger CUDA_VISIBLE_DEVICES=0 \
-        python -m kvmemory.kv_privacy --trials 40 --out /home/tiger/w5_privacy.json
+    SPRAG_MODEL_PATH=/path/to/Qwen3-8B PYTHONPATH=. CUDA_VISIBLE_DEVICES=0 \
+        python -m kvmemory.kv_privacy --trials 40 --out ./out/w5_privacy.json
 """
 from __future__ import annotations
 
@@ -65,7 +65,7 @@ def build(secret: str, d: int, restate: bool, n_after: int = 4, rng=None):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--trials", type=int, default=40)
-    ap.add_argument("--out", default="/home/tiger/w5_privacy.json")
+    ap.add_argument("--out", default="./out/w5_privacy.json")
     args = ap.parse_args()
     rng = random.Random(0)
 

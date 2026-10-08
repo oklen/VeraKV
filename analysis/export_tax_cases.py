@@ -5,7 +5,7 @@ the questions where forcing a visible derivation plausibly corrupted the upstrea
 """
 import json, re, os
 
-BASE = "/home/tiger/"
+BASE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results") + os.sep
 
 def norm(s):
     return re.sub(r"\s+", " ", (s or "")).strip()
@@ -26,7 +26,7 @@ print("row keys:", sorted(next(iter(S.values())).keys()))
 
 # domain per episode from the probe dataset
 dom = {}
-for l in open(BASE + "AMA-Bench/dataset/test_prx/open_end_qa_set.jsonl", encoding="utf-8"):
+for l in open(os.path.join(os.environ.get("AMA_BENCH", "AMA-Bench"), "dataset/test_prx/open_end_qa_set.jsonl"), encoding="utf-8"):
     r = json.loads(l)
     dom[str(r["episode_id"])] = r.get("domain", "?")
 

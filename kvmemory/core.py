@@ -38,7 +38,7 @@ class Segment:
     meta: dict = field(default_factory=dict)
 
 
-# ---- pluggable components (the fork / 魔改 surface) ----
+# ---- pluggable components (the fork / customization surface) ----
 class Summarizer(Protocol):
     """Produce the ColdIndex entry for an old segment. Default = framework auto-gist; swap for the
     agent's own scratchpad/Thought when the trajectory provides one."""

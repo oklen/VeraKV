@@ -2,8 +2,8 @@
 % Venues verified against arXiv/proceedings (see related_work.md Part II).
 
 @inproceedings{amabench,
-  title={{AMA-Bench}: Benchmarking Agent Memory over Arbitrary-Length Trajectories},
-  author={{AMA-Bench Team}},
+  title={{AMA-Bench}: Evaluating Long-Horizon Memory for Agentic Applications},
+  author={Zhao, Yujie and Yuan, Boqin and Huang, Junbo and Yuan, Haocheng and Yu, Zhongming and Xu, Haozhou and Hu, Lanxiang and Shankarampeta, Abhilash and Huang, Zimeng and Ni, Wentao and Tian, Yuandong and Zhao, Jishen},
   booktitle={International Conference on Learning Representations (ICLR)},
   year={2026},
   note={arXiv:2602.22769}
@@ -204,4 +204,158 @@
   year   = {2025},
   howpublished = {\url{https://manager.harmix.ai/blog/pam-locomo-benchmark-results}},
   note   = {File-first memory; reports LOCOMO 0.744}
+}
+
+@article{promptcache,
+  title={Prompt Cache: Modular Attention Reuse for Low-Latency Inference},
+  author={Gim, In and Chen, Guojun and Lee, Seung-seob and Sarda, Nikhil and Khandelwal, Anurag and Zhong, Lin},
+  journal={arXiv preprint arXiv:2311.04934},
+  year={2023}
+}
+
+@article{cacheblend,
+  title={{CacheBlend}: Fast Large Language Model Serving for {RAG} with Cached Knowledge Fusion},
+  author={Yao, Jiayi and Li, Hanchen and Liu, Yuhan and Ray, Siddhant and Cheng, Yihua and Zhang, Qizheng and Du, Kuntai and Lu, Shan and Jiang, Junchen},
+  journal={arXiv preprint arXiv:2405.16444},
+  year={2024}
+}
+
+@article{epic,
+  title={{EPIC}: Efficient Position-Independent Caching for Serving Large Language Models},
+  author={Hu, Junhao and Huang, Wenrui and Wang, Weidong and Wang, Haoyi and Hu, Tiancheng and Zhang, Qin and Feng, Hao and Chen, Xusheng and Shan, Yizhou and Xie, Tao},
+  journal={arXiv preprint arXiv:2410.15332},
+  year={2024}
+}
+
+@article{minipic,
+  title={{MiniPIC}: Flexible Position-Independent Caching in $<$100{LOC}},
+  author={Ordonez, Nathan and Parnell, Thomas},
+  journal={arXiv preprint arXiv:2606.13126},
+  year={2026}
+}
+
+@article{mepic,
+  title={{MEPIC}: Memory Efficient Position Independent Caching for {LLM} Serving},
+  author={Wang, Qian and Yousefijamarani, Zahra and Heisler, Morgan Lindsay and Gu, Rongzhi and Xiaolong, Bai and Yizhou, Shan and Zhang, Wei and Lan, Wang and Xiong, Ying and Zhang, Yong and Fan, Zhenan},
+  journal={arXiv preprint arXiv:2512.16822},
+  year={2025}
+}
+
+@article{hypic,
+  title={{HYPIC}: Accelerating Hybrid-Attention {LLM} Serving with Position-Independent Caching},
+  author={Liu, Yifei and Wu, Juntong and Liu, Yang and Hu, Junhao and Li, Minghao and Chen, Xiaoxu and Chen, Weihang},
+  journal={arXiv preprint arXiv:2607.01299},
+  year={2026}
+}
+
+@article{star,
+  title={Star Attention: Efficient {LLM} Inference over Long Sequences},
+  author={Acharya, Shantanu and Jia, Fei and Ginsburg, Boris},
+  journal={arXiv preprint arXiv:2411.17116},
+  year={2024}
+}
+
+@article{sparsex,
+  title={{SparseX}: Efficient {KV}-Cache Reuse Across Multi-Turn, {RAG}, and Multi-Agent Workloads},
+  author={{MemTensor}},
+  journal={arXiv preprint arXiv:2606.01751},
+  year={2026}
+}
+
+@article{memdelta,
+  title={{MemDelta}: Controlled Baselines and Hidden Confounds in Agent Memory Evaluation},
+  author={{MemDelta authors}},
+  journal={arXiv preprint arXiv:2606.29914},
+  year={2026}
+}
+
+@inproceedings{ocrmemory,
+  title={{OCR-Memory}: Optical Context Retrieval for Long-Horizon Agent Memory},
+  author={{OCR-Memory authors}},
+  booktitle={Proceedings of ACL},
+  year={2026}
+}
+
+@article{emllm,
+  title={Human-like Episodic Memory for Infinite Context {LLMs}},
+  author={Fountas, Zafeirios and Benfeghoul, Martin A and Oomerjee, Adnan and Christopoulou, Fenia and Lampouras, Gerasimos and Bou-Ammar, Haitham and Wang, Jun},
+  journal={arXiv preprint arXiv:2407.09450},
+  year={2024}
+}
+
+@article{keep,
+  title={{KEEP}: A {KV}-Cache-Centric Memory Management System for Efficient Embodied Planning},
+  author={Yang, Zebin and Xie, Tong and Lu, Baotong and Liu, Shaoshan and Yu, Bo and Li, Meng},
+  journal={arXiv preprint arXiv:2602.23592},
+  year={2026}
+}
+
+@article{verbatimchunks,
+  title={Verbatim Chunks Beat Extracted Artifacts: A Controlled Ablation of Memory Representations for Long {LLM} Conversations},
+  author={An, Tao},
+  journal={arXiv preprint arXiv:2601.00821},
+  year={2026}
+}
+
+@article{kvnotes,
+  title={Models Take Notes at Prefill: {KV} Cache Can Be Editable and Composable},
+  author={Li, Bojie},
+  journal={arXiv preprint arXiv:2606.17107},
+  year={2026}
+}
+
+@article{kveraser,
+  title={{KVEraser}: Learning to Steer {KV} Cache for Efficient Localized Context Erasing},
+  author={Li, Mufei and Liu, Shikun and Fu, Dongqi and Wang, Haoyu and Xia, Yinglong and Li, Hong and Yan, Hong and Li, Pan},
+  journal={arXiv preprint arXiv:2606.17034},
+  year={2026}
+}
+
+@article{ruler,
+  title={{RULER}: What's the Real Context Size of Your Long-Context Language Models?},
+  author={Hsieh, Cheng-Ping and Sun, Simeng and Kriman, Samuel and Acharya, Shantanu and Rekesh, Dima and Jia, Fei and Zhang, Yang and Ginsburg, Boris},
+  journal={arXiv preprint arXiv:2404.06654},
+  year={2024}
+}
+
+@article{readagent,
+  title={A Human-Inspired Reading Agent with Gist Memory of Very Long Contexts},
+  author={Lee, Kuang-Huei and Chen, Xinyun and Furuta, Hiroki and Canny, John and Fischer, Ian},
+  journal={International Conference on Machine Learning (ICML)},
+  year={2024}
+}
+
+@article{worldkv,
+  title={{WorldKV}: Efficient World Memory with World Retrieval and Compression},
+  author={Yi, Jung and Kim, Minjae and Cho, Paul Hyunbin and Jang, Wooseok and Yun, Sangdoo and Kim, Seungryong},
+  journal={arXiv preprint arXiv:2605.22718},
+  year={2026}
+}
+
+@article{intentkv,
+  title={{IntentKV}: Cross-Turn Intent-Aware {KV} Cache Pruning for Agent Inference},
+  author={Li, Junjie and Lou, Jiong and Li, Jie},
+  journal={arXiv preprint arXiv:2606.09916},
+  year={2026}
+}
+
+@article{ember,
+  title={{EMBER}: Efficient Memory via Budgeted Evidence Retention for Long-Horizon Agents},
+  author={Li, Yilong and Banerjee, Suman and Che, Tong},
+  journal={arXiv preprint arXiv:2606.05894},
+  year={2026}
+}
+
+@article{horma,
+  title={Organize then Retrieve: Hierarchical Memory Navigation for Efficient Agents},
+  author={Hsu, Hao-Lun and Kuang, Nikki Lijing and Liu, Boyi and Yao, Zhewei and He, Yuxiong},
+  journal={arXiv preprint arXiv:2606.11680},
+  year={2026}
+}
+
+@article{memexrl,
+  title={Memex({RL}): Scaling Long-Horizon {LLM} Agents via Indexed Experience Memory},
+  author={Wang, Zhenting and Chen, Huancheng and Wang, Jiayun and Wei, Wei},
+  journal={arXiv preprint arXiv:2603.04257},
+  year={2026}
 }

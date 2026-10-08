@@ -334,7 +334,7 @@ replicate at n=2496 — treat half-set zero-exclusion as screening, only full-se
 paired runs as confirmatory.
 
 Files: mu_merged_{RESTRLEXF,RESTRF2,HOFTCL}.json, sel_HOFTCL_full.jsonl;
-paired analysis: /home/tiger/w20_verdict.py.
+paired analysis: a local w20_verdict.py (not released; the paired statistics follow analysis/w9_verdict.py).
 
 ---
 
@@ -364,7 +364,7 @@ CUR 自发救回 4/12(DESTROYED 池同样有 ~33% 重掷边缘性)、KEPT 12/12;
 
 工程:dump 截断已根治(agentic_reader.py art[:9000]/up_ans[:4000]/ans[:2000],同步 worker);
 官方 judge prompt 完整复刻件在 j2x3/j2x4_run.py;3-worker 分片判分 ~5 分钟/轮。
-Files: analysis/hoftcl_{autopsy,2x2}.py, results/j2x{2,3,4}_*, /home/tiger/mc2.log。
+Files: analysis/hoftcl_{autopsy,2x2}.py, results/j2x{2,3,4}_*, minicase run log (not released)。
 
 ---
 

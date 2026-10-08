@@ -1,8 +1,9 @@
-import json,random,collections
+import json,os,random,collections
+RES=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),"results")
 random.seed(0)
 def load(*t):
     r=[]
-    for x in t: r+=json.load(open("/home/tiger/mu_merged_%s.json"%x))
+    for x in t: r+=json.load(open(os.path.join(RES,"mu_merged_%s.json"%x)))
     return r
 def qa_ci(rs,B=2000):
     n=len(rs); accs=[]

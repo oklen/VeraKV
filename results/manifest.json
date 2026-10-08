@@ -261,5 +261,345 @@
    "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
    "status": "local run"
   }
- ]
+ ],
+ "runs_added_2026_10": [
+  {
+   "tag": "EXTLW",
+   "n": 1248,
+   "accuracy": 0.6154,
+   "role": "Table family: appendix -> query-relevant original lines (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "FACTSW",
+   "n": 1248,
+   "accuracy": 0.5825,
+   "role": "Table family: appendix -> extracted atomic facts (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "FULLTR",
+   "n": 1248,
+   "accuracy": 0.5577,
+   "role": "Table family: full trajectory recency-truncated @22k, cfg_full22.json (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "LOOPSW",
+   "n": 432,
+   "accuracy": 0.3773,
+   "role": "reader map: iterative lookup loop replacing the answer pass (SW)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "LOOPS2",
+   "n": 432,
+   "accuracy": 0.4676,
+   "role": "reader map: lookup loop as evidence gatherer, answer pass kept (SW)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "CSW3",
+   "n": 432,
+   "accuracy": 0.4676,
+   "role": "reader map: same-batch SW control for the loop rows",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "FSELA",
+   "n": 1248,
+   "accuracy": 0.5401,
+   "role": "reader map: model-selected evidence compression (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "FSELB",
+   "n": 1248,
+   "accuracy": 0.5144,
+   "role": "reader map: model-selected evidence compression (h1)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "STA",
+   "n": 1248,
+   "accuracy": 0.6178,
+   "role": "reader map: entity-state timeline scaffold (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "STB",
+   "n": 1248,
+   "accuracy": 0.645,
+   "role": "reader map: entity-state timeline scaffold (h1)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "FLGA",
+   "n": 1248,
+   "accuracy": 0.6378,
+   "role": "reader map: flagship + fused sufficiency gate (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "FLGB",
+   "n": 1248,
+   "accuracy": 0.6258,
+   "role": "reader map: flagship + fused sufficiency gate (h1)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "GOFA",
+   "n": 1248,
+   "accuracy": 0.6338,
+   "role": "reader map: escape clause only, flagship (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "GOLA",
+   "n": 1248,
+   "accuracy": 0.5978,
+   "role": "reader map: escape clause only, lexical (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "GOCA",
+   "n": 1248,
+   "accuracy": 0.6282,
+   "role": "reader map: escape clause only, lexical+pin (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "DECA",
+   "n": 1248,
+   "accuracy": 0.6514,
+   "role": "reader map: separate sufficiency gate call (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "DECB",
+   "n": 1248,
+   "accuracy": 0.6442,
+   "role": "reader map: separate sufficiency gate call (h1)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "FSTRA",
+   "n": 1248,
+   "accuracy": 0.5929,
+   "role": "reader map: lexical router structured base (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "FGATEA",
+   "n": 1248,
+   "accuracy": 0.6058,
+   "role": "reader map: lexical router + fused gate (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "FGATEB",
+   "n": 1248,
+   "accuracy": 0.5994,
+   "role": "reader map: lexical router + fused gate (h1)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "CSA",
+   "n": 1248,
+   "accuracy": 0.637,
+   "role": "gate attribution: lexical+pin structured base (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "CSB",
+   "n": 1248,
+   "accuracy": 0.653,
+   "role": "gate attribution: lexical+pin structured base (h1)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "CGA",
+   "n": 1248,
+   "accuracy": 0.6362,
+   "role": "gate attribution: lexical+pin + fused gate (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "CGB",
+   "n": 1248,
+   "accuracy": 0.6346,
+   "role": "gate attribution: lexical+pin + fused gate (h1)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "TH0",
+   "n": 1248,
+   "accuracy": 0.6426,
+   "role": "reader map: deterministic lookup tools, full domain mix (h0)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "SWRECALL",
+   "n": 432,
+   "accuracy": 0.4259,
+   "role": "SOFTWARE dissection: step-recall logging run (SW)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "SWBASE",
+   "n": 432,
+   "accuracy": 0.4282,
+   "role": "SOFTWARE development probe",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "SWSEL",
+   "n": 432,
+   "accuracy": 0.3889,
+   "role": "SOFTWARE development probe",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "SWSEL2",
+   "n": 432,
+   "accuracy": 0.3727,
+   "role": "SOFTWARE development probe",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "SWAG",
+   "n": 432,
+   "accuracy": 0.3588,
+   "role": "SOFTWARE development probe",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "SW3",
+   "n": 324,
+   "accuracy": 0.3889,
+   "role": "SOFTWARE development probe (one shard missing)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "PROBE",
+   "n": 48,
+   "accuracy": 0.5208,
+   "role": "48-QA smoke probe",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "PROBEG",
+   "n": 48,
+   "accuracy": 0.6042,
+   "role": "48-QA smoke probe",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "PROBEP",
+   "n": 48,
+   "accuracy": 0.5417,
+   "role": "48-QA smoke probe",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "PROBES",
+   "n": 48,
+   "accuracy": 0.6042,
+   "role": "48-QA smoke probe",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "STPROBE",
+   "n": 48,
+   "accuracy": 0.5,
+   "role": "48-QA smoke probe",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "ASM_RECENT",
+   "n": 2496,
+   "accuracy": 0.6102,
+   "role": "App. D assembly 2x2: hot window only (cfg_arm_recent.json)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "ASM_GIST",
+   "n": 2496,
+   "accuracy": 0.6042,
+   "role": "App. D assembly 2x2: gist overview only (cfg_arm_gist.json)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "ASM_RETRIEVAL",
+   "n": 2496,
+   "accuracy": 0.6114,
+   "role": "App. D assembly 2x2: routed selection only (cfg_arm_retrieval.json)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  },
+  {
+   "tag": "ASM_KVLEX",
+   "n": 2496,
+   "accuracy": 0.613,
+   "role": "App. D assembly 2x2: selection + overview (cfg_kvmem_lex.json)",
+   "harness": "official AMA-Bench run.py, Qwen3-32B reader+judge (Track B)",
+   "status": "local run"
+  }
+ ],
+ "kv_and_out_of_window_runs": {
+  "index": "results/oow/index.json",
+  "analysis": "analysis/oow_paired.py",
+  "note": "per-question 0/1 arm fields; official_* files scored by the official AMA-Bench judge"
+ },
+ "kv_equivalence_896": {
+  "kv": "155/896",
+  "text": "156/896",
+  "argmax_agree": "747/896",
+  "gate": "126/128",
+  "files": "results/kv_equiv_896/"
+ },
+ "judge_llama70b": {
+  "file": "results/judge_llama70b/ama_rejudged.json",
+  "qwen3_32b": 0.6426,
+  "llama31_70b": 0.6767,
+  "agreement": 0.8442
+ }
 }

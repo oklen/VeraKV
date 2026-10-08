@@ -1,0 +1,184 @@
+{
+  "n": 168,
+  "kv_flip": 4,
+  "kv_ans_change": 111,
+  "tx_flip": 0,
+  "tx_ans_change": 0,
+  "gate_agree": 24,
+  "gate_n": 24,
+  "mean_shift_top": 0.6860119047619048,
+  "by_dom": {
+    "Game": [
+      42,
+      0,
+      22
+    ],
+    "EMBODIED_AI": [
+      42,
+      3,
+      26
+    ],
+    "TEXT2SQL": [
+      42,
+      0,
+      33
+    ],
+    "WEB": [
+      42,
+      1,
+      30
+    ]
+  },
+  "rows": [
+    {
+      "episode_id": 0,
+      "domain": "Game",
+      "n_seg": 100
+    },
+    {
+      "episode_id": 42,
+      "domain": "EMBODIED_AI",
+      "n_seg": 93
+    },
+    {
+      "episode_id": 90,
+      "domain": "TEXT2SQL",
+      "n_seg": 25
+    },
+    {
+      "episode_id": 186,
+      "domain": "WEB",
+      "n_seg": 11
+    },
+    {
+      "episode_id": 2,
+      "domain": "Game",
+      "n_seg": 56
+    },
+    {
+      "episode_id": 43,
+      "domain": "EMBODIED_AI",
+      "n_seg": 82
+    },
+    {
+      "episode_id": 91,
+      "domain": "TEXT2SQL",
+      "n_seg": 25
+    },
+    {
+      "episode_id": 187,
+      "domain": "WEB",
+      "n_seg": 16
+    },
+    {
+      "episode_id": 4,
+      "domain": "Game",
+      "n_seg": 35
+    },
+    {
+      "episode_id": 44,
+      "domain": "EMBODIED_AI",
+      "n_seg": 77
+    },
+    {
+      "episode_id": 92,
+      "domain": "TEXT2SQL",
+      "n_seg": 7
+    },
+    {
+      "episode_id": 195,
+      "domain": "WEB",
+      "n_seg": 31
+    },
+    {
+      "episode_id": 5,
+      "domain": "Game",
+      "n_seg": 9
+    },
+    {
+      "episode_id": 45,
+      "domain": "EMBODIED_AI",
+      "n_seg": 77
+    },
+    {
+      "episode_id": 93,
+      "domain": "TEXT2SQL",
+      "n_seg": 20
+    },
+    {
+      "episode_id": 196,
+      "domain": "WEB",
+      "n_seg": 12
+    },
+    {
+      "episode_id": 6,
+      "domain": "Game",
+      "n_seg": 175
+    },
+    {
+      "episode_id": 46,
+      "domain": "EMBODIED_AI",
+      "n_seg": 76
+    },
+    {
+      "episode_id": 95,
+      "domain": "TEXT2SQL",
+      "n_seg": 20
+    },
+    {
+      "episode_id": 197,
+      "domain": "WEB",
+      "n_seg": 12
+    },
+    {
+      "episode_id": 9,
+      "domain": "Game",
+      "n_seg": 275
+    },
+    {
+      "episode_id": 47,
+      "domain": "EMBODIED_AI",
+      "n_seg": 72
+    },
+    {
+      "episode_id": 96,
+      "domain": "TEXT2SQL",
+      "n_seg": 14
+    },
+    {
+      "episode_id": 198,
+      "domain": "WEB",
+      "n_seg": 12
+    },
+    {
+      "episode_id": 10,
+      "domain": "Game",
+      "n_seg": 186
+    },
+    {
+      "episode_id": 48,
+      "domain": "EMBODIED_AI",
+      "n_seg": 65
+    },
+    {
+      "episode_id": 97,
+      "domain": "TEXT2SQL",
+      "n_seg": 25
+    },
+    {
+      "episode_id": 199,
+      "domain": "WEB",
+      "n_seg": 15
+    },
+    {
+      "episode_id": 11,
+      "domain": "Game",
+      "n_seg": 180
+    },
+    {
+      "episode_id": 98,
+      "domain": "TEXT2SQL",
+      "n_seg": 25
+    }
+  ]
+}

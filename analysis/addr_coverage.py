@@ -1,6 +1,6 @@
 """Explicit-address coverage in AMA-Bench questions, per domain (reviewer #8: is structural
 addressing a step-index benchmark artifact, or a general property of agent-trajectory queries?)."""
-import json, re, collections
+import json, os, re, collections
 
 PATS = {
     "step_ref":   re.compile(r"\b(?:step|turn)s?\s+\d+", re.I),
@@ -11,7 +11,7 @@ PATS = {
     "identifier": re.compile(r"\b[a-z]+_[a-z_]+\b|\b[a-z]+[A-Z][a-zA-Z]+\b"),  # snake/camel identifiers
 }
 
-rows = [json.loads(l) for l in open("/home/tiger/AMA-Bench/dataset/test/open_end_qa_set.jsonl", encoding="utf-8") if l.strip()]
+rows = [json.loads(l) for l in open(os.environ.get("AMA_TEST", "./data/ama_test.jsonl"), encoding="utf-8") if l.strip()]
 dom_of = lambda eid: str(eid).split("_")[0].upper() if not str(eid)[0].isdigit() else "?"
 # episode_id may not carry domain; fall back to a 'domain'/'source' field
 per = collections.defaultdict(lambda: collections.defaultdict(int))

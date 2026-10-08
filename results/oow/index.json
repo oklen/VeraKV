@@ -1,0 +1,354 @@
+[
+ {
+  "file": "rv.jsonl.gz",
+  "script": "kvmemory/kv_review.py",
+  "n": 824,
+  "what": "8B: E1 conditioner content, E2 evidence matching (tx_plus/b_noR), E3 full-reading ceiling, E4 tail dial",
+  "binary_fields": [
+   "b6_f0",
+   "b6_f2",
+   "b6_f6",
+   "b_anch",
+   "b_hot",
+   "b_noR",
+   "c_dummy",
+   "c_none",
+   "c_other",
+   "c_shuf",
+   "full",
+   "tx",
+   "tx_plus"
+  ]
+ },
+ {
+  "file": "rv32.jsonl.gz",
+  "script": "kvmemory/kv_review.py",
+  "n": 616,
+  "what": "32B: evidence-matching audit + full-reading ceiling",
+  "binary_fields": [
+   "b_anch",
+   "b_hot",
+   "b_noR",
+   "full",
+   "tx",
+   "tx_plus"
+  ]
+ },
+ {
+  "file": "fl.jsonl.gz",
+  "script": "kvmemory/kv_floor.py",
+  "n": 824,
+  "what": "8B hot=4 floor arms (b_hot, b_dig generated-digest conditioner, b_k8, b_qsel)",
+  "binary_fields": [
+   "b_anch",
+   "b_dig",
+   "b_dig_hot",
+   "b_hot",
+   "b_k8",
+   "b_qsel",
+   "tx"
+  ]
+ },
+ {
+  "file": "owf8.jsonl.gz",
+  "script": "kvmemory/kv_owfloor.py",
+  "n": 527,
+  "what": "8B over-window (30-100k, YaRN 4x)",
+  "binary_fields": [
+   "b_anch",
+   "b_hot",
+   "full",
+   "tx"
+  ]
+ },
+ {
+  "file": "owf32.jsonl.gz",
+  "script": "kvmemory/kv_owfloor.py",
+  "n": 474,
+  "what": "32B over-window",
+  "binary_fields": [
+   "b_anch",
+   "b_hot",
+   "tx"
+  ]
+ },
+ {
+  "file": "fr.jsonl.gz",
+  "script": "kvmemory/kv_frontier.py",
+  "n": 824,
+  "what": "fresh-budget selectors (recency/graph/attention/query/random)",
+  "binary_fields": [
+   "f_attn",
+   "f_front",
+   "f_none",
+   "f_qrel",
+   "f_random",
+   "f_recent",
+   "ftok_f_none",
+   "ftok_tx",
+   "tx"
+  ]
+ },
+ {
+  "file": "kp.jsonl.gz",
+  "script": "kvmemory/kv_keepsel.py",
+  "n": 824,
+  "what": "KEEP-style attention-propagation fresh selector",
+  "binary_fields": [
+   "bh",
+   "kp_att",
+   "kp_rnd"
+  ]
+ },
+ {
+  "file": "ev.jsonl.gz",
+  "script": "kvmemory/kv_evext.py",
+  "n": 824,
+  "what": "Regularity I within-episode factorial (same extra events to both paths)",
+  "binary_fields": [
+   "bh_base",
+   "bh_graph",
+   "bh_rand",
+   "tx_base",
+   "tx_graph",
+   "tx_rand"
+  ]
+ },
+ {
+  "file": "fx.jsonl.gz",
+  "script": "kvmemory/kv_fixanchor.py",
+  "n": 824,
+  "what": "frozen global conditioner",
+  "binary_fields": [
+   "bf_hot",
+   "bh_true",
+   "bn_fix",
+   "bn_true"
+  ]
+ },
+ {
+  "file": "dx.jsonl.gz",
+  "script": "kvmemory/kv_distanchor.py",
+  "n": 824,
+  "what": "conditioner write-time geometry (adjacent / native / far)",
+  "binary_fields": [
+   "d_adj",
+   "d_far",
+   "d_nat",
+   "none",
+   "t_adj",
+   "t_far",
+   "t_nat"
+  ]
+ },
+ {
+  "file": "ep.jsonl.gz",
+  "script": "kvmemory/kv_epic.py",
+  "n": 824,
+  "what": "EPIC-style boundary recompute baseline",
+  "binary_fields": [
+   "b_anch",
+   "b_hot",
+   "epic16",
+   "epic16_hot",
+   "epic16_hot_rblk",
+   "epic32",
+   "iso"
+  ]
+ },
+ {
+  "file": "da.jsonl.gz",
+  "script": "kvmemory/kv_depanchor.py",
+  "n": 824,
+  "what": "dependency-graph upstream conditioner",
+  "binary_fields": [
+   "bh",
+   "dp",
+   "dp_noR",
+   "dp_rand",
+   "hy"
+  ]
+ },
+ {
+  "file": "nt.jsonl.gz",
+  "script": "kvmemory/kv_notesel.py",
+  "n": 824,
+  "what": "note-transplant test (delimiter vs random anchor rows)",
+  "binary_fields": [
+   "bh",
+   "norblk",
+   "nt256",
+   "nt64",
+   "rd256",
+   "rd64"
+  ]
+ },
+ {
+  "file": "kl.jsonl.gz",
+  "script": "kvmemory/kv_klprobe.py",
+  "n": 824,
+  "what": "distributional autopsy (first-token KL vs full re-prefill)",
+  "binary_fields": [
+   "agree_bh",
+   "agree_tx",
+   "b_hot",
+   "full",
+   "tx"
+  ]
+ },
+ {
+  "file": "gh.jsonl.gz",
+  "script": "kvmemory/kv_globhot.py",
+  "n": 824,
+  "what": "8B harvest 2x2 (glob / opening rows / fresh tail)",
+  "binary_fields": [
+   "bh",
+   "glob",
+   "glob_R",
+   "glob_hot",
+   "glob_hotR"
+  ]
+ },
+ {
+  "file": "gh_llama.jsonl.gz",
+  "script": "kvmemory/kv_globhot.py",
+  "n": 824,
+  "what": "Llama-3.1-8B-Instruct replication of the harvest cell",
+  "binary_fields": [
+   "bh",
+   "glob",
+   "glob_R",
+   "glob_hot",
+   "glob_hotR"
+  ]
+ },
+ {
+  "file": "hx.jsonl.gz",
+  "script": "kvmemory/kv_hxfer.py",
+  "n": 824,
+  "what": "8B harvest under an agent-style cache header (prompt mismatch)",
+  "binary_fields": [
+   "bh",
+   "g_agt",
+   "g_agt_i",
+   "g_rev_i",
+   "glob_R"
+  ]
+ },
+ {
+  "file": "hx32.jsonl.gz",
+  "script": "kvmemory/kv_hxfer.py",
+  "n": 824,
+  "what": "32B harvest vs store vs full reading (--arms bh,glob_R,full)",
+  "binary_fields": [
+   "bh",
+   "full",
+   "glob_R"
+  ]
+ },
+ {
+  "file": "sk.jsonl.gz",
+  "script": "kvmemory/kv_skill.py",
+  "n": 800,
+  "what": "answering protocol as a rotated skill-KV block (--place rot)",
+  "binary_fields": [
+   "bh",
+   "bh_ik",
+   "bh_it",
+   "gr",
+   "gr_ik",
+   "gr_it"
+  ]
+ },
+ {
+  "file": "sl.jsonl.gz",
+  "script": "kvmemory/kv_skillib.py",
+  "n": 800,
+  "what": "query-routed skill library (text vs KV; replacement vs additive)",
+  "binary_fields": [
+   "ik_adapt",
+   "ik_dec",
+   "ik_hint",
+   "it_adapt",
+   "it_dec",
+   "it_hint"
+  ]
+ },
+ {
+  "file": "loc8.jsonl.gz",
+  "script": "kvmemory/kv_locomo.py",
+  "n": 1150,
+  "what": "LOCOMO 8B, sessions as events (tx,b_hot,gr,gr_it,gr_sk)",
+  "binary_fields": [
+   "b_hot",
+   "gr",
+   "gr_it",
+   "gr_sk",
+   "tx"
+  ]
+ },
+ {
+  "file": "loc32.jsonl.gz",
+  "script": "kvmemory/kv_locomo.py",
+  "n": 1150,
+  "what": "LOCOMO 32B, same five arms",
+  "binary_fields": [
+   "b_hot",
+   "gr",
+   "gr_it",
+   "gr_sk",
+   "tx"
+  ]
+ },
+ {
+  "file": "mx.jsonl.gz",
+  "script": "kvmemory/kv_matrix.py",
+  "n": 824,
+  "what": "12-arm conditioner matrix (dev + held-out episodes); input to vote_analysis / cascade_ceiling / kv_verify / kv_attn",
+  "binary_fields": [
+   "anch",
+   "b_anch",
+   "c_anch",
+   "dum_l",
+   "dum_s",
+   "ext",
+   "fixnat",
+   "iso",
+   "randf",
+   "roll",
+   "sem",
+   "tx"
+  ]
+ },
+ {
+  "file": "official_k12.jsonl.gz",
+  "script": "kvmemory/kv_ama_bridge.py + ama/br_judge.py",
+  "n": 2431,
+  "what": "official harness, K=12: tx / iso / b_hot (anchored+tail), official Qwen3-32B judge; three-arm judged intersection",
+  "binary_fields": [
+   "tx",
+   "iso",
+   "b_hot"
+  ]
+ },
+ {
+  "file": "official_k5.jsonl.gz",
+  "script": "kvmemory/kv_ama_bridge.py --k 5 --arms tx,b_hot + ama/br_judge.py",
+  "n": 2403,
+  "what": "official harness, K=5: tx / b_hot (anchored+tail)",
+  "binary_fields": [
+   "tx",
+   "b_hot"
+  ]
+ },
+ {
+  "file": "official_deploymap.jsonl.gz",
+  "script": "kvmemory/kv_ama_bridge.py --arms gsk,g_txt + ama/bg_judge.py",
+  "n": 2496,
+  "what": "deployment map: gsk = harvest+skill-KV in-window (harvest=1), anchored stores+skill-KV over-window; g_txt = harvest + protocol as text (in-window only). Pair with official_k12 on (episode_id, question_uuid)",
+  "binary_fields": [
+   "gsk",
+   "g_txt"
+  ]
+ }
+]

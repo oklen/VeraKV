@@ -1,69 +1,64 @@
 # VeraKV — research brief (3-minute read)
 
-**Problem.** Long-horizon agents (coding, web, embodied) accumulate histories that overflow any
-context window. Deployed memory systems *construct* a lossy store — extract facts, build graphs,
-summarize — and retrieve from it. On dense agent trajectories this destroys exactly the evidence
-questions need: on AMA-Bench, every published construction-based system scores *below* a
-no-memory baseline.
+**Problem.** Long-horizon agents accumulate histories that outgrow the context window. Most memory
+systems keep the raw history but hand the reader what they constructed from it — facts, notes,
+summaries, graphs — so which details the reader can ever see is fixed at write time. On dense agent
+trajectories that loses the exact values and steps questions ask for: on AMA-Bench, purpose-built
+dialogue-memory systems (Mem0 0.21, A-Mem 0.32, MemGPT 0.33, MemoryBank 0.34) score below a no-memory
+long-context baseline (0.52). Serving the raw history from a cheap index is by now an established
+pattern; what was missing is measurement — which property of the raw payload carries the benefit, and
+when the trajectory's own KV cache can stand in for re-encoded text.
 
-**Core finding — payload fidelity dominates the memory side.** VeraKV constructs *indices, not
-answer payloads*: raw turns kept verbatim, a cheap extractive gist index + recency overview over
-them, per-query routing, selected spans rehydrated byte-for-byte. On the official AMA-Bench
-harness (Qwen3-32B reader+judge, all 2,496 QA):
+**The system.** VeraKV keeps the raw turns verbatim, indexes them with extractive gists and a recency
+overview, selects spans per query (cheap router + deterministic step-address pin), and serves them
+verbatim — as re-prefilled text in every headline number, or as gathered KV within the window. On the
+official AMA-Bench harness (Qwen3-32B reader + judge, all 2,496 QA):
 
 | | Acc |
 |---|---|
-| **VeraKV memory stack, harness default reader** | **0.5954** |
+| **VeraKV (deployed router + step-pin memory, structured answer instruction)** — leaderboard-verified, #1 as of 2026-07-15, #2 since a 2026-09 entry (0.6975); the released lexical + step-pin default scores 0.6466 locally | **0.6478** |
+| VeraKV memory stack, harness default reader | 0.5954 |
 | AMA-Agent (purpose-built for the benchmark) | 0.5722 |
-| Best prior published memory system | 0.4606 |
-| VeraKV + one-sentence structured answer instruction (end-to-end recipe) | 0.6466* |
+| Best other published memory system (MemoRAG) | 0.4606 |
 
-*\*submitted for official leaderboard verification; above the prior leaderboard best 0.6246.*
+**Payload fidelity, attributed.** Matched evidence, reader and judge, only the payload form varies:
+serving an LLM summary or extracted facts instead of the verbatim cited step costs 8–14pp (910 QA,
+replicated under a Llama-3.1-8B judge). In the deployed pipeline, replacing the verbatim appendix with
+LLM summaries costs −5.1pp and with extracted facts −5.9pp — both at or below serving no appendix — while
+a deterministic swap to the query-relevant original lines costs −2.6pp: paraphrase hurts about twice as
+much as shortening. A cheap router matters little on step-indexed agent traces (a model-pick fusion
+audited score-neutral) and a lot on diffuse dialogue.
 
-A same-pipeline attribution ladder makes the payload's role causal (same reader, prompt, budget,
-selected steps — only the payload form varies): recency-truncated full context **−8.4pp** →
-LLM summaries **−5.1** → extracted facts **−5.9** (both *below* serving no evidence at all,
-−4.3) → deterministic *original-lines* extraction **−2.6** → verbatim anchor. **The poison is
-paraphrase, not compression.**
+**The reader is a separable axis.** A same-batch memory × reader factorial is additive: routing
++3.1–3.5pp at either reader, a one-sentence structured answer instruction +5.1–5.5pp at either router.
+Fourteen reader-side mechanisms (plans, compiled views, checklists, re-retrieval, type-routed
+instructions, lookup loops) come back null or negative over a strong router. The instruction itself can
+ride in the memory's return value, and as a rotated skill-KV block it ties the text instruction; a
+query-routed library of additive per-class hints adds +2.1pp overall (+6.3pp where a rule fires).
 
-**The confound audit (what usually goes unmeasured).** A memory×reader factorial shows the single
-largest knob in the whole system is the *reader instruction* (+5.1–5.8pp at either router) —
-larger than every memory-side refinement combined (+3.1–3.5). So end-to-end memory comparisons
-that don't control the reader largely measure reader differences. We report both axes separately,
-disclose the instruction verbatim, and characterize its churn honestly (it fixes 318 questions
-and breaks 184; part of the gain is judge-facing style, measured by case analysis).
+**KV serving, within the window.** Gathering the selected spans' cached KV at original positions
+reproduces a full-prefill-then-mask oracle (identical 256-token greedy sequences) and is
+accuracy-equivalent to re-prefilling the same spans as text (17.3% vs 17.4%, 896 QA). The benefit is cost:
+the question's first-token latency stays flat while text re-prefill grows with evidence (1.6–10.9×), and
+it beats a resident full-trajectory prefix cache 1.4–1.9× on TTFT.
 
-**A predictive law, stress-tested 14 ways.** Twelve reader-side mechanisms over a fixed memory
-(evidence compression, state scaffolds, sufficiency gates, deterministic lookup tools, iterative
-ReAct loops, pre-computed reasoning plans, type-routed specialized instructions, re-retrieval
-under three budgets) yield one law: *a
-mechanism helps only when it injects specific, query-addressable information the context is
-missing; reasoning must happen in the answering pass.* Pre-computed reasoning is
-anti-transferable (−5.6pp); a prompted iterative loop adds exactly nothing as an evidence-gatherer
-(±0.0 same-batch) and costs −9pp when it displaces the answering pass; and a reasoning-affordant
-re-presentation of the same verbatim evidence (need-grouped quotes, timelines, occurrence panels —
-no conclusions) recovers none of the instruction's per-question fixes (+0.3pp vs a 32% spontaneous-
-recovery control) while breaking 13% of previously-correct questions; even carving the
-instruction itself into question-type-specialized fragments loses (−3.0pp; routed classes −7 to
-−23) — the eliciting instruction survives as an indivisible whole. The one domain we lose
-(SOFTWARE, −17 vs AMA-Agent) is dissected to a five-layer elimination — not retrieval (100%
-recall), not access, not format, not iteration — isolating the residual to *code execution over
-the raw trajectory* + construction-time indexing: a complementary paradigm, stated as a boundary.
+**Beyond the window.** Independently encoded event stores collapse on the official harness (−13.2pp
+paired, n=2431). Anchored stores plus a fresh two-event tail recover 72%, and at a lean K=5 budget the gap
+is −0.8pp, CI [−3.0, +1.4]. Two scoped regularities organize the rest: evidence converts to accuracy only
+through joint encoding (text gains from more served events, the cache does not), and a store's
+write-time conditioning must match what is served, in content and in position. Query-time token repair
+(EPIC-style), dependency-graph conditioners and six fresh-budget selectors including a KEEP-style one
+all fail to beat the simple recipe. Where the agent's own rollout cache survives, harvesting it replaces
+the ~5× store-write cost at parity across scales (8B/32B), benchmarks (AMA-Bench/LOCOMO) and backbones
+(Qwen/Llama); a mixed deployment policy ties the routed-text carrier baseline on the full official harness
+(.397 vs .397).
 
-**The serving mechanism.** Because the store is verbatim KV, selection is a cache operation:
-prefill the trajectory once, gather selected spans' KV at their original positions, re-prefill
-only the question. Exact against a full-prefill-then-mask oracle (24/24 episodes, two model
-families, YaRN-extended RoPE), accuracy-tied with the text pipeline at n=576 — including serving
-the *deployed* overview+appendix layout — with flat TTFT as evidence grows (1.6–10.9×, reaching
-32× at 32k selected tokens). A planted-secret probe measures the privacy boundary: 0/120
-extractable leakage from contextual carryover, positive control confirms probe sensitivity.
+**Boundaries, stated.** Full context can win when the history fits and the reader exploits it
+(LongMemEval-S at 128k); on AMA-Bench SOFTWARE, temporal-scan questions ("which step first / last") hit a
+coverage ceiling — supplying the answer-bearing step verbatim lifts an 8B or 32B reader only to ~0.12,
+because verifying an extremum needs the whole 60–100k-token trajectory; exact KV-layer deletion needs
+downstream invalidation (a planted-secret probe leaks 0/120); the out-of-window dials are 8B-only.
 
-**Boundaries, stated not hidden.** Full context wins when history fits the window and the reader
-can exploit it (LongMemEval crossover mapped per question type); construction-time extraction wins
-for weak readers on tiny isolated facts; verbatim storage has governance costs (deletion semantics
-measured at both text and KV layers).
-
-**Artifacts.** Everything is released and re-runnable: 30+ tagged runs with raw per-question
-predictions and judge scores, machine-readable manifest, exact prompts, analysis scripts
-(bootstrap/cluster CIs, flip-set case studies), serving/launch recipes, and the leaderboard
-submission file. https://github.com/oklen/VeraKV
+**Artifacts.** Code, configs, prompts, raw per-question predictions with judge outputs, the per-question
+outputs of the KV and out-of-window runs, analysis scripts and the leaderboard submission:
+https://github.com/oklen/VeraKV

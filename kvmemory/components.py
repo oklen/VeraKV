@@ -1,4 +1,4 @@
-"""kvmemory.components — default pluggable implementations (the fork / 魔改 surface).
+"""kvmemory.components — default pluggable implementations (the fork / customization surface).
 
 These embody the SPRAG findings as swappable defaults:
   * AutoGistSummarizer  — cheap extractive ColdIndex (action + observation head). The index must be

@@ -7,8 +7,9 @@ SXPH-wrong & RESTR4-right: gold vs both predictions, to classify terse-but-right
 genuinely wrong.
 """
 import json, re, collections
+import os
 
-BASE = "/home/tiger/"
+BASE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results") + os.sep
 
 def norm(s):
     return re.sub(r"\s+", " ", (s or "")).strip()

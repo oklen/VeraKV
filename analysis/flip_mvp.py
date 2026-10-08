@@ -7,7 +7,7 @@ Joins mu_merged_PKTD.json (packet appendix + DEFAULT reader) and mu_merged_RFLIP
 Signal = recovery on F+ net of the raw arm's spontaneous (regression-to-mean) recovery,
 plus breakage on S. Paired per-question, McNemar counts included.
 
-    python analysis/flip_mvp.py results/mu_merged_PKTD.json results/mu_merged_RFLIP.json /tmp/flipsets.json
+    python analysis/flip_mvp.py results/mu_merged_PKTD.json results/mu_merged_RFLIP.json ./out/flipsets.json
 """
 import json, sys, collections
 

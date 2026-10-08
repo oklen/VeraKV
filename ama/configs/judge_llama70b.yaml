@@ -1,0 +1,8 @@
+# AMA-Bench judge config for the cross-family re-judge (paper App. "Judge robustness").
+# Serve Llama-3.1-70B-Instruct with vLLM on vllm_port; `model` must equal its --served-model-name.
+provider: "vllm"
+model: "/path/to/Llama-3.1-70B-Instruct"
+vllm_host: "localhost"
+vllm_port: 8057
+timeout: 600
+enable_thinking: false

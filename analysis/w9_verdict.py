@@ -4,8 +4,9 @@ Verifies the manipulation (answer lengths), then paired deltas w/ bootstrap CIs,
 splits, and SXPF quote fidelity — the inputs for the corrected paper passage.
 """
 import json, re, random, collections
+import os
 
-BASE = "/home/tiger/"
+BASE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results") + os.sep
 
 def norm(s):
     return re.sub(r"\s+", " ", (s or "")).strip()

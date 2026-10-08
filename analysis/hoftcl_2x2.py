@@ -2,7 +2,7 @@
 import json, re, glob, os
 from collections import Counter, defaultdict
 
-RES = "/Users/bytedance/Downloads/kvmemory-release/results"
+RES = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results")
 rows = json.load(open(f"{RES}/j2x2_rows.json"))
 if os.path.exists(f"{RES}/j2x4_rows.json"):
     full = {r["i"]: r for r in json.load(open(f"{RES}/j2x4_rows.json"))}

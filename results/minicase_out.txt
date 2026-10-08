@@ -4,21 +4,21 @@ SRV_UP=1
 Q: At step 86, the agent performs a 'Do' action while facing a diamond, but the diamond remains present in the observation at step 87. Based on Crafter's resource collection rules, wh
 GOLD: It can be definitively inferred that the agent does not have an iron pickaxe in its inventory. In Crafter, each tier of resource requires a specific tool to collect it; diamond, being a high-tier resource, requires an iron pickaxe. The 'Do' action at
 Traceback (most recent call last):
-  File "/home/tiger/stage_w7/minicase.py", line 78, in <module>
+  File "<run-dir>/stage_w7/minicase.py", line 78, in <module>
     ctx = get_ctx(eid, q)
-  File "/home/tiger/stage_w7/minicase.py", line 69, in get_ctx
+  File "<run-dir>/stage_w7/minicase.py", line 69, in get_ctx
     mem_cache[eid] = m.memory_construction(traj)
-  File "/home/tiger/AMA-Bench/src/method/kvmemory.py", line 121, in memory_construction
+  File "<AMA-Bench>/src/method/kvmemory.py", line 121, in memory_construction
     router=self._make_router(),
-  File "/home/tiger/AMA-Bench/src/method/kvmemory.py", line 167, in _make_router
+  File "<AMA-Bench>/src/method/kvmemory.py", line 167, in _make_router
     return self._router_by_name(self.cfg.get("router", "lexical"))
-  File "/home/tiger/AMA-Bench/src/method/kvmemory.py", line 183, in _router_by_name
+  File "<AMA-Bench>/src/method/kvmemory.py", line 183, in _router_by_name
     base = self._router_by_name(self.cfg.get("causal_base", "hybrid"))
-  File "/home/tiger/AMA-Bench/src/method/kvmemory.py", line 180, in _router_by_name
+  File "<AMA-Bench>/src/method/kvmemory.py", line 180, in _router_by_name
     return HybridRouter([self._router_by_name(n) for n in names],
-  File "/home/tiger/AMA-Bench/src/method/kvmemory.py", line 180, in <listcomp>
+  File "<AMA-Bench>/src/method/kvmemory.py", line 180, in <listcomp>
     return HybridRouter([self._router_by_name(n) for n in names],
-  File "/home/tiger/AMA-Bench/src/method/kvmemory.py", line 174, in _router_by_name
+  File "<AMA-Bench>/src/method/kvmemory.py", line 174, in _router_by_name
     raise ValueError("router='model' needs the harness client (pass --llm-server)")
 ValueError: router='model' needs the harness client (pass --llm-server)
 MINICASE_DONE

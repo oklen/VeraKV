@@ -17,7 +17,7 @@ This is the SAME policy as our text-level `kvmemory` arm (core.KVMemory.assemble
 old turns indexed by a cheap gist, router rehydrates the few old turns each query needs. The compact
 selected context is precisely the advantage under their 32k backbone budget (trajectories reach ~1M tok).
 
-Requires the `kvmemory` package importable (PYTHONPATH includes its parent, e.g. /home/tiger).
+Requires the `kvmemory` package importable (PYTHONPATH includes the repository root).
 """
 from __future__ import annotations
 
@@ -38,6 +38,8 @@ from kvmemory.components import (
 
 # inside a worker thread races transformers' lazy loader → "cannot import name 'AutoTokenizer'".
 _TOK_LOCK = threading.Lock()
+# default tokenizer = the reader checkpoint (local dir exported as MODEL by ama/maxutil_run.sh)
+_DEFAULT_TOK = os.environ.get("MODEL", "Qwen/Qwen3-32B")
 _TOK_CACHE: dict = {}
 
 
@@ -100,7 +102,7 @@ class KVMemoryMethod(BaseMethod):
     DEFAULTS = {"arm": "kvmemory", "hot_turns": 4, "k_rehydrate": 5, "router": "lexical",
                 "hybrid_routers": ["lexical", "model"], "rrf_c": 60, "per_step_cap_tok": 0,
                 "embed_max_cands": 1500,  # lexical-prefilter cap for the embed router (bounds GPU mem)
-                "max_ctx_tokens": 22000, "tokenizer": "/tmp/Qwen3-32B"}  # TOKEN-cap under the model window
+                "max_ctx_tokens": 22000, "tokenizer": _DEFAULT_TOK}  # TOKEN-cap under the model window
 
     def __init__(self, config_path: str | None = None, client=None, embedding_engine=None):
         self.client = client
@@ -145,7 +147,7 @@ class KVMemoryMethod(BaseMethod):
             # full-context control: the raw trajectory, recency-truncated to the same token budget
             # (drop OLDEST first) -- no routing, no gists, no appendix; same reader/prompt/judge.
             body = "\n\n".join(f"<step {s.turn}>\n{s.text}" for s in memory.segments)
-            tok = _load_tokenizer(self.cfg.get("tokenizer", "/tmp/Qwen3-32B"))
+            tok = _load_tokenizer(self.cfg.get("tokenizer", _DEFAULT_TOK))
             max_tok = int(self.cfg.get("max_ctx_tokens", 22000))
             cc = max_tok * 6
             if len(body) > cc:
@@ -159,7 +161,7 @@ class KVMemoryMethod(BaseMethod):
         # window: keep the evidence appendix (trim only its tail if it alone overflows), then fill the
         # remaining budget with the overview's recent end.
         static, dyn = memory.assemble_routed_split(question)
-        tok = _load_tokenizer(self.cfg.get("tokenizer", "/tmp/Qwen3-32B"))
+        tok = _load_tokenizer(self.cfg.get("tokenizer", _DEFAULT_TOK))
         max_tok = int(self.cfg.get("max_ctx_tokens", 22000))
         cc = max_tok * 6  # cheap char pre-truncate so giant (300k-tok) contexts aren't tokenized in full
         if len(dyn) > cc:

@@ -156,7 +156,8 @@ class MemoryQAInterface:
             }
         if __import__("os").environ.get("AMA_AGENTIC_READER") and not mcq_mode:
             import sys as _sys
-            if "/home/tiger" not in _sys.path: _sys.path.insert(0, "/home/tiger")
+            _d = __import__("os").environ.get("VERAKV_AMA_DIR")  # dir holding agentic_reader.py
+            if _d and _d not in _sys.path: _sys.path.insert(0, _d)
             from agentic_reader import agentic_answer
             return agentic_answer(self.client, question, retrieved_context, self.max_tokens, extract_final_answer, method=self.method, memory=memory)
         if mcq_mode:

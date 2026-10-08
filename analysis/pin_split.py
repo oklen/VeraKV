@@ -1,7 +1,8 @@
-import json,re
+import json,os,re
+RES=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),"results")
 def load(*t):
     r=[]
-    for x in t: r+=json.load(open("/home/tiger/mu_merged_%s.json"%x))
+    for x in t: r+=json.load(open(os.path.join(RES,"mu_merged_%s.json"%x)))
     return r
 def split_acc(rs):
     cite=[]; non=[]

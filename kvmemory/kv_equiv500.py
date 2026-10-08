@@ -6,9 +6,9 @@ parity + first-token agreement + GATE-B mask-oracle spot-check, but:
   * --ans_out: per-QA JSONL dump (q, gold, both answers, domain, qtype) for a 32B post-judge pass
   * per-domain tallies in the shard summary
 
-    SPRAG_MODEL_PATH=/tmp/Qwen3-8B PYTHONPATH=/home/tiger CUDA_VISIBLE_DEVICES=0 \
+    SPRAG_MODEL_PATH=/path/to/Qwen3-8B PYTHONPATH=. CUDA_VISIBLE_DEVICES=0 \
         python -m kvmemory.kv_equiv500 --shard 0 --nshards 8 --max_ep 72 --max_qa 8 \
-        --max_tokens 26000 --out /home/tiger/w4_eq_s0.json --ans_out /home/tiger/w4_ans_s0.jsonl
+        --max_tokens 26000 --out ./out/w4_eq_s0.json --ans_out ./out/w4_ans_s0.jsonl
 """
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ from kvmemory.kv_equiv import judge, norm
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", default="/home/tiger/ama_test.jsonl")
+    ap.add_argument("--data", default="./data/ama_test.jsonl")
     ap.add_argument("--max_tokens", type=int, default=26000)
     ap.add_argument("--max_ep", type=int, default=72)
     ap.add_argument("--max_qa", type=int, default=8)
@@ -40,8 +40,8 @@ def main():
     ap.add_argument("--gate_ep", type=int, default=3)
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--nshards", type=int, default=1)
-    ap.add_argument("--out", default="/home/tiger/w4_eq.json")
-    ap.add_argument("--ans_out", default="/home/tiger/w4_ans.jsonl")
+    ap.add_argument("--out", default="./out/w4_eq.json")
+    ap.add_argument("--ans_out", default="./out/w4_ans.jsonl")
     ap.add_argument("--layout", choices=["compact", "deployed"], default="compact",
                     help="compact = [selected||q]; deployed = overview(hot verbatim+old gists) present in "
                          "BOTH arms: kv gathers {selected spans + overview segment} (overview prefilled once "

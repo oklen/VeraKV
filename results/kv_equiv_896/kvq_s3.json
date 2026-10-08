@@ -1,0 +1,199 @@
+{
+  "rows": [
+    {
+      "episode_id": 161,
+      "domain": "SOFTWARE",
+      "n_seg": 47,
+      "total_tok": 28503
+    },
+    {
+      "episode_id": 91,
+      "domain": "TEXT2SQL",
+      "n_seg": 25,
+      "total_tok": 8911
+    },
+    {
+      "episode_id": 92,
+      "domain": "TEXT2SQL",
+      "n_seg": 7,
+      "total_tok": 3803
+    },
+    {
+      "episode_id": 93,
+      "domain": "TEXT2SQL",
+      "n_seg": 20,
+      "total_tok": 7664
+    },
+    {
+      "episode_id": 94,
+      "domain": "TEXT2SQL",
+      "n_seg": 24,
+      "total_tok": 18380
+    },
+    {
+      "episode_id": 95,
+      "domain": "TEXT2SQL",
+      "n_seg": 20,
+      "total_tok": 8245
+    },
+    {
+      "episode_id": 96,
+      "domain": "TEXT2SQL",
+      "n_seg": 14,
+      "total_tok": 7215
+    },
+    {
+      "episode_id": 97,
+      "domain": "TEXT2SQL",
+      "n_seg": 25,
+      "total_tok": 7022
+    },
+    {
+      "episode_id": 98,
+      "domain": "TEXT2SQL",
+      "n_seg": 25,
+      "total_tok": 1621
+    },
+    {
+      "episode_id": 99,
+      "domain": "TEXT2SQL",
+      "n_seg": 16,
+      "total_tok": 1752
+    },
+    {
+      "episode_id": 100,
+      "domain": "TEXT2SQL",
+      "n_seg": 25,
+      "total_tok": 9016
+    },
+    {
+      "episode_id": 101,
+      "domain": "TEXT2SQL",
+      "n_seg": 25,
+      "total_tok": 11951
+    },
+    {
+      "episode_id": 102,
+      "domain": "TEXT2SQL",
+      "n_seg": 25,
+      "total_tok": 8524
+    },
+    {
+      "episode_id": 103,
+      "domain": "TEXT2SQL",
+      "n_seg": 15,
+      "total_tok": 5387
+    },
+    {
+      "episode_id": 104,
+      "domain": "TEXT2SQL",
+      "n_seg": 24,
+      "total_tok": 9665
+    },
+    {
+      "episode_id": 19,
+      "domain": "Game",
+      "n_seg": 195,
+      "total_tok": 17059
+    },
+    {
+      "episode_id": 51,
+      "domain": "EMBODIED_AI",
+      "n_seg": 150,
+      "total_tok": 25428
+    },
+    {
+      "episode_id": 108,
+      "domain": "TEXT2SQL",
+      "n_seg": 25,
+      "total_tok": 9700
+    },
+    {
+      "episode_id": 24,
+      "domain": "Game",
+      "n_seg": 50,
+      "total_tok": 6756
+    },
+    {
+      "episode_id": 26,
+      "domain": "Game",
+      "n_seg": 50,
+      "total_tok": 6972
+    },
+    {
+      "episode_id": 28,
+      "domain": "Game",
+      "n_seg": 50,
+      "total_tok": 6769
+    },
+    {
+      "episode_id": 116,
+      "domain": "TEXT2SQL",
+      "n_seg": 25,
+      "total_tok": 10104
+    },
+    {
+      "episode_id": 120,
+      "domain": "TEXT2SQL",
+      "n_seg": 15,
+      "total_tok": 10057
+    },
+    {
+      "episode_id": 124,
+      "domain": "TEXT2SQL",
+      "n_seg": 12,
+      "total_tok": 7430
+    },
+    {
+      "episode_id": 128,
+      "domain": "TEXT2SQL",
+      "n_seg": 9,
+      "total_tok": 649
+    },
+    {
+      "episode_id": 132,
+      "domain": "TEXT2SQL",
+      "n_seg": 8,
+      "total_tok": 6283
+    },
+    {
+      "episode_id": 136,
+      "domain": "TEXT2SQL",
+      "n_seg": 25,
+      "total_tok": 12166
+    },
+    {
+      "episode_id": 140,
+      "domain": "TEXT2SQL",
+      "n_seg": 10,
+      "total_tok": 4892
+    }
+  ],
+  "n": 224,
+  "argmax_agree": 201,
+  "answer_match": 30,
+  "kv_ok": 31,
+  "tx_ok": 31,
+  "gateb_agree": 32,
+  "gateb_n": 32,
+  "by_type": {
+    "A": [
+      121,
+      106,
+      15,
+      13
+    ],
+    "B": [
+      78,
+      72,
+      12,
+      11
+    ],
+    "C": [
+      25,
+      23,
+      4,
+      7
+    ]
+  }
+}

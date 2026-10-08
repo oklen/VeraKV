@@ -14,7 +14,7 @@ Run manifests (n / accuracy / bootstrap CI): `mu_<TAG>_done`.
 | R1 | lexical | structured | full | 0.6154 | factorial table |
 | R2 | hybrid | structured | full | 0.6294 | ladder / router table |
 | FPA + FPB | flagship (causal+hybrid+pin) | default | full | **0.5954** | factorial table (memory-only headline) |
-| FLSA + FLSB | flagship | structured | full | 0.6478 | reproduction of the 0.6466 official-run headline |
+| FLSA + FLSB | flagship | structured | full | 0.6478 | the submitted entry (leaderboard-verified 0.6478) |
 
 ## Same-day anchors (h0, used by the ablations below)
 
@@ -49,8 +49,8 @@ Run manifests (n / accuracy / bootstrap CI): `mu_<TAG>_done`.
 | TSW / CSW | deterministic lookup tools on SW / control | 0.4444 / 0.4375 | +0.7 ≈ 0 |
 | QSW / CSW2 | quote-first instruction on SW / control | 0.3634 / 0.4630 | −10.0 (format is not the gap) |
 
-(select / state / gated / gate-only rows of the paper table come from the earlier
-wave whose merged files are on the experiment host; they ship in the next artifact push.)
+The select / state / gated / gate-only / decouple rows of the paper table come from the 2026-07-04
+reader-side wave; their merged files are now included (section "Reader-side wave" below).
 
 ## Structural address resolution (paper: robustness paragraph)
 
@@ -214,3 +214,96 @@ completeness +12.7, curve monotone; xjudge_out{,2}.json); mini case rig 11×4
 truncated pick-stubs, lexical-only beats it +2.7 [+0.5,+5.0] (RESTRLEX 0.6506 /
 RESTREMB 0.6410 / RESTR5 0.6226) — paper corrected, recommended default = pin
 over lexical.
+
+## Added in the October 2026 release
+
+### Reader-side wave (2026-07-04; paper App. "reader-side falsification map")
+
+Same harness and judge; `h0`/`h1` halves. Agentic reader modes are set via `AMA_AGENTIC_MODE`
+(`ama/agentic_reader.py`), run through `ama/maxutil_run.sh`.
+
+| Tag(s) | Memory / reader mode | Split | Acc | Paper row |
+|---|---|---|---|---|
+| FSELA + FSELB | model-selected evidence compression (`select`) | full | 0.5401 / 0.5144 | evidence compression −3.0 |
+| STA + STB | flagship, entity-state timeline scaffold (`state`) | full | 0.6178 / 0.6450 | timeline scaffold −1.6 vs FLSA+FLSB |
+| FLGA + FLGB | flagship, sufficiency gate fused into the answer prompt (`gated`) | full | 0.6378 / 0.6258 | fused gate −1.6 |
+| GOFA / GOLA / GOCA | escape clause only, never re-retrieves (`gateonly`) — flagship / lexical / lexical+pin | h0 | 0.6338 / 0.5978 / 0.6282 | escape clause alone −2.6 (GOFA vs FLSA) |
+| DECA + DECB | flagship, gate as a separate call (`decouple`) | full | 0.6514 / 0.6442 | separate gate ±0.0 |
+| FSTRA / FGATEA / FGATEB | lexical router: structured base / fused gate (h0, h1) | h0, h1 | 0.5929 / 0.6058 / 0.5994 | re-retrieval under a weak router +1.3 (FGATEA vs FSTRA) |
+| CSA, CSB / CGA, CGB | lexical+pin: structured base / fused gate | h0, h1 | 0.6370, 0.6530 / 0.6362, 0.6346 | gate attribution on lexical+pin |
+| TH0 | deterministic lookup tools, full domain mix (`tools`) | h0 | 0.6426 | tools (indicative; SW contrast is TSW vs CSW) |
+| SWRECALL | flagship, structured, gate-only reader with step-recall logging (asked step present 268/268) | SW | 0.4259 | SOFTWARE dissection: not retrieval (App. E) |
+| SWBASE / SWSEL / SWSEL2 / SWAG / SW3 | further SOFTWARE-domain development probes of the reader modes (SW3: one shard missing, n=324) | SW | 0.4282 / 0.3889 / 0.3727 / 0.3588 / 0.3889 | not cited by number |
+| PROBE / PROBEG / PROBEP / PROBES / STPROBE | 48-QA smoke probes of the reader modes | 48 QA | 0.52–0.60 | development only |
+| EXTLW / FACTSW / FULLTR | appendix → original lines / extracted facts; full trajectory recency-truncated (`cfg_full22.json`) | h0 | 0.6154 / 0.5825 / 0.5577 | Table "family" (vs RESTR2 / RESTR) |
+| LOOPSW / LOOPS2 / CSW3 | iterative lookup loop replacing the answer pass / as evidence gatherer / same-batch control | SW | 0.3773 / 0.4676 / 0.4676 | loop rows (−9.0 / ±0.0) |
+
+### Memory assembly 2×2 (paper App. D)
+
+Full set, structured reader, lexical router, same batch. `analysis/assembly_2x2.py`.
+
+| Tag | Routed verbatim selection | Gist overview | Config | Acc | SOFTWARE |
+|---|---|---|---|---|---|
+| ASM_RECENT | – | – | `ama/configs/cfg_arm_recent.json` | 0.6102 | 0.4537 |
+| ASM_GIST | – | ✓ | `cfg_arm_gist.json` | 0.6042 | 0.4375 |
+| ASM_RETRIEVAL | ✓ | – | `cfg_arm_retrieval.json` | 0.6114 | 0.4815 |
+| ASM_KVLEX | ✓ | ✓ | `cfg_kvmem_lex.json` | 0.6130 | 0.4792 |
+
+### Router audit tags (paper App. F)
+
+`RESTRLEXF` = lexical + step-pin (`cfg_kvmem_causal.json`), structured, full set: 0.6466 (2026-07-07 batch;
+paired with `RESTRF2` in the same batch: −0.8pp [−2.3, +0.8]).
+`RESTRF4` = model-pick hybrid + step-pin (`cfg_flagship.json`), structured, full set: 0.6410 (2026-07-08,
+upgraded serving stack; not paired with `RESTRLEXF`).
+`RESTRF` / `RESTRF2` / `RESTRF3` = same-config replicates of the flagship configuration
+(0.6454 / 0.6538 / 0.6466). `RESTRF3` and `RESTRLEXF` score the same 0.6466 by coincidence; they are different
+configurations.
+
+### Judge robustness (paper App. "Judge robustness")
+
+`judge_llama70b/ama_rejudged.json`: per-question predictions of a full official-harness re-run with the
+original Qwen3-32B judge score (`qwen_score`, 0.6426) and an independent Llama-3.1-70B-Instruct judge score
+(`score`, 0.6767 [0.6583, 0.6947]); 84.4% item agreement. `python analysis/rejudge_llama70b.py --summary
+results/judge_llama70b/ama_rejudged.json`.
+
+### KV serving (paper Sec. 3.5, App. "KV-serving correctness")
+
+| Path | What | Script |
+|---|---|---|
+| `kv_equiv_144/kv_equiv.json` | 144 QA / 24 episodes: kv 17 vs text 18 correct, mask-oracle gate 24/24 | `kvmemory/kv_equiv.py` |
+| `kv_equiv_896/kvq_merged.json` (+ per-shard) | 896 QA / 112 episodes: kv 155 vs text 156, argmax agreement 747, gate 126/128 | `kvmemory/kv_equiv.py` (4 shards) |
+| `kv_sidechannel/kv_sidechannel_full.json` | perturb unselected upstream turns: gathered-KV answer changes 111/168, text 0, gate 24/24 | `kvmemory/kv_sidechannel.py` |
+| `sw_mechanism/sw_mechanism_{8b,32b}.json` | 74 temporal-scan questions: selection / +gold step / +complete index (8B 1, 9, 12; 32B 6, 9, 10 correct); gold step in selection 4/74 | `kvmemory/sw_mechanism.py` |
+| `kv_cost/ttft_{8b,32b}.jsonl` | stage-resolved query cost and store-write time, 12 episodes × 4 QA | `kvmemory/kv_ttft.py`, `analysis/ttft_stages.py` |
+| `kv_cost/pfx_8b.json` | sub-selection vs resident prefix cache vs text re-prefill, K = 2–12 | `kvmemory/kv_pfx.py`, `analysis/pfx_ttft.py` |
+
+### Out-of-window and KV-serving runs (paper Sec. 3.6, Sec. 4) — `oow/`
+
+One gzipped JSONL per run; each row is one question with a 0/1 field per arm (and `ans_<arm>` /
+`pred_<arm>` answers). `oow/index.json` lists file, script, n and arms; `analysis/oow_paired.py` computes
+the paired statistics.
+
+| File | n | Script | What |
+|---|---|---|---|
+| `official_k12.jsonl.gz` | 2431 | `kv_ama_bridge` + `ama/br_judge.py` | official harness K=12: tx .3974 / iso .2653 / b_hot .3603 |
+| `official_k5.jsonl.gz` | 2403 | `kv_ama_bridge --k 5` + `br_judge` | K=5: tx .3679 / b_hot .3600 |
+| `official_deploymap.jsonl.gz` | 2496 | `kv_ama_bridge --arms gsk,g_txt` + `ama/bg_judge.py` | deployment map (pair with K=12: gsk .3965 vs .3603 / .3974) |
+| `owf8`, `owf32` | 527, 474 | `kv_owfloor` | over-window cell, 8B / 32B |
+| `rv`, `rv32` | 824, 616 | `kv_review` | evidence matching, conditioner content, full-reading ceiling, tail dial |
+| `fl` | 824 | `kv_floor` (hot=4) | floor arms incl. generated-digest conditioner |
+| `gh`, `gh_llama` | 824 | `kv_globhot` | harvest 2×2, Qwen3-8B / Llama-3.1-8B-Instruct |
+| `hx`, `hx32` | 824 | `kv_hxfer` | agent-style cache header (8B); harvest vs store vs full (32B) |
+| `fr`, `kp` | 824 | `kv_frontier`, `kv_keepsel` | fresh-budget selectors; KEEP-style selector |
+| `ev` | 824 | `kv_evext` | Regularity I factorial (use `--nonempty bridges`, n=727) |
+| `fx`, `dx`, `ep`, `da`, `nt` | 824 | `kv_fixanchor`, `kv_distanchor`, `kv_epic`, `kv_depanchor`, `kv_notesel` | Regularity II dials |
+| `kl` | 824 | `kv_klprobe` | first-token KL autopsy (`analysis/kl_probe.py`) |
+| `sk`, `sl` | 800 | `kv_skill`, `kv_skillib` | skill block; skill library |
+| `loc8`, `loc32` | 1150 | `kv_locomo` | LOCOMO, sessions as events |
+| `mx` | 824 | `kv_matrix` | 12-arm conditioner matrix (input to `analysis/vote_analysis.py`, `analysis/cascade_ceiling.py`) |
+
+### Synthetic probes (paper Sec. 4, "Four synthetic probes") — `probes/`
+
+Per-shard outputs (8 shards, Qwen3-8B) of `kv_phantom` + `kv_vartrack` (`phvt/`), `kv_vardecomp` (`vd/`),
+`kv_predigest` (`pd/`), `kv_predigest_sweep` (`pds/`), `kv_decoyctl` (`dc/`), `kv_decoyctl2` (`d2/`),
+`kv_sweepmenu` (`sm/`), `kv_mater` (`mt/`), `kv_refcarrier` (`rc/`), `kv_noteknob2` (`nk2/`). Analysis:
+`analysis/probes/{phvt,vd,pd,pds,nk2}_analyze.py <dir>`.

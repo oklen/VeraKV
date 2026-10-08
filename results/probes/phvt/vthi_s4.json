@@ -1,0 +1,810 @@
+{
+ "rows": [
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 1,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 1,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 1,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 2,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 4,
+   "far": 0,
+   "full": 1,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 1
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  },
+  {
+   "hops": 4,
+   "far": 1,
+   "full": 0,
+   "harvest": 1,
+   "iso": 0,
+   "anch": 0
+  }
+ ],
+ "summary": {
+  "h1_far0": {
+   "full": 0.9375,
+   "harvest": 1.0,
+   "iso": 0.125,
+   "anch": 0.9375
+  },
+  "h1_far1": {
+   "full": 0.125,
+   "harvest": 1.0,
+   "iso": 0.0,
+   "anch": 0.125
+  },
+  "h2_far0": {
+   "full": 0.5,
+   "harvest": 1.0,
+   "iso": 0.0,
+   "anch": 0.5
+  },
+  "h2_far1": {
+   "full": 0.0625,
+   "harvest": 1.0,
+   "iso": 0.0,
+   "anch": 0.0625
+  },
+  "h4_far0": {
+   "full": 0.625,
+   "harvest": 1.0,
+   "iso": 0.0,
+   "anch": 0.625
+  },
+  "h4_far1": {
+   "full": 0.0,
+   "harvest": 1.0,
+   "iso": 0.0,
+   "anch": 0.0
+  }
+ }
+}
