@@ -2,9 +2,10 @@
 
 - **What model-pick is:** the deployed configuration (`cfg_flagship.json`, behind the 0.6478 entry) fuses
   lexical overlap with a "model-pick" signal, a short model call that names the past steps a question needs.
-- **What was already known:** the paper's router audit (appendix "The deployed router") notes that on a
-  thinking model these 32-token calls usually return truncated stubs, and finds the signal score-neutral.
-- **What the call logs of the [paired re-run](AMA_AGENT_PAIRED.md) add:** it is every call, not most.
+- **What was already known:** the paper's router audit (appendix "The deployed router") had seen these
+  32-token calls return truncated stubs on a thinking model, and found the signal score-neutral.
+- **What the call logs of the [paired re-run](AMA_AGENT_PAIRED.md) add:** it is every call, not most. The
+  October revision of the paper now says so in that appendix, and reports the re-run below.
   - AMA-Bench's client never passes the config's `enable_thinking`, so Qwen3 thinks by default.
   - Each call returns only the opening of an unfinished `<think>` block.
   - The parser takes whatever numbers appear there as step picks.

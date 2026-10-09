@@ -680,7 +680,7 @@ pin is a transparent rule, not a learned exploit.
 The router in the deployed stack fuses lexical overlap with a second
 ``model-pick'' signal. A controlled full-set audit finds that signal
 \emph{score-neutral}: paired within one batch, a lexical base $+$ step-pin ($0.6466$) differs from
-the model-pick hybrid base by $-0.8\pp$ $[-2.3,+0.8]$.\footnote{Full audit in
+the model-pick hybrid base by $-0.8\pp$ $[-2.3,+0.8]$; with its pick call fixed, the signal stays score-neutral.\footnote{Full audit in
 Appendix~\ref{app:routeraudit}.} We therefore name and release the reproducible
 \textbf{lexical $+$ step-pin} default---the substrate and the pin carry the routing
 on AMA-Bench, not a semantic scorer.
@@ -1910,15 +1910,15 @@ gold step already present in the selection & \multicolumn{2}{c}{$5.4\%$} \\
 Preparing the release we found that the ``hybrid'' router in the deployed
 configuration fuses lexical overlap with a second \emph{model-pick} signal (a short
 LLM call that names likely-relevant turns)---\emph{not} the dense-embedding router
-used on LOCOMO and LongMemEval-S. Run on a thinking model, its $32$-token pick calls
-usually return truncated stubs, so we audited whether the signal contributes at all.
+used on LOCOMO and LongMemEval-S. The harness leaves the model's thinking mode on (it never passes its \texttt{enable\_thinking} setting), so each $32$-token pick call
+returns only the opening of an unfinished reasoning block (all $7{,}128$ such calls logged in two later re-runs), and the parser reads whatever numbers appear there as turns. We audited whether the signal contributes at all.
 
 It does not. A same-day paired audit on the half set put a plain lexical base
 \emph{ahead} ($+2.7\pp$ $[+0.5,+5.0]$); a pre-registered full-set replication is
 score-neutral ($-0.8\pp$ $[-2.3,+0.8]$, the two bases trading domains; the lexical run scores $0.6466$).
 A further full-set run of the model-pick hybrid base $+$ step-pin, made a day later on an
 upgraded serving stack and therefore not paired with these, scores $0.6410$, $0.56\pp$ below
-the lexical run and within the run-to-run spread of about $1\pp$.
+the lexical run and within the run-to-run spread of about $1\pp$. A pre-registered same-batch re-run on all $2{,}496$ QA then fixed the pick call (thinking off; prompt and $32$-token budget unchanged). The deployed configuration as published scores $0.5992$ there with the default answer prompt and $0.6486$ with the structured one; the fixed signal changes these by $+0.2\pp$ $[-1.5,+2.1]$ and $+1.4\pp$ $[-0.2,+3.2]$ (neither significant), and against lexical$+$pin it is $+1.8\pp$ $[+0.0,+3.6]$ and $+0.8\pp$ $[-0.8,+2.4]$, the two answer prompts disagreeing.
 No reported \emph{difference} depends on the signal (memory configuration is
 held constant within each same-batch table). We therefore name, recommend, and
 release the reproducible \textbf{lexical $+$ step-pin} default: identical accuracy,
