@@ -14,9 +14,16 @@
 | MemGPT | 0.3304 |
 | Mem0 | 0.2104 |
 
-- **Wins 5 of 6 AMA-Bench domains** against the purpose-built AMA-Agent.
-- **The memory alone beats AMA-Agent:** 0.5954 vs 0.5722 with the harness's own default reader, before any
-  reader-side change.
+VeraKV's rows are our runs; the other rows are published or leaderboard scores.
+
+- **Wins 5 of 6 AMA-Bench domains** against the purpose-built AMA-Agent's published scores.
+- **The memory alone beats AMA-Agent's published score:** 0.5954 vs 0.5722 with the harness's own default
+  reader, before any reader-side change.
+- **Head-to-head with AMA-Agent on the same server and judge.** On 2,136 paired questions, VeraKV beats
+  AMA-Agent as released by 4.2 points [+1.8, +6.6], and by 13.7 [+8.7, +18.6] on state-update questions.
+  AMA-Agent loses mainly because its first "is this enough?" check stops too early. With that early answer
+  removed it ties VeraKV (−2.0 [−4.4, +0.4]), at about 3× the time and 7× the generated tokens per
+  question. [Details](docs/AMA_AGENT_PAIRED.md).
 - **Beats dedicated dialogue memory on LOCOMO:** J = 0.704 against Mem0's 0.671 and Zep's 0.660, under
   LOCOMO's public gpt-4o-mini protocol.
 - **Original lines beat rewritten memory by 8–14 points.** With matched evidence, reader and judge,
@@ -43,7 +50,9 @@ Reproducible State-of-the-Art System*; source in [`paper/kvmemory.tex`](paper/kv
 
 - **Payload fidelity, measured on agent trajectories.** Most memory systems keep the raw history; what
   differs is what the reader is served (Mem0's search returns its extracted facts; AMA-Agent's released
-  code serves its top-5 raw turns by embedding similarity together with an LLM-written state summary).
+  code serves its top-5 raw turns by embedding similarity together with an LLM-written state summary,
+  though on 84% of questions it answers earlier, from those turns alone; see the
+  [paired re-run](docs/AMA_AGENT_PAIRED.md)).
   With matched cited evidence, reader and judge, serving an LLM summary or extracted facts instead of the
   verbatim step costs 8–14pp; in the deployed pipeline a deterministic swap to the query-relevant
   *original lines* costs −2.6pp versus −5.1 / −5.9pp for generative re-encodings. AMA-Bench's own needle
@@ -65,7 +74,8 @@ Reproducible State-of-the-Art System*; source in [`paper/kvmemory.tex`](paper/kv
   cost at parity (8B/32B, Qwen/Llama, AMA-Bench/LOCOMO); a mixed deployment policy ties the routed-text
   carrier baseline on the full official harness (.397 vs .397).
 - **The system.** The memory stack alone (harness default reader) scores 0.5954 against the purpose-built
-  AMA-Agent's 0.5722; with the disclosed structured answer instruction it reaches the verified 0.6478.
+  AMA-Agent's published 0.5722; with the disclosed structured answer instruction it reaches the verified
+  0.6478.
   The one domain it does not lead, SOFTWARE, is a coverage ceiling on temporal-scan questions (verifying
   "which step first/last" needs the whole 60–100k-token trajectory), not a retrieval or reasoning gap.
 
@@ -77,11 +87,16 @@ kvmemory/   the memory package (core, components, routers, HF backend with KV su
             module per experiment, each runnable as `python -m kvmemory.<name>` (usage in its docstring)
 ama/        AMA-Bench integration: harness/ (2 patched files), configs/, agentic_reader.py (reader-mode
             ablations), answer instructions, maxutil_run.sh (vLLM launch + sharding + merge),
-            br_judge.py / bg_judge.py (official judge for the KV-bridge answers)
+            br_judge.py / bg_judge.py (official judge for the KV-bridge answers),
+            paired/ (the paired re-run against AMA-Agent; how to run it in paired/README.md)
+docs/       AMA_AGENT_PAIRED.md: the paired re-run against AMA-Agent; MODEL_PICK_FIX.md: the model-pick
+            call fixed and re-run
 analysis/   scripts that turn run outputs into the paper's numbers (see the table below)
 results/    raw per-question predictions + judge scores (mu_merged_<TAG>.json, run manifests mu_<TAG>_done),
             results/oow/ (KV-serving and out-of-window runs), results/probes/ (synthetic probes),
-            smaller outputs; index in results/MANIFEST.md
+            results/ama_paired/ (the paired re-run against AMA-Agent), results/modelpick_fix/ (the
+            model-pick fix re-run), smaller outputs; index in
+            results/MANIFEST.md
 scripts/    run_ama.sh — end-to-end official-harness run on one 8×A100 node
 submissions/ the leaderboard submission file
 data/       where the benchmark files go (not shipped; see data/README.md)
@@ -119,7 +134,10 @@ python analysis/cluster_ci.py                                     # QA-level + e
 `ama/maxutil_run.sh` documents the reader-mode switches (`AMA_AGENTIC_READER`, `AMA_AGENTIC_MODE`) and
 the pin-corruption ablation (`SPRAG_PIN_SHUFFLE`). The submitted 0.6478 entry used `cfg_flagship.json`
 (lexical + model-pick fusion + pin); App. "The deployed router" shows the fusion is score-neutral, and
-`cfg_kvmem_causal.json` (lexical + step-pin) is the released default.
+`cfg_kvmem_causal.json` (lexical + step-pin) is the released default. In the official harness the
+model-pick call runs in Qwen3's thinking mode and returns only the start of its reasoning;
+`cfg_flagship_nothink.json` (`"pick_thinking": false`) fixes the call, and the fixed signal is
+score-neutral as well ([docs/MODEL_PICK_FIX.md](docs/MODEL_PICK_FIX.md)).
 
 **KV and out-of-window experiments (HF transformers).** The AMA-Bench test file goes to
 `data/ama_test.jsonl` (see [data/README.md](data/README.md)). Each module's docstring carries its run
@@ -188,6 +206,8 @@ episode-clustered bootstrap (10,000 draws, seed 0) can differ from a paper CI in
 | §3.2 | LOCOMO, Qwen3-32B reader/judge; public gpt-4o-mini protocol | `kvmemory/locomo_eval.py`, `kvmemory/locomo_gpt4omini.py` | — |
 | §3.3 | LongMemEval-S (128k YaRN full vs routed at 28k) | `kvmemory/longmemeval_eval.py` | — |
 | App. I | Llama-3.1-70B re-judge of a full official run | `analysis/rejudge_llama70b.py`, `ama/configs/judge_llama70b.yaml` | `results/judge_llama70b/ama_rejudged.json` |
+| not in the paper | paired re-run against AMA-Agent: as released (A1), token-counted context cap (A2), no early answer (A3); VeraKV V1 / V2 ([write-up](docs/AMA_AGENT_PAIRED.md)) | `ama/paired/run.py`, `make_tokcap.py`, `make_nofast.py` | `results/ama_paired/`, `ama/paired/analyze.py`, `a3_analyze.py` |
+| not in the paper | model-pick call fixed and re-run: V1 / V1f / V2 under two readers, 2,496 QA ([write-up](docs/MODEL_PICK_FIX.md)) | `ama/paired/run.py` (arm V1f), `ama/configs/cfg_flagship_nothink.json` | `results/modelpick_fix/`, `ama/paired/modelpick_analyze.py` |
 
 The shared modules `kv_scope`, `kv_replay`, `kv_write`, `kv_matrix`, `kv_ow`, `kv_floor`, `kv_globhot`,
 `kv_distanchor` and `kv_orphan` hold the store-encoding, assembly and gather primitives the
@@ -209,6 +229,16 @@ which carries the extended versions. `gpt-4o-mini` runs need an OpenAI-compatibl
   headline system. Never compare the two across protocols (paper App. "Protocol ledger").
 - KV gather is exact only within the positional window; every headline accuracy comes from the text
   pipeline. Claims for the cache path are about first-token latency, not answering faster.
+- The AMA-Agent comparisons in the table and in the first two bullets use its published scores. Our
+  re-run of the released AMA-Agent comes out 4.9 points below them on the five domains it covers, and 26
+  below on SOFTWARE, for reasons we could not find. The paired comparison uses our re-run for both
+  systems ([reproduction checks](docs/AMA_AGENT_PAIRED.md#reproduction-checks)).
+- The deployed router's model-pick call (32 output tokens) never worked as designed in the official
+  harness: the harness leaves Qwen3-32B's thinking mode on, and in our two re-runs every call stopped
+  inside the model's reasoning. The paper's router audit saw these truncated calls and found the signal
+  score-neutral. A same-batch re-run with the call fixed, on all 2,496 questions, finds the working signal
+  score-neutral too: +0.2 [−1.5, +2.1] with the default reader, +1.4 [−0.2, +3.2] with the structured
+  reader ([details](docs/MODEL_PICK_FIX.md)).
 
 ## License
 

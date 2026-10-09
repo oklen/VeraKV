@@ -89,13 +89,39 @@ _OBS = re.compile(r"Observation:\s*(.*)", re.S)
 
 class _ClientLLM:
     """Adapt the AMA-Bench ModelClient (.query(prompt, temperature, max_tokens)) to the .generate()
-    interface ModelPickRouter expects. Lets the router reuse the harness backbone for query-aware picks."""
+    interface ModelPickRouter expects. Lets the router reuse the harness backbone for query-aware picks.
 
-    def __init__(self, client):
+    thinking=True is the published behaviour: ModelClient.query leaves Qwen3's default thinking mode on,
+    so a 32-token pick call returns only the opening of an unfinished <think> block and the parser reads
+    whatever numbers appear there. thinking=False asks vLLM's chat template for the non-thinking mode
+    (chat_template_kwargs enable_thinking=false); prompt, max_tokens and temperature are unchanged. It
+    never falls back to the thinking path: after 3 failed attempts the error propagates."""
+
+    def __init__(self, client, thinking: bool = True):
         self.client = client
+        self.thinking = thinking
 
     def generate(self, prompts: list[str], max_tokens: int = 32, **_) -> list[str]:
-        return [self.client.query(p, temperature=0.0, max_tokens=max_tokens) for p in prompts]
+        if self.thinking:
+            return [self.client.query(p, temperature=0.0, max_tokens=max_tokens) for p in prompts]
+        return [self._no_think(p, max_tokens) for p in prompts]
+
+    def _no_think(self, prompt: str, max_tokens: int) -> str:
+        import time
+        if getattr(self.client, "provider", "") != "custom":
+            raise ValueError("pick_thinking=false needs the vLLM server client (provider 'custom')")
+        err = None
+        for attempt in range(3):
+            try:
+                r = self.client.client.chat.completions.create(
+                    model=self.client.model, messages=[{"role": "user", "content": prompt}],
+                    temperature=0.0, max_tokens=max_tokens,
+                    extra_body={"chat_template_kwargs": {"enable_thinking": False}})
+                return (r.choices[0].message.content or "").strip()
+            except Exception as e:  # noqa: BLE001
+                err = e
+                time.sleep(2 * (attempt + 1))
+        raise err
 
 
 class KVMemoryMethod(BaseMethod):
@@ -190,7 +216,7 @@ class KVMemoryMethod(BaseMethod):
         if name == "model":
             if self.client is None:
                 raise ValueError("router='model' needs the harness client (pass --llm-server)")
-            return ModelPickRouter(_ClientLLM(self.client))
+            return ModelPickRouter(_ClientLLM(self.client, thinking=bool(self.cfg.get("pick_thinking", True))))
         if name == "embed":
             return EmbeddingRouter(self._embedder(), max_cands=int(self.cfg.get("embed_max_cands", 1500)))
         if name == "hybrid":

@@ -601,5 +601,196 @@
   "qwen3_32b": 0.6426,
   "llama31_70b": 0.6767,
   "agreement": 0.8442
+ },
+ "ama_paired_2026_10": {
+  "writeup": "docs/AMA_AGENT_PAIRED.md",
+  "code": "ama/paired/",
+  "files": "results/ama_paired/{full,a3}/s{0..3}/q.jsonl.gz, labels.jsonl, handcheck_sample.jsonl, analysis.json, a3_analysis.json",
+  "harness": "official AMA-Bench code paths, Qwen3-32B reader + official judge on the same server per shard",
+  "status": "local run, not in the paper",
+  "questions_per_arm": 2136,
+  "domains": [
+   "WEB",
+   "EMBODIED_AI",
+   "Game",
+   "TEXT2SQL",
+   "SOFTWARE"
+  ],
+  "accuracy": {
+   "A1": 0.537,
+   "A2": 0.5389,
+   "V1": 0.5787,
+   "V2": 0.5749,
+   "A3": 0.5983,
+   "A1r": 0.536
+  },
+  "paired": {
+   "V1-A1 all": {
+    "diff_pp": 4.2,
+    "ci95_pp": [
+     1.8,
+     6.6
+    ],
+    "wins": 335,
+    "losses": 246,
+    "p_mcnemar": 0.000255
+   },
+   "V1-A1 state_update": {
+    "diff_pp": 13.7,
+    "ci95_pp": [
+     8.7,
+     18.6
+    ],
+    "wins": 117,
+    "losses": 43,
+    "p_mcnemar": 4.19e-09
+   },
+   "A2-A1 all": {
+    "diff_pp": 0.2,
+    "ci95_pp": [
+     -0.5,
+     0.9
+    ],
+    "wins": 30,
+    "losses": 26,
+    "p_mcnemar": 0.689
+   },
+   "A3-A1r all": {
+    "diff_pp": 6.2,
+    "ci95_pp": [
+     4.2,
+     8.3
+    ],
+    "wins": 303,
+    "losses": 170,
+    "p_mcnemar": 1e-09
+   },
+   "A3-A1r state_update": {
+    "diff_pp": 10.7,
+    "ci95_pp": [
+     6.8,
+     14.6
+    ],
+    "wins": 92,
+    "losses": 34,
+    "p_mcnemar": 2.36e-07
+   },
+   "V1-A3 all": {
+    "diff_pp": -2.0,
+    "ci95_pp": [
+     -4.4,
+     0.4
+    ],
+    "wins": 268,
+    "losses": 310,
+    "p_mcnemar": 0.088
+   }
+  },
+  "arms": {
+   "A1": "AMA-Agent as released",
+   "A2": "A1 with the final context cap counted in tokens",
+   "A3": "A1 whose sufficiency check never answers directly",
+   "A1r": "released answer on the A3 run's calls",
+   "V1": "VeraKV cfg_flagship.json",
+   "V2": "VeraKV cfg_kvmem_causal.json"
+  }
+ },
+ "modelpick_fix_2026_10": {
+  "writeup": "docs/MODEL_PICK_FIX.md",
+  "code": "ama/paired/run.py (arm V1f), ama/harness/method_kvmemory.py (pick_thinking), ama/configs/cfg_flagship_nothink.json",
+  "files": "results/modelpick_fix/{def,str}/s{0..3}/q.jsonl.gz, modelpick_analysis.json",
+  "status": "local run, not in the paper",
+  "questions_per_arm": 2496,
+  "accuracy": {
+   "def": {
+    "V1": 0.5992,
+    "V1f": 0.6034,
+    "V2": 0.5857
+   },
+   "str": {
+    "V1": 0.6486,
+    "V1f": 0.6628,
+    "V2": 0.6546
+   }
+  },
+  "paired": {
+   "V1f-V1 def": {
+    "diff_pp": 0.2,
+    "ci95_pp": [
+     -1.5,
+     2.1
+    ],
+    "wins": 234,
+    "losses": 228,
+    "p_mcnemar": 0.816
+   },
+   "V1f-V2 def": {
+    "diff_pp": 1.8,
+    "ci95_pp": [
+     0.0,
+     3.6
+    ],
+    "wins": 259,
+    "losses": 214,
+    "p_mcnemar": 0.0429
+   },
+   "V1-V2 def": {
+    "diff_pp": 1.4,
+    "ci95_pp": [
+     -0.2,
+     2.9
+    ],
+    "wins": 192,
+    "losses": 158,
+    "p_mcnemar": 0.0776
+   },
+   "V1f-V1 str": {
+    "diff_pp": 1.4,
+    "ci95_pp": [
+     -0.2,
+     3.2
+    ],
+    "wins": 246,
+    "losses": 210,
+    "p_mcnemar": 0.101
+   },
+   "V1f-V2 str": {
+    "diff_pp": 0.8,
+    "ci95_pp": [
+     -0.8,
+     2.4
+    ],
+    "wins": 235,
+    "losses": 215,
+    "p_mcnemar": 0.37
+   },
+   "V1-V2 str": {
+    "diff_pp": -0.6,
+    "ci95_pp": [
+     -2.1,
+     0.8
+    ],
+    "wins": 178,
+    "losses": 194,
+    "p_mcnemar": 0.437
+   }
+  },
+  "holm_primary": [
+   [
+    "P2 str",
+    0.0965,
+    0.193
+   ],
+   [
+    "P1 def",
+    0.801,
+    0.801
+   ]
+  ],
+  "arms": {
+   "V1": "cfg_flagship.json as published (model-pick call in thinking mode)",
+   "V1f": "cfg_flagship_nothink.json (model-pick call without thinking)",
+   "V2": "cfg_kvmem_causal.json (lexical + step-pin)"
+  }
  }
 }

@@ -307,3 +307,36 @@ Per-shard outputs (8 shards, Qwen3-8B) of `kv_phantom` + `kv_vartrack` (`phvt/`)
 `kv_predigest` (`pd/`), `kv_predigest_sweep` (`pds/`), `kv_decoyctl` (`dc/`), `kv_decoyctl2` (`d2/`),
 `kv_sweepmenu` (`sm/`), `kv_mater` (`mt/`), `kv_refcarrier` (`rc/`), `kv_noteknob2` (`nk2/`). Analysis:
 `analysis/probes/{phvt,vd,pd,pds,nk2}_analyze.py <dir>`.
+
+## Paired re-run against AMA-Agent (2026-10-08) — `ama_paired/`
+
+Not in the paper. Write-up: [docs/AMA_AGENT_PAIRED.md](../docs/AMA_AGENT_PAIRED.md); code and how to run
+it: `ama/paired/`. AMA-Bench open-ended, five domains (open-world left out), 2,136 questions per arm, all
+arms judged by the official `compute_llm_as_judge` on the same Qwen3-32B server.
+
+| File | Arms (accuracy) | What |
+|---|---|---|
+| `full/s{0..3}/q.jsonl.gz` | A1 .537, A2 .539, V1 .579, V2 .575 | AMA-Agent as released (A1) and with its context cap counted in tokens (A2); VeraKV `cfg_flagship.json` (V1) and `cfg_kvmem_causal.json` (V2) |
+| `a3/s{0..3}/q.jsonl.gz` | A3 .598, A1r .536 | AMA-Agent without its early answer (A3), and what the released code answered on the same calls (A1r) |
+| `labels.jsonl` | — | 608 model labels (GPT-5.6-Sol) of the V1/A1 disagreements and of the A2/A1 disagreements on state-update and Web questions |
+| `handcheck_sample.jsonl` | — | the 25 labels checked by hand |
+| `analysis.json`, `a3_analysis.json` | — | every number in the write-up (`ama/paired/analyze.py`, `ama/paired/a3_analyze.py`) |
+
+Each record has the question, the reference answer, the answer, the verdict, AMA-Agent's path, token counts
+and per-call usage. The full reader prompts and retrieved contexts are left out for size (about 74 MB
+compressed).
+
+## Model-pick fix re-run (2026-10-09) — `modelpick_fix/`
+
+Not in the paper. Write-up: [docs/MODEL_PICK_FIX.md](../docs/MODEL_PICK_FIX.md). AMA-Bench open-ended, all six
+domains, 2,496 questions per arm and reader, official judge on the same Qwen3-32B server.
+
+| File | Arms (accuracy) | What |
+|---|---|---|
+| `def/s{0..3}/q.jsonl.gz` | V1 .599, V1f .603, V2 .586 | harness default reader |
+| `str/s{0..3}/q.jsonl.gz` | V1 .649, V1f .663, V2 .655 | structured reader (`ama/dec_instr.txt`) |
+| `modelpick_analysis.json` | — | every number in the write-up (`ama/paired/modelpick_analyze.py`) |
+
+V1 is `cfg_flagship.json` as published, V1f is `cfg_flagship_nothink.json` (the model-pick call without
+thinking) and V2 is `cfg_kvmem_causal.json`. Records keep the pick-call replies and the step numbers of the
+served appendix (`picked_steps`); the full reader prompts and contexts are left out for size.
