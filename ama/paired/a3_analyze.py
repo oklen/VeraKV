@@ -116,14 +116,15 @@ SL += [("A1r fast path", [k for k in qs if k in fast]), ("A1r full pipeline", [k
        ("state update, fast", [k for k in C if k in fast]), ("state update, full pipeline", [k for k in C if k not in fast])]
 
 print("questions %d; A1r fast path %d (%.1f%%); full-run A1 fast path %d" % (len(qs), len(fast), 100 * len(fast) / len(qs), len(full_direct)))
-for arm in ("A1", "A1r", "A3", "V1"):
+for arm in ("A1", "A1r", "A3", "V1", "V2"):
     g = [rows.get((arm,) + k) for k in qs]
     good = [r for r in g if ok(r)]
     print("%-3s n=%d acc=%.4f infra=%d | C %.3f" % (arm, len(good), sum(cor(r) for r in good) / max(1, len(good)),
                                                   sum(1 for r in g if not ok(r)),
                                                   sum(cor(r) for r in good if r["qtype"] == "C") / max(1, sum(1 for r in good if r["qtype"] == "C"))))
 OUT["paired"] = {}
-for a, b in (("A3", "A1r"), ("V1", "A3"), ("A3", "A1"), ("A1r", "A1"), ("V1", "A1r")):
+# V2 - A3 and V2 - A1 were added on 2026-10-17, after the pre-registered readout; they leave the rows above unchanged.
+for a, b in (("A3", "A1r"), ("V1", "A3"), ("A3", "A1"), ("A1r", "A1"), ("V1", "A1r"), ("V2", "A3"), ("V2", "A1")):
     print("\n== %s - %s" % (a, b))
     for name, keys in SL:
         r = paired(a, b, keys)

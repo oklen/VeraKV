@@ -21,13 +21,14 @@ official AMA-Bench harness (Qwen3-32B reader + judge, all 2,496 QA):
 | AMA-Agent (purpose-built for the benchmark) | 0.5722 |
 | Best other published memory system (MemoRAG) | 0.4606 |
 
-**Payload fidelity, attributed.** Matched evidence, reader and judge, only the payload form varies:
-serving an LLM summary or extracted facts instead of the verbatim cited step costs 8–14pp (910 QA,
-replicated under a Llama-3.1-8B judge). In the deployed pipeline, replacing the verbatim appendix with
-LLM summaries costs −5.1pp and with extracted facts −5.9pp — both at or below serving no appendix — while
-a deterministic swap to the query-relevant original lines costs −2.6pp: paraphrase hurts about twice as
-much as shortening. A cheap router matters little on step-indexed agent traces (a model-pick fusion
-audited score-neutral) and a lot on diffuse dialogue.
+**Payload fidelity.** Matched evidence, reader and judge, only the payload form varies: serving a short
+LLM summary or extracted facts instead of the verbatim cited step costs 8–10pp, and 14 on exact-recall
+questions (910 QA, replicated under a Llama-3.1-8B judge). Those payloads are also much shorter, so this
+measures what they leave out, not paraphrase as such. In the deployed pipeline, replacing the verbatim
+appendix with LLM summaries costs −5.1pp and with extracted facts −5.9pp — both at or below serving no
+appendix — while a deterministic swap to the query-relevant original lines costs −2.6pp. A cheap router
+matters little on step-indexed agent traces (a model-pick fusion audited score-neutral) and a lot on
+diffuse dialogue.
 
 **The reader is a separable axis.** A same-batch memory × reader factorial is additive: routing
 +3.1–3.5pp at either reader, a one-sentence structured answer instruction +5.1–5.5pp at either router.

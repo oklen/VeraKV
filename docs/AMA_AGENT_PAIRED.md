@@ -13,8 +13,9 @@ both systems. Two follow-up arms test why AMA-Agent loses; both were pre-registe
   - The prompt behind its answer is a median 3,046 tokens; VeraKV's is 9,338.
   - Counting its context cap in tokens instead of characters changes nothing (+0.2).
 - **Forced past that early answer (arm A3), AMA-Agent gains +6.2 overall and +10.7 on state update.** That
-  closes 74% of VeraKV's state-update lead and ties VeraKV overall: 0.598 vs 0.579, a difference of −2.0
-  [−4.4, +0.4]. On code it beats VeraKV by 9.3.
+  closes 74% of VeraKV's state-update lead and puts it about 2 points ahead of VeraKV overall: 0.598 vs
+  0.579, a difference of −2.0 [−4.4, +0.4]. Against the released configuration, which makes no model call
+  in the memory, the difference is −2.3 [−4.6, −0.1]. On code it beats VeraKV by 9.3.
 - **So against an AMA-Agent that keeps going, VeraKV's advantage is cost.**
   - VeraKV: 2 model calls per question (one of them a step-selection call capped at 32 output tokens),
     0.58k generated tokens, about 1 minute, and no model calls while writing memory.
@@ -176,6 +177,11 @@ Paired differences (95% interval; questions won/lost):
 - **A3's change brings in two things at once:** the search results, and the reader seeing the state summary.
   The design cannot separate them. Where the released code answered at the check and A3's search then
   failed or came back empty (100 questions), A3 still gained +4.0 (13 vs 9, not significant).
+- **Against the released configuration** (V2, lexical router and step pinning, no model call in the memory;
+  added 2026-10-17 with the same estimator, after the results above): V2 − A3 is −2.3 [−4.6, −0.1] overall
+  and +3.3 [−1.4, +8.1] on state update; V2 − A1 is +3.8 [+1.6, +6.1] overall and +13.3 [+8.2, +18.6] on
+  state update. So A3 comes out about 2 points ahead of either VeraKV configuration; against V2 the
+  interval just excludes zero.
 
 ### Cost per question
 
@@ -209,13 +215,15 @@ makes no model call when writing.
 - On the same questions, server and judge, VeraKV beats AMA-Agent as released: +4.2 overall and +13.7 on
   state update.
 - AMA-Agent as released loses mainly because its first sufficiency check says "enough" too early. Forced to
-  keep going, it closes three quarters of the state-update gap and ties VeraKV overall.
-- In that tie, VeraKV is cheaper: about 3× less time and 7× fewer generated tokens per question, and no
-  model calls while writing memory.
+  keep going, it closes three quarters of the state-update gap and comes out about 2 points ahead of VeraKV
+  overall (−2.0 [−4.4, +0.4] against V1, −2.3 [−4.6, −0.1] against V2).
+- At that point VeraKV is the cheaper of the two: about 3× less time and 7× fewer generated tokens per
+  question, and no model calls while writing memory.
 
 **Not supported**
 - That VeraKV beats AMA-Agent's *published* scores. Our A1 is 4.9 below them, and 26 below on code.
-- That VeraKV beats AMA-Agent as such. A3 ties it overall and wins on code and causal questions.
+- That VeraKV beats AMA-Agent as such. A3 comes out about 2 points ahead overall and wins on code and causal
+  questions.
 - Anything about the open-world domain, which this run leaves out.
 - Anything beyond this one serving setup: Qwen3-32B in thinking mode on vLLM 0.28. AMA-Agent's loop has a
   60-second budget, so slower serving stops it earlier. It decides "enough" in the first round on 84% of

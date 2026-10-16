@@ -1,6 +1,57 @@
 # VeraKV
 
-**Agent memory that hands the model the original lines, and #1 on AMA-Bench when submitted.**
+A model can't tell what it hasn't seen, so VeraKV never lets one decide what to leave out. AMA-Agent, built
+for this benchmark, asks its model whether it has read enough. On 84% of questions the model says yes after
+five retrieved steps, and VeraKV beats it by 4.2 points (13.7 on questions about changing state). VeraKV
+also builds its memory without a single model call: against AMA-Agent with that early stop removed, it
+stays within about 2 points at a third of the time per question. If you host the model, the same steps can
+be served as their own cached KV, with the same accuracy and a first token up to 10.9× faster.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/how-it-works-dark.png">
+  <img src="assets/how-it-works.png" alt="Most agent memories let a model extract facts when writing and decide when it has read enough when answering. VeraKV stores every step verbatim, picks steps by step number, word overlap and recency with no model call, and gives the reader a short head of every step plus the picked steps in full. Optionally it serves the picked steps as their cached KV." width="100%">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/results-dark.png">
+  <img src="assets/results.png" alt="Left: AMA-Bench accuracy as of 2026-07-15, VeraKV 0.6478 ahead of HybridFocus 0.6246, AMA-Agent 0.5722 and five other systems. Right: VeraKV minus AMA-Agent on the same server and judge, +4.2 overall and +13.7 on state-update questions; against AMA-Agent without its early answer, −2.0, at 63 s against 207 s per question." width="100%">
+</picture>
+
+`0.6478` on AMA-Bench, #1 on the leaderboard when submitted (2026-07-15) · `+4.2` vs AMA-Agent on the
+same server and judge · `10.9×` faster first token from cached KV
+
+[Paper (PDF)](paper/kvmemory.pdf) · [Reproduce](#reproducing) · [Head-to-head details](docs/AMA_AGENT_PAIRED.md)<br>
+Agent memory series: [VeraKV](https://github.com/oklen/VeraKV) — what to hand the model ·
+[Compute Globally, Materialize Locally](https://github.com/oklen/Compute-Globally-Materialize-Locally) — what
+survives eviction · [TracePack](https://github.com/oklen/TracePack) — what survives compaction
+
+**What it is:** a memory layer for long-running agents. It keeps the raw trajectory and makes no model
+call to build or search its memory. For each question it pins the steps the question names, ranks the
+rest by word overlap and keeps the last few. The reader gets a short head of every step plus the picked
+steps **verbatim**: a median of about 10k tokens, at most 22k. The picked steps can be served as text, or
+as their own cached KV at their original positions.
+
+This repository has the code, configurations, prompts, raw predictions and judge outputs behind every
+number in the paper, [`paper/kvmemory.pdf`](paper/kvmemory.pdf) (*When Does KV Reuse Work for Agent
+Memory? A Controlled Study of Payload Fidelity, Store Conditioning, and Cache Harvesting — with a
+Reproducible State-of-the-Art System*; source in [`paper/kvmemory.tex`](paper/kvmemory.tex)).
+
+## What we learned
+
+- **A smarter picker adds little.** Free word overlap plus the step numbers a question names is enough.
+  Having an LLM pick the steps adds nothing, even after we fixed its broken call
+  (+0.2 [−1.5, +2.1] and +1.4 [−0.2, +3.2]; [details](docs/MODEL_PICK_FIX.md)).
+- **How much the reader gets matters a lot.** At fixed routing, growing the assembled context from 6k to
+  22k tokens lifts accuracy from 0.550 to 0.644 (on half the questions). Handing the reader the most recent
+  22k tokens of the raw trajectory instead costs 8.4 points.
+- **AMA-Agent loses by answering too early.** On 84% of questions it answers after its first "is this
+  enough?" check. Remove that early answer and it pulls about 2 points ahead of VeraKV, at three times the
+  time per question.
+- **Cached KV is exact inside the window and buys latency, not accuracy.** Gathering the picked steps' KV
+  reproduces a full prefill and scores the same as re-reading them as text (17.3% vs 17.4%). Outside the
+  window, encoding events independently costs 13.2 points.
+
+## Results
 
 | AMA-Bench, official harness, all 2,496 questions | Accuracy |
 |---|---|
@@ -22,29 +73,23 @@ VeraKV's rows are our runs; the other rows are published or leaderboard scores.
 - **Head-to-head with AMA-Agent on the same server and judge.** On 2,136 paired questions, VeraKV beats
   AMA-Agent as released by 4.2 points [+1.8, +6.6], and by 13.7 [+8.7, +18.6] on state-update questions.
   AMA-Agent loses mainly because its first "is this enough?" check stops too early. With that early answer
-  removed it ties VeraKV (−2.0 [−4.4, +0.4]), at about 3× the time and 7× the generated tokens per
-  question. [Details](docs/AMA_AGENT_PAIRED.md).
+  removed it pulls about 2 points ahead (−2.0 [−4.4, +0.4] against this configuration, −2.3 [−4.6, −0.1]
+  against the released one, which makes no model call), at about 3× the time and 7× the generated tokens
+  per question. [Details](docs/AMA_AGENT_PAIRED.md).
 - **Beats dedicated dialogue memory on LOCOMO:** J = 0.704 against Mem0's 0.671 and Zep's 0.660, under
   LOCOMO's public gpt-4o-mini protocol.
-- **Original lines beat rewritten memory by 8–14 points.** With matched evidence, reader and judge,
-  serving an LLM summary or extracted facts instead of the verbatim step costs 8–14 pp.
 - **First token up to 10.9× faster.** Gathering the selected spans' cached KV instead of re-reading them
   as text keeps time-to-first-token flat at about 40 ms. The speedup is 1.6× to 10.9× as the evidence
   grows to 4k tokens, and 32× at 32k. The first token is identical to a full-prefill oracle.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/ttft-dark.png">
+  <img src="assets/ttft.png" alt="Time to first token against selected evidence on Qwen3-8B: re-reading the selected steps as text grows from 66 to 448 ms between 575 and 4,387 tokens, while gathering their cached KV stays at about 41 ms. Accuracy is 17.3% with KV and 17.4% with text on 896 questions." width="80%">
+</picture>
+
 A later leaderboard entry (0.6975, dated 2026-09-09) has since overtaken VeraKV, which now ranks #2.
 Under the gpt-4o-mini judge, prompting LOCOMO's full history scores 0.756. These and the other
 protocol caveats are in the paper and in [Honest-measurement notes](#honest-measurement-notes).
-
-**What it is:** a memory layer for long-running agents. It keeps the raw trajectory, routes each
-question to the steps it needs (lexical overlap plus step-number pins), and serves those steps
-**verbatim** in a filled budget. It can serve them as text, or as their own cached KV at their original
-positions.
-
-This repository has the code, configurations, prompts, raw predictions and judge outputs behind every
-number in the paper, [`paper/kvmemory.pdf`](paper/kvmemory.pdf) (*When Does KV Reuse Work for Agent
-Memory? A Controlled Study of Payload Fidelity, Store Conditioning, and Cache Harvesting — with a
-Reproducible State-of-the-Art System*; source in [`paper/kvmemory.tex`](paper/kvmemory.tex)).
 
 ## Findings in detail
 
@@ -53,9 +98,10 @@ Reproducible State-of-the-Art System*; source in [`paper/kvmemory.tex`](paper/kv
   code serves its top-5 raw turns by embedding similarity together with an LLM-written state summary,
   though on 84% of questions it answers earlier, from those turns alone; see the
   [paired re-run](docs/AMA_AGENT_PAIRED.md)).
-  With matched cited evidence, reader and judge, serving an LLM summary or extracted facts instead of the
-  verbatim step costs 8–14pp; in the deployed pipeline a deterministic swap to the query-relevant
-  *original lines* costs −2.6pp versus −5.1 / −5.9pp for generative re-encodings. AMA-Bench's own needle
+  With matched cited evidence, reader and judge, serving a short LLM summary or extracted facts instead of
+  the verbatim step costs 8–10pp (14 on exact-recall questions). Those payloads are also much shorter, so
+  this measures what they leave out, not rewriting as such. In the deployed pipeline a deterministic swap to
+  the query-relevant *original lines* costs −2.6pp, versus −5.1 / −5.9pp for summaries and facts. AMA-Bench's own needle
   control prices the same choice: serving MemoryBank's constructed memory of the answer-bearing turns
   instead of the turns drops BabyAI accuracy from 0.46 to 0.27 (−41% relative).
 - **The reader is a separable axis.** A same-batch memory × reader factorial: routing adds +3.1–3.5pp at
@@ -98,6 +144,7 @@ results/    raw per-question predictions + judge scores (mu_merged_<TAG>.json, r
             model-pick fix re-run), smaller outputs; index in
             results/MANIFEST.md
 scripts/    run_ama.sh — end-to-end official-harness run on one 8×A100 node
+figures/    make_figures.py — draws the README figures in assets/ (light and dark) from the files above
 submissions/ the leaderboard submission file
 data/       where the benchmark files go (not shipped; see data/README.md)
 ```
