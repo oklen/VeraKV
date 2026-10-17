@@ -109,6 +109,11 @@
    73.074
   ],
   "ama_agent_generated_tokens": 14187,
+  "ama_agent_serving": {
+   "model": "Qwen3-32B",
+   "hardware": "an 8×A100 node",
+   "source": "docs/AMA_AGENT_PAIRED.md, Setup"
+  },
   "verakv_model_calls": 0,
   "verakv_median_ms": 3.47,
   "verakv_runs": 9,

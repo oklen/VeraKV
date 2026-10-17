@@ -1,20 +1,21 @@
 # VeraKV
 
-<img src="assets/demo-case.gif" alt="One real AMA-Bench question played through both systems, with clocks in real seconds. Building memory for the 150-step trajectory: AMA-Agent issues 14 LLM calls together, one state summary per about 8,192 characters; they take 35 to 73 s each and the build takes 76 s in the logged run. VeraKV makes no model call: its index is the first lines of each step, built in 3.5 ms on a laptop CPU. Asked what state drawer 1 is in at step 77, VeraKV answers at 82 s with one model call: open, changed at step 17, as the reference says. AMA-Agent reads 6 retrieved steps, none of them the steps where the drawer was opened, judges them sufficient, and answers at 102 s: closed. Forced past that early answer, it takes 3 model calls and 311 s and still answers closed." width="100%">
+<img src="assets/demo-case.gif" alt="One real AMA-Bench question played through both systems, with clocks in real seconds. Building memory for the 150-step trajectory: AMA-Agent issues 14 LLM calls together, one state summary per about 8,192 characters; they take 35 to 73 s each and the build takes 76 s in the logged run. VeraKV makes no model call: its index is the first lines of each step, built in 3.5 ms on a laptop CPU. The two build times are then shown side by side: 76 s vs 3.5 ms, about 20,000× less time. Asked what state drawer 1 is in at step 77, VeraKV answers at 82 s with one model call: open, changed at step 17, as the reference says. AMA-Agent reads 6 retrieved steps, none of them the steps where the drawer was opened, judges them sufficient, and answers at 102 s: closed. Forced past that early answer, it takes 3 model calls and 311 s and still answers closed." width="100%">
 
-<sub>On this question VeraKV answers correctly in 82 s with one model call. AMA-Agent's check answers after 102 s,
-wrongly; forced past that early answer, it takes 3 calls and 311 s and is still wrong. Building the memory, once
-per trajectory, took AMA-Agent 76 s here: 14 LLM calls (one per ~8,192 characters of the 150 steps), issued
-together and taking 35–73 s each. VeraKV makes no model call to build its memory; with this repository's code the
-build takes 3.5 ms (median of 9 runs on a laptop CPU, Apple M3 Pro; `figures/time_index_build.py`). Over the 2,136
-paired questions, the median time per question is 54 s for VeraKV, 71 s for AMA-Agent and 207 s for AMA-Agent
-without its early answer. Wall times were measured under each run's own load (Qwen3-32B on vLLM, one 8×A100 node),
-so read them as an order of magnitude. VeraKV's index is the first lines of every step; it picks steps by word
-overlap and step numbers. The question (AMA-Bench, alfworld episode 34) was picked from the 333 where VeraKV was
-right and AMA-Agent wrong; on 252 it went the other way. Apart from that 3.5 ms, calls, times and answers are the
-ones logged in the [paired re-run](docs/AMA_AGENT_PAIRED.md); answers show their first two sentences. Below: what
-each reader's prompt held, excerpted section by section from the same logs. Built by `figures/make_demo.py` and
-`figures/make_context.py` from `figures/demo_case.json`.</sub>
+<sub>Building memory for this 150-step trajectory took AMA-Agent 76 s with 14 LLM calls and VeraKV 3.5 ms with no
+model call: about 20,000× less time, measured on different machines. On this question VeraKV answers correctly in
+82 s with one model call. AMA-Agent's check answers after 102 s, wrongly; forced past that early answer, it takes
+3 calls and 311 s and is still wrong. AMA-Agent's 76 s is from the logged run (Qwen3-32B on vLLM, one 8×A100
+node): its 14 calls, one per ~8,192 characters, were issued together and took 35–73 s each, and the memory is
+built once per trajectory. VeraKV's 3.5 ms is the median of 9 runs of this repository's code on a laptop CPU
+(Apple M3 Pro; `figures/time_index_build.py`). Over the 2,136 paired questions, the median time per question is
+54 s for VeraKV, 71 s for AMA-Agent and 207 s for AMA-Agent without its early answer. Wall times were measured
+under each run's own load, so read them as an order of magnitude. VeraKV's index is the first lines of every
+step; it picks steps by word overlap and step numbers. The question (AMA-Bench, alfworld episode 34) was picked
+from the 333 where VeraKV was right and AMA-Agent wrong; on 252 it went the other way. Apart from that 3.5 ms,
+calls, times and answers are the ones logged in the [paired re-run](docs/AMA_AGENT_PAIRED.md); answers show
+their first two sentences. Below: what each reader's prompt held, excerpted section by section from the same
+logs. Built by `figures/make_demo.py` and `figures/make_context.py` from `figures/demo_case.json`.</sub>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/context-case-dark.png">
@@ -39,7 +40,8 @@ be served as their own cached KV, with the same accuracy and a first token up to
 </picture>
 
 `0.6478` on AMA-Bench, #1 on the leaderboard when submitted (2026-07-15) · `+4.2` vs AMA-Agent on the
-same server and judge · `10.9×` faster first token from cached KV
+same server and judge · `10.9×` faster first token from cached KV · `76 s vs 3.5 ms` to build memory for a
+150-step trajectory (AMA-Agent with 14 LLM calls vs VeraKV with no model call)
 
 [Paper (PDF)](paper/kvmemory.pdf) · [Reproduce](#reproducing) · [Head-to-head details](docs/AMA_AGENT_PAIRED.md)<br>
 Agent memory series: [VeraKV](https://github.com/oklen/VeraKV) — what to hand the model ·

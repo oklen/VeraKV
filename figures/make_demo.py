@@ -5,7 +5,8 @@
 Reads figures/demo_case.json (built by figures/build_demo_case.py from the logged paired re-run, and VeraKV's
 build time from figures/time_index_build.py). Every quoted string and every number comes from that file; the
 rest are plain labels. Both clocks (building memory, answering) show real seconds and run faster than real
-time by the factor printed in the frame. AMA-Agent's memory segments fill in when their logged calls finished."""
+time by the factor printed in the frame. AMA-Agent's memory segments fill in when their logged calls finished.
+Between the two phases the build times are compared, with their ratio rounded down to one significant figure."""
 import json
 import os
 import shutil
@@ -37,7 +38,8 @@ L0, R0, PW = 0.03, 0.52, 0.45          # panel left edges and width (figure frac
 SPEED = 12.0                             # both clocks run this many times faster than real time
 T_TITLE, T_MEM, T_B0 = 0.2, 1.0, 1.5
 T_B1 = T_B0 + M["ama_agent_wall_seconds"] / SPEED
-T_Q = T_B1 + 1.0
+T_CMP = T_B1 + 0.5                       # the two build times compared, held for 3 s
+T_Q = T_CMP + 3.0
 T_LISTS, T_CLOCK = T_Q + 0.5, T_Q + 1.5
 T_V = T_CLOCK + V["seconds"] / SPEED
 T_A = T_CLOCK + A["seconds"] / SPEED
@@ -83,6 +85,31 @@ def box(fig, x, y, w, h, colour, alpha=1.0):
 
 def outline(fig, x, y, w, h, colour, lw=2.2):
     fig.patches.append(Rectangle((x, y), w, h, transform=fig.transFigure, fill=False, ec=colour, lw=lw))
+
+
+def centred(fig, y, parts, size, weight="bold"):
+    """One line in several colours, centred on the frame."""
+    r = fig.canvas.get_renderer()
+    objs = [text(fig, 0, y, s, size=size, color=c, weight=weight) for s, c in parts]
+    widths = [o.get_window_extent(r).width / W for o in objs]
+    x = 0.5 - sum(widths) / 2
+    for o, w in zip(objs, widths):
+        o.set_x(x)
+        x += w
+
+
+def build_comparison(fig):
+    """The two build times side by side; the ratio is rounded down to one significant figure."""
+    wall, ms, serving = M["ama_agent_wall_seconds"], M["verakv_median_ms"], M["ama_agent_serving"]
+    ratio = int(wall / (ms / 1000.0))
+    about = int(str(ratio)[0]) * 10 ** (len(str(ratio)) - 1)
+    assert "laptop CPU" in M["verakv_machine"]
+    box(fig, L0, 0.515, R0 + PW - L0, 0.14, BOX)
+    centred(fig, 0.632, [("Building memory for this trajectory: ", FG), ("%d s" % wall, ORANGE), (" vs ", FG),
+                         ("%.1f ms" % ms, GREEN), (" — about %s× less time" % format(about, ","), FG)], size=18)
+    text(fig, 0.5, 0.572, "AMA-Agent: %d LLM calls (%s, logged run on %s) · VeraKV: no model call (laptop CPU, "
+         "median of %d runs)" % (M["ama_agent_llm_calls"], serving["model"], serving["hardware"], M["verakv_runs"]),
+         color=MUTED, ha="center")
 
 
 def step_line(s, obs=None):
@@ -133,6 +160,9 @@ def frame(t):
                 for d in C["deciding_steps"]:
                     if "open" in d["action"]:
                         outline(fig, cell_x(x0, d["step"]) - 0.002, ys - 0.006, PW / N + 0.004, hs + 0.012, colour)
+
+    if T_CMP <= t < T_Q:
+        build_comparison(fig)
 
     # 2. answering one question, on a shared clock
     if t >= T_Q:

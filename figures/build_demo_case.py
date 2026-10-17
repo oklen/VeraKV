@@ -161,6 +161,8 @@ case = {
                      "ama_agent_wall_seconds": bcalls["build_wall_seconds_logged"],
                      "ama_agent_call_seconds": [c["dt"] for c in calls],      # per turn range, same order
                      "ama_agent_generated_tokens": sum(c["usage"][1] for c in calls),
+                     "ama_agent_serving": {"model": "Qwen3-32B", "hardware": "an 8×A100 node",
+                                           "source": "docs/AMA_AGENT_PAIRED.md, Setup"},
                      "verakv_model_calls": 0, "verakv_median_ms": vbuild["median_ms"],
                      "verakv_runs": vbuild["repeats"], "verakv_machine": vbuild["machine"]},
     "contexts": {"ama_agent": a_ctx, "verakv": v_ctx},
