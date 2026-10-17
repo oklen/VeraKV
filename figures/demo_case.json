@@ -6,7 +6,9 @@
   "task_type": "alfworld",
   "question_uuid": "51a13dd0-f7f2-4599-b920-dedcf31fcd17",
   "run": "paired re-run 2026-10-08, rows ep=34 qi=3 (docs/AMA_AGENT_PAIRED.md)",
-  "memory": "AMA-Agent's stored memory for episode 34 in the paired re-run: one state summary per chunk, each headed 'summary_turn_range: turn X to turn Y'; chunks are cut on turn boundaries at session_size 8192 characters (configs/ama_agent.yaml), one LLM call per chunk (_compress_chunk in src/method/ama_agent_core/construct.py)"
+  "memory": "AMA-Agent's stored memory for episode 34 in the paired re-run: one state summary per chunk, each headed 'summary_turn_range: turn X to turn Y'; chunks are cut on turn boundaries at session_size 8192 characters (configs/ama_agent.yaml), one LLM call per chunk (_compress_chunk in src/method/ama_agent_core/construct.py)",
+  "build_calls": "paired re-run 2026-10-08, shard s2 calls.jsonl (archive ama_paired_full_20261008.tgz): records with arm A, ep 34, qi null, stage build. Run stdout for the same build: 'built A ep 34 in 76s state_mem 9972 chars'. The steps each call covered are the 'Step N:' lines of its logged prompt (all contiguous).",
+  "verakv_build": "figures/time_index_build.py: KVMemoryMethod.memory_construction with ama/configs/cfg_kvmem_causal.json on the harness text of episode 34, plus every step's index line; median of 9 runs"
  },
  "num_steps": 150,
  "question": "What is the state of drawer 1 at step 77? When did this change occur and what were the prior whole changes history?",
@@ -89,7 +91,163 @@
    ]
   ],
   "ama_agent_session_chars": 8192,
-  "verakv_model_calls": 0
+  "ama_agent_wall_seconds": 76,
+  "ama_agent_call_seconds": [
+   66.654,
+   69.889,
+   43.053,
+   51.465,
+   47.698,
+   39.212,
+   36.441,
+   35.098,
+   46.705,
+   41.065,
+   46.135,
+   63.688,
+   58.671,
+   73.074
+  ],
+  "ama_agent_generated_tokens": 14187,
+  "verakv_model_calls": 0,
+  "verakv_median_ms": 3.47,
+  "verakv_runs": 9,
+  "verakv_machine": "a laptop CPU (Apple M3 Pro)"
+ },
+ "contexts": {
+  "ama_agent": [
+   {
+    "title": "Role",
+    "lines": [
+     "You are routing a question about an agent trajectory to the right retrieval stage."
+    ]
+   },
+   {
+    "title": "Query",
+    "lines": [
+     "Query: What is the state of drawer 1 at step 77? …"
+    ]
+   },
+   {
+    "title": "Retrieved turns",
+    "size": "each turn also lists its available actions, left out here",
+    "header": "Retrieved Turns (top-k from similarity search — this is NOT the full trajectory):",
+    "turns": [
+     [
+      "Turn 4:",
+      "  Action: go to drawer 1",
+      "  Observation: You arrive at drawer 1. The drawer 1 is closed."
+     ],
+     [
+      "Turn 6:",
+      "  Action: close drawer 1",
+      "  Observation: You close the drawer 1."
+     ],
+     [
+      "Turn 9:",
+      "  Action: close drawer 2",
+      "  Observation: You close the drawer 2."
+     ],
+     [
+      "Turn 12:",
+      "  Action: close drawer 3",
+      "  Observation: You close the drawer 3."
+     ],
+     [
+      "Turn 16:",
+      "  Action: go to drawer 1",
+      "  Observation: You arrive at drawer 1. The drawer 1 is closed."
+     ],
+     [
+      "Turn 77:",
+      "  Action: go to countertop 2",
+      "  Observation: You arrive at countertop 2. …"
+     ]
+    ]
+   },
+   {
+    "title": "Note",
+    "lines": [
+     "IMPORTANT: the retrieved turns above are a small subset of the full trajectory selected by similarity. …"
+    ]
+   },
+   {
+    "title": "Decision procedure",
+    "header": "# Decision procedure — follow in order, stop at the first match",
+    "lines": [
+     "…",
+     "Step 2. Otherwise, can you answer the question COMPLETELY and ACCURATELY using only the retrieved turns above …",
+     "→ If YES, choose SUFFICIENT and provide the full answer. End here.",
+     "Step 3. Are there specific other turns (adjacent, range, or by index) you need to inspect to answer? …",
+     "→ If YES, choose NEED_GRAPH and specify which turns. End here.",
+     "…"
+    ]
+   },
+   {
+    "title": "Output formats",
+    "header": "# Output formats — use EXACTLY one of these, on its own line(s) at the start of your response",
+    "lines": [
+     "SUFFICIENT",
+     "ANSWER: <your complete and accurate answer>",
+     "NEED_GRAPH: <spec>",
+     "…",
+     "NEED_CODE: <short description of what to compute>"
+    ]
+   }
+  ],
+  "verakv": [
+   {
+    "title": "Overview: one line per step",
+    "size": "steps 0–145",
+    "lines": [
+     "<step 0> [summary] action=look obs=You are in the middle of a room. …",
+     "<step 4> [summary] action=go to drawer 1 obs=You arrive at drawer 1. The drawer 1 is closed. …",
+     "<step 5> [summary] action=open drawer 1 obs=You open the drawer 1. The drawer 1 is open. …",
+     "<step 6> [summary] action=close drawer 1 obs=You close the drawer 1. …",
+     "<step 16> [summary] action=go to drawer 1 obs=You arrive at drawer 1. The drawer 1 is closed. …",
+     "<step 17> [summary] action=open drawer 1 obs=You open the drawer 1. The drawer 1 is open. …",
+     "<step 145> [summary] action=go to countertop 2 obs=You arrive at countertop 2. …"
+    ],
+    "gaps_after": [
+     0,
+     6,
+     17
+    ]
+   },
+   {
+    "title": "The last 4 steps in full",
+    "size": "steps 146–149",
+    "lines": [
+     "<step 146>",
+     "Action: look",
+     "Observation: You are facing the countertop 2. …"
+    ]
+   },
+   {
+    "title": "Selected steps in full",
+    "header": "Full text of the most relevant earlier steps:",
+    "size": "steps 21, 67, 77, 136, 141",
+    "lines": [
+     "<step 77>",
+     "Action: go to countertop 2",
+     "Observation: You arrive at countertop 2. …"
+    ]
+   },
+   {
+    "title": "Question",
+    "lines": [
+     "## Questions",
+     "Question 1: What is the state of drawer 1 at step 77? …"
+    ]
+   },
+   {
+    "title": "Instruction",
+    "lines": [
+     "## Instructions",
+     "Provide a direct and concise answer."
+    ]
+   }
+  ]
  },
  "ama_agent": {
   "arm": "A1",

@@ -1,5 +1,26 @@
 # VeraKV
 
+<img src="assets/demo-case.gif" alt="One real AMA-Bench question played through both systems, with clocks in real seconds. Building memory for the 150-step trajectory: AMA-Agent issues 14 LLM calls together, one state summary per about 8,192 characters; they take 35 to 73 s each and the build takes 76 s in the logged run. VeraKV makes no model call: its index is the first lines of each step, built in 3.5 ms on a laptop CPU. Asked what state drawer 1 is in at step 77, VeraKV answers at 82 s with one model call: open, changed at step 17, as the reference says. AMA-Agent reads 6 retrieved steps, none of them the steps where the drawer was opened, judges them sufficient, and answers at 102 s: closed. Forced past that early answer, it takes 3 model calls and 311 s and still answers closed." width="100%">
+
+<sub>On this question VeraKV answers correctly in 82 s with one model call. AMA-Agent's check answers after 102 s,
+wrongly; forced past that early answer, it takes 3 calls and 311 s and is still wrong. Building the memory, once
+per trajectory, took AMA-Agent 76 s here: 14 LLM calls (one per ~8,192 characters of the 150 steps), issued
+together and taking 35–73 s each. VeraKV makes no model call to build its memory; with this repository's code the
+build takes 3.5 ms (median of 9 runs on a laptop CPU, Apple M3 Pro; `figures/time_index_build.py`). Over the 2,136
+paired questions, the median time per question is 54 s for VeraKV, 71 s for AMA-Agent and 207 s for AMA-Agent
+without its early answer. Wall times were measured under each run's own load (Qwen3-32B on vLLM, one 8×A100 node),
+so read them as an order of magnitude. VeraKV's index is the first lines of every step; it picks steps by word
+overlap and step numbers. The question (AMA-Bench, alfworld episode 34) was picked from the 333 where VeraKV was
+right and AMA-Agent wrong; on 252 it went the other way. Apart from that 3.5 ms, calls, times and answers are the
+ones logged in the [paired re-run](docs/AMA_AGENT_PAIRED.md); answers show their first two sentences. Below: what
+each reader's prompt held, excerpted section by section from the same logs. Built by `figures/make_demo.py` and
+`figures/make_context.py` from `figures/demo_case.json`.</sub>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/context-case-dark.png">
+  <img src="assets/context-case.png" alt="What each reader's prompt held for this question, excerpted section by section from the logged prompts. AMA-Agent's reader: a routing role, the query, six retrieved turns (4, 6, 9, 12, 16 and 77; none of them step 5 or 17, where drawer 1 was opened), a note that these are a small subset selected by similarity, a decision procedure (answer if the retrieved turns are enough, otherwise ask for more turns) and output formats. VeraKV's reader: an overview with one line per step for steps 0 to 145, among them steps 5 and 17 (open drawer 1, the drawer is open), the last 4 steps in full, the selected steps 21, 67, 77, 136 and 141 in full, the question, and the instruction to provide a direct and concise answer." width="100%">
+</picture>
+
 A model can't tell what it hasn't seen, so VeraKV never lets one decide what to leave out. AMA-Agent, built
 for this benchmark, asks its model whether it has read enough. On 84% of questions the model says yes after
 five retrieved steps, and VeraKV beats it by 4.2 points (13.7 on questions about changing state). VeraKV
@@ -11,19 +32,6 @@ be served as their own cached KV, with the same accuracy and a first token up to
   <source media="(prefers-color-scheme: dark)" srcset="assets/how-it-works-dark.png">
   <img src="assets/how-it-works.png" alt="Most agent memories let a model extract facts when writing and decide when it has read enough when answering. VeraKV stores every step verbatim, picks steps by step number, word overlap and recency with no model call, and gives the reader a short head of every step plus the picked steps in full. Optionally it serves the picked steps as their cached KV." width="100%">
 </picture>
-
-<img src="assets/demo-case.gif" alt="One real AMA-Bench question played through both systems on a shared clock. Building memory for the 150-step trajectory takes AMA-Agent 14 LLM calls, one state summary per about 8,192 characters. VeraKV makes no model call, because its index is the first lines of each step. Asked what state drawer 1 is in at step 77, VeraKV answers at 82 s with one model call: open, changed at step 17, as the reference says. AMA-Agent reads 6 retrieved steps, none of them the steps where the drawer was opened, judges them sufficient, and answers at 102 s: closed. Forced past that early answer, it takes 3 model calls and 311 s and still answers closed." width="100%">
-
-<sub>On this question VeraKV answers correctly in 82 s with one model call. AMA-Agent's check answers after 102 s,
-wrongly; forced past that early answer, it takes 3 calls and 311 s and is still wrong. Over the 2,136 paired
-questions, the median time per question is 54 s for VeraKV, 71 s for AMA-Agent and 207 s for AMA-Agent without
-its early answer. Building memory costs VeraKV no model call, against about one per 8,192 characters of
-trajectory for AMA-Agent (14 for this 150-step trajectory). Wall times were measured under each run's own load,
-so read them as an order of magnitude. VeraKV here makes no model call in its memory: it keeps the first lines of
-every step as its index and picks steps by word overlap and step numbers. The question (AMA-Bench, alfworld
-episode 34) was picked from the 333 where VeraKV was right and AMA-Agent wrong; on 252 it went the other way.
-Calls, times and answers are the ones logged in the [paired re-run](docs/AMA_AGENT_PAIRED.md); answers show
-their first two sentences. Built by `figures/make_demo.py` from `figures/demo_case.json`.</sub>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/results-dark.png">
@@ -158,7 +166,9 @@ results/    raw per-question predictions + judge scores (mu_merged_<TAG>.json, r
             results/MANIFEST.md
 scripts/    run_ama.sh — end-to-end official-harness run on one 8×A100 node
 figures/    make_figures.py — draws the README figures in assets/ (light and dark) from the files above;
-            make_demo.py — the one-question demo GIF, from demo_case.json (built by build_demo_case.py)
+            make_demo.py and make_context.py — the one-question demo GIF and the figure of what each reader
+            sees, from demo_case.json (built by build_demo_case.py); time_index_build.py — times VeraKV's
+            memory build for one episode
 submissions/ the leaderboard submission file
 data/       where the benchmark files go (not shipped; see data/README.md)
 ```
