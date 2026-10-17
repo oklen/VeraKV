@@ -12,6 +12,16 @@ be served as their own cached KV, with the same accuracy and a first token up to
   <img src="assets/how-it-works.png" alt="Most agent memories let a model extract facts when writing and decide when it has read enough when answering. VeraKV stores every step verbatim, picks steps by step number, word overlap and recency with no model call, and gives the reader a short head of every step plus the picked steps in full. Optionally it serves the picked steps as their cached KV." width="100%">
 </picture>
 
+<img src="assets/demo-case.gif" alt="One real AMA-Bench question played through both systems: what is the state of drawer 1 at step 77, and how did it change? AMA-Agent's similarity search hands its reader 6 of the 150 steps (1,992 tokens), none of them the steps where drawer 1 was opened (5 and 17). Its check answers SUFFICIENT, and it answers that the drawer is closed. VeraKV hands its reader a short head of every step plus 9 steps in full (12,270 tokens) with no model call. The heads of steps 5 and 17 show the drawer being opened, and it answers open, as the reference does." width="100%">
+
+<sub>One real question (AMA-Bench, alfworld episode 34), shown with the prompts and answers logged in the
+[paired re-run](docs/AMA_AGENT_PAIRED.md). VeraKV here is the released configuration (word overlap and step
+pinning, no model call in the memory). The question was picked from the 333 where this configuration was right
+and AMA-Agent wrong; on 252 it went the other way. It shows the main way AMA-Agent lost in that re-run: its
+check answers from the first similarity search on 84% of questions, and on the questions the labelled comparison
+(flagship configuration) won, AMA-Agent's context held the complete evidence only 48% of the time. Answers show
+their first two sentences. Built by `figures/make_demo.py` from `figures/demo_case.json`.</sub>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/results-dark.png">
   <img src="assets/results.png" alt="Left: AMA-Bench accuracy as of 2026-07-15, VeraKV 0.6478 ahead of HybridFocus 0.6246, AMA-Agent 0.5722 and five other systems. Right: VeraKV minus AMA-Agent on the same server and judge, +4.2 overall and +13.7 on state-update questions; against AMA-Agent without its early answer, −2.0, at 63 s against 207 s per question." width="100%">
@@ -144,7 +154,8 @@ results/    raw per-question predictions + judge scores (mu_merged_<TAG>.json, r
             model-pick fix re-run), smaller outputs; index in
             results/MANIFEST.md
 scripts/    run_ama.sh — end-to-end official-harness run on one 8×A100 node
-figures/    make_figures.py — draws the README figures in assets/ (light and dark) from the files above
+figures/    make_figures.py — draws the README figures in assets/ (light and dark) from the files above;
+            make_demo.py — the one-question demo GIF, from demo_case.json (built by build_demo_case.py)
 submissions/ the leaderboard submission file
 data/       where the benchmark files go (not shipped; see data/README.md)
 ```
