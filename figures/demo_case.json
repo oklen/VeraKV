@@ -5,14 +5,12 @@
   "domain": "EMBODIED_AI",
   "task_type": "alfworld",
   "question_uuid": "51a13dd0-f7f2-4599-b920-dedcf31fcd17",
-  "run": "paired re-run 2026-10-08, rows ep=34 qi=3 (docs/AMA_AGENT_PAIRED.md)"
+  "run": "paired re-run 2026-10-08, rows ep=34 qi=3 (docs/AMA_AGENT_PAIRED.md)",
+  "memory": "AMA-Agent's stored memory for episode 34 in the paired re-run: one state summary per chunk, each headed 'summary_turn_range: turn X to turn Y'; chunks are cut on turn boundaries at session_size 8192 characters (configs/ama_agent.yaml), one LLM call per chunk (_compress_chunk in src/method/ama_agent_core/construct.py)"
  },
- "task": "Place two salt shakers in a drawer.",
  "num_steps": 150,
- "trajectory_tokens": 36590,
  "question": "What is the state of drawer 1 at step 77? When did this change occur and what were the prior whole changes history?",
  "reference": "At step 77, drawer 1 is open. Changes occurred at: step 5 (open drawer 1), step 6 (close drawer 1), step 17 (open drawer 1).",
- "question_type": "C",
  "deciding_steps": [
   {
    "step": 5,
@@ -30,8 +28,80 @@
    "observation": "You open the drawer 1. The drawer 1 is open. In it, you see a spoon 1."
   }
  ],
+ "memory_build": {
+  "ama_agent_llm_calls": 14,
+  "ama_agent_turn_ranges": [
+   [
+    0,
+    12
+   ],
+   [
+    13,
+    23
+   ],
+   [
+    24,
+    33
+   ],
+   [
+    34,
+    45
+   ],
+   [
+    46,
+    57
+   ],
+   [
+    58,
+    69
+   ],
+   [
+    70,
+    81
+   ],
+   [
+    82,
+    93
+   ],
+   [
+    94,
+    104
+   ],
+   [
+    105,
+    115
+   ],
+   [
+    116,
+    126
+   ],
+   [
+    127,
+    136
+   ],
+   [
+    137,
+    147
+   ],
+   [
+    148,
+    149
+   ]
+  ],
+  "ama_agent_session_chars": 8192,
+  "verakv_model_calls": 0
+ },
  "ama_agent": {
   "arm": "A1",
+  "model_calls": 1,
+  "call_kinds": [
+   "suff"
+  ],
+  "generated_tokens": 1386,
+  "seconds": 102.45,
+  "answer": "At step 77, drawer 1 is closed. The last change to this state occurred in **Turn 6**, when the agent closed drawer 1. The prior whole changes history for drawer 1 in the retrieved turns includes:  \n- **Turn 4**: Drawer 1 was closed (initial observed state).  \n- **Turn 6**: Drawer 1 was closed again (implying it was opened between Turn 4 and Turn 6, though no explicit open action is shown in the retrieved subset).  \nNo further changes to drawer 1 are recorded in the retrieved turns after Turn 6.",
+  "judge": "no",
+  "score": 0.0,
   "retrieved": [
    4,
    6,
@@ -74,46 +144,38 @@
     "observation": "You arrive at countertop 2. On the countertop 2, you see a butterknife 1, a cellphone 1, a cup 3, a knife 1, a pan 1, a papertowelroll 1, a saltshaker 1, and a spatula 1."
    }
   ],
-  "prompt_tokens": 1992,
-  "check_question": "can you answer the question COMPLETELY and ACCURATELY using only the retrieved turns above (plus general knowledge)?",
   "check_output": "SUFFICIENT",
-  "reasoning_quotes": [
-   "But the retrieved turns don't include turn 5.",
-   "we might assume that drawer 1 remained closed from turn 6 onwards until step 77."
+  "reasoning_quote": "But the retrieved turns don't include turn 5."
+ },
+ "ama_agent_no_early_answer": {
+  "arm": "A3",
+  "model_calls": 3,
+  "call_kinds": [
+   "suff",
+   "codegen",
+   "reader"
   ],
-  "answer": "At step 77, drawer 1 is closed. The last change to this state occurred in **Turn 6**, when the agent closed drawer 1. The prior whole changes history for drawer 1 in the retrieved turns includes:  \n- **Turn 4**: Drawer 1 was closed (initial observed state).  \n- **Turn 6**: Drawer 1 was closed again (implying it was opened between Turn 4 and Turn 6, though no explicit open action is shown in the retrieved subset).  \nNo further changes to drawer 1 are recorded in the retrieved turns after Turn 6.",
+  "generated_tokens": 6811,
+  "seconds": 310.56,
+  "answer": "At step 77, drawer 1 is **closed**. This state changed last at **turn 6** when the agent closed it. Prior changes:  \n- **Turn 4**: Drawer 1 was closed (initial state).  \n- **Turn 5**: Drawer 1 was opened.  \n- **Turn 6**: Drawer 1 was closed again.  \nNo further changes occurred between turn 6 and step 77.",
   "judge": "no",
   "score": 0.0
  },
  "verakv": {
   "arm": "V2",
-  "config": "ama/configs/cfg_kvmem_causal.json (lexical router + step pin)",
-  "heads": [
-   0,
-   145
+  "model_calls": 1,
+  "call_kinds": [
+   "reader"
   ],
-  "hot": [
-   146,
-   147,
-   148,
-   149
-  ],
-  "full": [
-   21,
-   67,
-   77,
-   136,
-   141
-  ],
+  "generated_tokens": 957,
+  "seconds": 81.86,
+  "answer": "At step 77, drawer 1 is **open**. This state was established in **step 17** when the drawer was opened. Prior changes:  \n- **Step 5**: Drawer 1 was opened (initially closed in step 4).  \n- **Step 6**: Drawer 1 was closed.  \n- **Step 17**: Drawer 1 was reopened and remained open thereafter.",
+  "judge": "yes",
+  "score": 1.0,
   "head_lines": {
    "5": "action=open drawer 1 obs=You open the drawer 1. The drawer 1 is open. In it, you see a spoon 1.  The current available actions are: examine drawer 1, go to cabinet 1, go to cabinet 2, g",
    "6": "action=close drawer 1 obs=You close the drawer 1.  The current available actions are: close drawer 1, examine drawer 1, go to cabinet 1, go to cabinet 2, go to cabinet 3, go to cabinet 4",
    "17": "action=open drawer 1 obs=You open the drawer 1. The drawer 1 is open. In it, you see a spoon 1.  The current available actions are: examine drawer 1, examine peppershaker 1, go to cabin"
-  },
-  "prompt_tokens": 12270,
-  "model_calls_in_memory": 0,
-  "answer": "At step 77, drawer 1 is **open**. This state was established in **step 17** when the drawer was opened. Prior changes:  \n- **Step 5**: Drawer 1 was opened (initially closed in step 4).  \n- **Step 6**: Drawer 1 was closed.  \n- **Step 17**: Drawer 1 was reopened and remained open thereafter.",
-  "judge": "yes",
-  "score": 1.0
+  }
  }
 }

@@ -12,14 +12,17 @@ be served as their own cached KV, with the same accuracy and a first token up to
   <img src="assets/how-it-works.png" alt="Most agent memories let a model extract facts when writing and decide when it has read enough when answering. VeraKV stores every step verbatim, picks steps by step number, word overlap and recency with no model call, and gives the reader a short head of every step plus the picked steps in full. Optionally it serves the picked steps as their cached KV." width="100%">
 </picture>
 
-<img src="assets/demo-case.gif" alt="One real AMA-Bench question played through both systems: what is the state of drawer 1 at step 77, and how did it change? AMA-Agent's similarity search hands its reader 6 of the 150 steps (1,992 tokens), none of them the steps where drawer 1 was opened (5 and 17). Its check answers SUFFICIENT, and it answers that the drawer is closed. VeraKV hands its reader a short head of every step plus 9 steps in full (12,270 tokens) with no model call. The heads of steps 5 and 17 show the drawer being opened, and it answers open, as the reference does." width="100%">
+<img src="assets/demo-case.gif" alt="One real AMA-Bench question played through both systems on a shared clock. Building memory for the 150-step trajectory takes AMA-Agent 14 LLM calls, one state summary per about 8,192 characters. VeraKV makes no model call, because its index is the first lines of each step. Asked what state drawer 1 is in at step 77, VeraKV answers at 82 s with one model call: open, changed at step 17, as the reference says. AMA-Agent reads 6 retrieved steps, none of them the steps where the drawer was opened, judges them sufficient, and answers at 102 s: closed. Forced past that early answer, it takes 3 model calls and 311 s and still answers closed." width="100%">
 
-<sub>One real question (AMA-Bench, alfworld episode 34), shown with the prompts and answers logged in the
-[paired re-run](docs/AMA_AGENT_PAIRED.md). VeraKV here is the released configuration (word overlap and step
-pinning, no model call in the memory). The question was picked from the 333 where this configuration was right
-and AMA-Agent wrong; on 252 it went the other way. It shows the main way AMA-Agent lost in that re-run: its
-check answers from the first similarity search on 84% of questions, and on the questions the labelled comparison
-(flagship configuration) won, AMA-Agent's context held the complete evidence only 48% of the time. Answers show
+<sub>On this question VeraKV answers correctly in 82 s with one model call. AMA-Agent's check answers after 102 s,
+wrongly; forced past that early answer, it takes 3 calls and 311 s and is still wrong. Over the 2,136 paired
+questions, the median time per question is 54 s for VeraKV, 71 s for AMA-Agent and 207 s for AMA-Agent without
+its early answer. Building memory costs VeraKV no model call, against about one per 8,192 characters of
+trajectory for AMA-Agent (14 for this 150-step trajectory). Wall times were measured under each run's own load,
+so read them as an order of magnitude. VeraKV here makes no model call in its memory: it keeps the first lines of
+every step as its index and picks steps by word overlap and step numbers. The question (AMA-Bench, alfworld
+episode 34) was picked from the 333 where VeraKV was right and AMA-Agent wrong; on 252 it went the other way.
+Calls, times and answers are the ones logged in the [paired re-run](docs/AMA_AGENT_PAIRED.md); answers show
 their first two sentences. Built by `figures/make_demo.py` from `figures/demo_case.json`.</sub>
 
 <picture>
