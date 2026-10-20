@@ -145,8 +145,8 @@ protocol caveats are in the paper and in [Honest-measurement notes](#honest-meas
 - **The system.** The memory stack alone (harness default reader) scores 0.5954 against the purpose-built
   AMA-Agent's published 0.5722; with the disclosed structured answer instruction it reaches the verified
   0.6478.
-  The one domain it does not lead, SOFTWARE, is a coverage ceiling on temporal-scan questions (verifying
-  "which step first/last" needs the whole 60–100k-token trajectory), not a retrieval or reasoning gap.
+  The one domain it does not lead, SOFTWARE, is not a retrieval or reasoning gap: its residual is temporal-scan
+  questions ("which step first/last"), where every configuration scores low and many gold labels do not match the trajectory.
 
 ## Layout
 
@@ -245,7 +245,7 @@ episode-clustered bootstrap (10,000 draws, seed 0) can differ from a paper CI in
 | §3.4, Tab. "family" | appendix → original lines / facts; full trajectory recency-truncated | `ama/agentic_reader.py` (`extlines`, `facts`), `ama/configs/cfg_full22.json` | `results/mu_merged_{EXTLW,FACTSW,FULLTR}.json` |
 | §3.4, Fig. "payload" | oracle-evidence payload ablation (verbatim / summary / facts, 910 QA) + Llama-3.1-8B re-judge | `kvmemory/kv_payload.py` (vLLM client), `kvmemory/kv_payload_hf.py`, `kvmemory/cross_judge.py` | — |
 | App. D | memory-assembly 2×2 (selection × gist overview), per-domain split | `ama/configs/cfg_arm_{recent,gist,retrieval}.json`, `cfg_kvmem_lex.json` | `results/mu_merged_ASM_*.json`, `analysis/assembly_2x2.py` |
-| §3.1, App. E | SOFTWARE temporal-scan coverage ceiling (8B and 32B readers) | `kvmemory/sw_mechanism.py` | `results/sw_mechanism/` |
+| §3.1, App. E | SOFTWARE temporal-scan: low for every configuration, noisy gold labels (8B and 32B readers) | `kvmemory/sw_mechanism.py` | `results/sw_mechanism/` |
 | App. F | deployed-router audit: same-batch replication, lexical+pin 0.6466 vs model-pick hybrid+pin 0.6538, paired −0.8pp [−2.3, +0.8]; a later model-pick run on the upgraded serving stack, 0.6410 (not paired) | `ama/configs/cfg_kvmem_causal.json`, `cfg_flagship.json` | `results/mu_merged_RESTRLEXF.json` (lexical+pin), `mu_merged_RESTRF2.json` (model-pick+pin, same batch), `mu_merged_RESTRF4.json` (model-pick+pin, later run); flagship replicates `RESTRF`, `RESTRF2`, `RESTRF3` |
 | App. G | step-number deletion / pin-only robustness (+ Llama-3.1-8B re-judge) | `kvmemory/kv_stepablate.py`, `kvmemory/cross_judge.py` | — |
 | §3.5, App. H | mask-oracle gate (synthetic), 0.7 vs 13.5-logit gap, TTFT vs evidence size | `kvmemory/kv_select_smoke.py` | — |

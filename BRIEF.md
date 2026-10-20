@@ -55,9 +55,9 @@ the ~5× store-write cost at parity across scales (8B/32B), benchmarks (AMA-Benc
 (.397 vs .397).
 
 **Boundaries, stated.** Full context can win when the history fits and the reader exploits it
-(LongMemEval-S at 128k); on AMA-Bench SOFTWARE, temporal-scan questions ("which step first / last") hit a
-coverage ceiling — supplying the answer-bearing step verbatim lifts an 8B or 32B reader only to ~0.12,
-because verifying an extremum needs the whole 60–100k-token trajectory; exact KV-layer deletion needs
+(LongMemEval-S at 128k); on AMA-Bench SOFTWARE, temporal-scan questions ("which step first / last") are low
+for every configuration — supplying the answer-bearing step verbatim lifts an 8B or 32B reader only to ~0.12 —
+and many of their gold steps do not match the trajectory, so we do not call it a coverage ceiling; exact KV-layer deletion needs
 downstream invalidation (a planted-secret probe leaks 0/120); the out-of-window dials are 8B-only.
 
 **Artifacts.** Code, configs, prompts, raw per-question predictions with judge outputs, the per-question

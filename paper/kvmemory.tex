@@ -460,13 +460,13 @@ that scores our predictions \emph{higher} than the same-family judge
 (Appendix~\ref{app:judge}); and we release all configs, raw predictions, and judge
 outputs.}
 
-The one domain \kvm{} does not lead, \textsc{Software}, is a \emph{coverage}
-ceiling, not a retrieval or reasoning gap: named steps are recalled in full and
+The one domain \kvm{} does not lead, \textsc{Software}, is not a retrieval or
+reasoning gap: named steps are recalled in full and
 \textsc{Software} \emph{reasoning} is in fact \kvm{}'s strongest question type at
 budget. The residual is the temporal-scan questions---``which step first/last did
-X'', $19\%$ of the domain---which require verifying an extremum over the entire
-$60$--$100$k-token trajectory held verbatim: the one place AMA-Agent's
-whole-trajectory state summary, written at construction time, genuinely helps.\footnote{The
+X'', $19\%$ of the domain---on which every configuration we ran scores low and
+whose gold labels often do not match the trajectory itself, so we do not attribute
+the gap to coverage or to AMA-Agent's construction-time state summary.\footnote{The
 \textsc{Software} mechanism is dissected in Appendix~\ref{app:swmech}.}
 
 \begin{table}[t]
@@ -1460,17 +1460,17 @@ serving regimes and their trajectory-length limits are in Table~\ref{tab:modes})
 and report LongMemEval-S only in the strong-reader (Qwen3-32B) regime---a scoping
 choice, testing the settings the claim is about.
 
-The \emph{select} pillar's boundary is a \emph{coverage} ceiling, visible in one
-domain. On AMA-Bench \textsc{Software}, selection achieves $100\%$ recall of the
-\emph{named} steps yet AMA-Agent leads by $+17\pp$; the dissection in
+The \emph{select} pillar's one visible weak spot is AMA-Bench \textsc{Software}.
+There selection achieves $100\%$ recall of the
+\emph{named} steps yet AMA-Agent's published score leads by $+17\pp$; the dissection in
 Appendix~\ref{app:swmech} eliminates retrieval, tool access,
 output format, and prompted iteration, and localizes the residual to
-\emph{temporal-scan} questions whose answer step is unnamed and must be proven
-extremal over the whole trajectory---so even supplied verbatim it caps a reader at
-$\sim\!0.12$. Verifying an extremum needs the entire $60$--$100$k-token trajectory,
-which AMA-Agent's construction-time state summary covers and a fixed retrieval
-budget cannot. That is genuinely complementary, and our ablations indicate it
-cannot be absorbed by bolting machinery onto a single-pass reader.
+\emph{temporal-scan} questions whose answer step is unnamed, where even the gold step
+supplied verbatim leaves a reader at
+$\sim\!0.12$. We first read this as a coverage ceiling, but an audit of the labels
+does not support that reading alone: for most questions asking when something was first or
+last modified, the gold step is not an edit (Appendix~\ref{app:swmech}). We make no
+claim that more coverage, or a construction-time state summary, would close this gap.
 
 Finally, verbatim storage carries governance costs, as does any system that also keeps the raw history---which many constructed memories do.
 The store retains raw history: PII persists verbatim and must be handled by
@@ -1852,7 +1852,7 @@ Game                & $0.589$ & $0.536$ & $-5.3\pp$ \\
 \end{tabular}
 \end{table}
 
-\section{Software temporal-scan: a coverage ceiling, isolated}
+\section{Software temporal-scan: uniformly low, noisily labelled}
 \label{app:swmech}
 \textsc{Software} is the one domain \kvm{} trails (Table~\ref{tab:ama}), and its
 failures concentrate in \emph{temporal-scan} questions---``which step \emph{first}
@@ -1868,27 +1868,27 @@ we hold the reader fixed and vary only the evidence, on the $74$ temporal-scan
 questions whose gold answer names a clean step (Table~\ref{tab:swmech}): the
 deployed \emph{selection}; selection \emph{plus the gold step} verbatim; and a
 complete one-line \emph{index of every step} plus the gold step verbatim. Two facts
-fix the cause. First, the answer-bearing step reaches the reader only $5.4\%$ of the
+stand out. First, the answer-bearing step reaches the reader only $5.4\%$ of the
 time under budget-limited selection---identical at both reader sizes, because it is
 a property of the router, not the reader. Second, \emph{supplying}
 that step verbatim lifts accuracy only to $\sim\!0.12$ on \emph{both} an $8$B and a
-$32$B reader, and a complete (lossy) index does not help further. So retrieval is
-not the bottleneck and neither is reader capacity: answering ``which step first''
-requires confirming that \emph{no other} step qualifies---the entire
+$32$B reader, and a complete (lossy) index does not help further. We first read this
+as a coverage ceiling: answering ``which step first'' requires confirming that
+\emph{no other} step qualifies---the entire
 $60$--$100$k-token trajectory (median $94$ steps) held verbatim, which exceeds any
-fixed budget. The residual is a coverage/verification ceiling, consistent with
-AMA-Agent's edge here coming from retaining more of the raw trajectory rather than
-from executable reasoning. (Absolute levels here sit below the deployed
-\textsc{Software} numbers of Table~\ref{tab:ama} because this is the pure
-clean-gold temporal-scan subset under a plain answer prompt; the cross-condition
-contrast, not the level, is the finding.)
+fixed budget. An audit of the labels does not support that reading alone. Of the $34$
+first/last questions that ask when something was modified, changed, or fixed, the gold
+step is an edit in only $10$ ($19$ are command runs, $5$ file views), and none of four
+gold steps checked by hand modifies the code the question names. So these questions are
+low for every configuration and noisily labelled; we do not call the residual a coverage
+ceiling. (Levels sit below Table~\ref{tab:ama}: a clean-gold subset, plain answer prompt.)
 
 \begin{table}[h]
 \centering
-\caption{Software temporal-scan mechanism: reader fixed, evidence varied, $74$
-first/last questions with a clean gold step. Supplying the gold step verbatim caps
-at $\sim\!0.12$ on both readers---retrieval is not the bottleneck; verifying an
-extremum needs the whole trajectory.}
+\caption{Software temporal-scan: reader fixed, evidence varied, $74$
+first/last questions with a clean gold step. Supplying the gold step verbatim reaches
+only $\sim\!0.12$ on both readers; many gold labels do not match the trajectory
+(see text), so we do not read this as a coverage ceiling.}
 \label{tab:swmech}
 \small
 \begin{tabular}{lcc}
