@@ -1,0 +1,326 @@
+# VeraKV
+
+[中文](README.md) | **English**
+
+<img src="assets/demo-case.gif" alt="One real AMA-Bench question played through both systems, with clocks in real seconds. Building memory for the 150-step trajectory: AMA-Agent issues 14 LLM calls together, one state summary per about 8,192 characters; they take 35 to 73 s each and the build takes 76 s in the logged run. VeraKV makes no model call: its index is the first lines of each step, built in 3.5 ms on a laptop CPU. The two build times are then shown side by side: 76 s vs 3.5 ms, about 20,000× less time. Asked what state drawer 1 is in at step 77, VeraKV answers at 82 s with one model call: open, changed at step 17, as the reference says. AMA-Agent reads 6 retrieved steps, none of them the steps where the drawer was opened, judges them sufficient, and answers at 102 s: closed. Forced past that early answer, it takes 3 model calls and 311 s and still answers closed." width="100%">
+
+<sub>Building memory for this 150-step trajectory took AMA-Agent 76 s with 14 LLM calls and VeraKV 3.5 ms with no
+model call: about 20,000× less time, measured on different machines. On this question VeraKV answers correctly in
+82 s with one model call. AMA-Agent's check answers after 102 s, wrongly; forced past that early answer, it takes
+3 calls and 311 s and is still wrong. AMA-Agent's 76 s is from the logged run (Qwen3-32B on vLLM, one 8×A100
+node): its 14 calls, one per ~8,192 characters, were issued together and took 35–73 s each, and the memory is
+built once per trajectory. VeraKV's 3.5 ms is the median of 9 runs of this repository's code on a laptop CPU
+(Apple M3 Pro; `figures/time_index_build.py`). Over the 2,136 paired questions, the median time per question is
+54 s for VeraKV, 71 s for AMA-Agent and 207 s for AMA-Agent without its early answer. Wall times were measured
+under each run's own load, so read them as an order of magnitude. VeraKV's index is the first lines of every
+step; it picks steps by word overlap and step numbers. The question (AMA-Bench, alfworld episode 34) was picked
+from the 333 where VeraKV was right and AMA-Agent wrong; on 252 it went the other way. Apart from that 3.5 ms,
+calls, times and answers are the ones logged in the [paired re-run](docs/AMA_AGENT_PAIRED.md); answers show
+their first two sentences. Below: what each reader's prompt held, excerpted section by section from the same
+logs. Built by `figures/make_demo.py` and `figures/make_context.py` from `figures/demo_case.json`.</sub>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/context-case-dark.png">
+  <img src="assets/context-case.png" alt="What each reader's prompt held for this question, excerpted section by section from the logged prompts. AMA-Agent's reader: a routing role, the query, six retrieved turns (4, 6, 9, 12, 16 and 77; none of them step 5 or 17, where drawer 1 was opened), a note that these are a small subset selected by similarity, a decision procedure (answer if the retrieved turns are enough, otherwise ask for more turns) and output formats. VeraKV's reader: an overview with one line per step for steps 0 to 145, among them steps 5 and 17 (open drawer 1, the drawer is open), the last 4 steps in full, the selected steps 21, 67, 77, 136 and 141 in full, the question, and the instruction to provide a direct and concise answer." width="100%">
+</picture>
+
+A model can't tell what it hasn't seen, so VeraKV never lets one decide what to leave out. AMA-Agent, built
+for this benchmark, asks its model whether it has read enough. On 84% of questions the model says yes after
+five retrieved steps, and VeraKV beats it by 4.2 points (13.7 on questions about changing state). VeraKV
+also builds its memory without a single model call: against AMA-Agent with that early stop removed, it
+stays within about 2 points at a third of the time per question. If you host the model, the same steps can
+be served as their own cached KV, with the same accuracy and a first token up to 10.9× faster.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/how-it-works-dark.png">
+  <img src="assets/how-it-works.png" alt="Most agent memories let a model extract facts when writing and decide when it has read enough when answering. VeraKV stores every step verbatim, picks steps by step number, word overlap and recency with no model call, and gives the reader a short head of every step plus the picked steps in full. Optionally it serves the picked steps as their cached KV." width="100%">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/results-dark.png">
+  <img src="assets/results.png" alt="Left: AMA-Bench accuracy as of 2026-07-15, VeraKV 0.6478 ahead of HybridFocus 0.6246, AMA-Agent 0.5722 and five other systems. Right: VeraKV minus AMA-Agent on the same server and judge, +4.2 overall and +13.7 on state-update questions; against AMA-Agent without its early answer, −2.0, at 63 s against 207 s per question." width="100%">
+</picture>
+
+`0.6478` on AMA-Bench, #1 on the leaderboard when submitted (2026-07-15) · `+4.2` vs AMA-Agent on the
+same server and judge · `10.9×` faster first token from cached KV · `76 s vs 3.5 ms` to build memory for a
+150-step trajectory (AMA-Agent with 14 LLM calls vs VeraKV with no model call)
+
+[Paper (PDF)](paper/kvmemory.pdf) · [Reproduce](#reproducing) · [Head-to-head details](docs/AMA_AGENT_PAIRED.md)<br>
+Agent memory series: [VeraKV](https://github.com/oklen/VeraKV) — what to hand the model ·
+[Compute Globally, Materialize Locally](https://github.com/oklen/Compute-Globally-Materialize-Locally) — what
+survives eviction · [TracePack](https://github.com/oklen/TracePack) — what survives compaction
+
+**What it is:** a memory layer for long-running agents. It keeps the raw trajectory and makes no model
+call to build or search its memory. For each question it pins the steps the question names, ranks the
+rest by word overlap and keeps the last few. The reader gets a short head of every step plus the picked
+steps **verbatim**: a median of about 10k tokens, at most 22k. The picked steps can be served as text, or
+as their own cached KV at their original positions.
+
+This repository has the code, configurations, prompts, raw predictions and judge outputs behind every
+number in the paper, [`paper/kvmemory.pdf`](paper/kvmemory.pdf) (*When Does KV Reuse Work for Agent
+Memory? A Controlled Study of Payload Fidelity, Store Conditioning, and Cache Harvesting — with a
+Reproducible State-of-the-Art System*; source in [`paper/kvmemory.tex`](paper/kvmemory.tex)).
+
+## What we learned
+
+- **A smarter picker adds little.** Free word overlap plus the step numbers a question names is enough.
+  Having an LLM pick the steps adds nothing, even after we fixed its broken call
+  (+0.2 [−1.5, +2.1] and +1.4 [−0.2, +3.2]; [details](docs/MODEL_PICK_FIX.md)).
+- **How much the reader gets matters a lot.** At fixed routing, growing the assembled context from 6k to
+  22k tokens lifts accuracy from 0.550 to 0.644 (on half the questions). Handing the reader the most recent
+  22k tokens of the raw trajectory instead costs 8.4 points.
+- **AMA-Agent loses by answering too early.** On 84% of questions it answers after its first "is this
+  enough?" check. Remove that early answer and it pulls about 2 points ahead of VeraKV, at three times the
+  time per question.
+- **Cached KV is exact inside the window and buys latency, not accuracy.** Gathering the picked steps' KV
+  reproduces a full prefill and scores the same as re-reading them as text (17.3% vs 17.4%). Outside the
+  window, encoding events independently costs 13.2 points.
+
+## Results
+
+| AMA-Bench, official harness, all 2,496 questions | Accuracy |
+|---|---|
+| **VeraKV** — verified on the public leaderboard, #1 as of 2026-07-15 | **0.6478** |
+| HybridFocus (leaderboard entry) | 0.6246 |
+| VeraKV, memory only (the harness's default reader) | 0.5954 |
+| AMA-Agent (purpose-built for the benchmark) | 0.5722 |
+| Long-context Qwen3-32B, no memory | 0.52 |
+| MemoRAG | 0.4606 |
+| HippoRAG2 | 0.4480 |
+| MemGPT | 0.3304 |
+| Mem0 | 0.2104 |
+
+VeraKV's rows are our runs; the other rows are published or leaderboard scores.
+
+- **Wins 5 of 6 AMA-Bench domains** against the purpose-built AMA-Agent's published scores.
+- **The memory alone beats AMA-Agent's published score:** 0.5954 vs 0.5722 with the harness's own default
+  reader, before any reader-side change.
+- **Head-to-head with AMA-Agent on the same server and judge.** On 2,136 paired questions, VeraKV beats
+  AMA-Agent as released by 4.2 points [+1.8, +6.6], and by 13.7 [+8.7, +18.6] on state-update questions.
+  AMA-Agent loses mainly because its first "is this enough?" check stops too early. With that early answer
+  removed it pulls about 2 points ahead (−2.0 [−4.4, +0.4] against this configuration, −2.3 [−4.6, −0.1]
+  against the released one, which makes no model call), at about 3× the time and 7× the generated tokens
+  per question. [Details](docs/AMA_AGENT_PAIRED.md).
+- **Beats dedicated dialogue memory on LOCOMO:** J = 0.704 against Mem0's 0.671 and Zep's 0.660, under
+  LOCOMO's public gpt-4o-mini protocol.
+- **First token up to 10.9× faster.** Gathering the selected spans' cached KV instead of re-reading them
+  as text keeps time-to-first-token flat at about 40 ms. The speedup is 1.6× to 10.9× as the evidence
+  grows to 4k tokens, and 32× at 32k. The first token is identical to a full-prefill oracle.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/ttft-dark.png">
+  <img src="assets/ttft.png" alt="Time to first token against selected evidence on Qwen3-8B: re-reading the selected steps as text grows from 66 to 448 ms between 575 and 4,387 tokens, while gathering their cached KV stays at about 41 ms. Accuracy is 17.3% with KV and 17.4% with text on 896 questions." width="80%">
+</picture>
+
+A later leaderboard entry (0.6975, dated 2026-09-09) has since overtaken VeraKV, which now ranks #2.
+Under the gpt-4o-mini judge, prompting LOCOMO's full history scores 0.756. These and the other
+protocol caveats are in the paper and in [Honest-measurement notes](#honest-measurement-notes).
+
+## Findings in detail
+
+- **Payload fidelity, measured on agent trajectories.** Most memory systems keep the raw history; what
+  differs is what the reader is served (Mem0's search returns its extracted facts; AMA-Agent's released
+  code serves its top-5 raw turns by embedding similarity together with an LLM-written state summary,
+  though on 84% of questions it answers earlier, from those turns alone; see the
+  [paired re-run](docs/AMA_AGENT_PAIRED.md)).
+  With matched cited evidence, reader and judge, serving a short LLM summary or extracted facts instead of
+  the verbatim step costs 8–10pp (14 on exact-recall questions). Those payloads are also much shorter, so
+  this measures what they leave out, not rewriting as such. In the deployed pipeline a deterministic swap to
+  the query-relevant *original lines* costs −2.6pp, versus −5.1 / −5.9pp for summaries and facts. AMA-Bench's own needle
+  control prices the same choice: serving MemoryBank's constructed memory of the answer-bearing turns
+  instead of the turns drops BabyAI accuracy from 0.46 to 0.27 (−41% relative).
+- **The reader is a separable axis.** A same-batch memory × reader factorial: routing adds +3.1–3.5pp at
+  either reader, a one-sentence structured answer instruction adds +5.1–5.5pp at either router. The
+  instruction can travel inside the memory's return value, and as a rotated skill-KV block it ties the
+  text instruction.
+- **Within the context window, KV gather is exact and costs less, not more accurate.** Gathering the
+  selected spans' cached KV at their original positions reproduces a full-prefill-then-mask oracle and is
+  accuracy-equivalent to re-prefilling the same spans as text (17.3% vs 17.4%, 896 QA); first-token
+  latency decouples from evidence size.
+- **Beyond the window, a characterization.** Independently encoded event stores collapse on the official
+  harness (−13.2pp paired, n=2431); anchored stores with a fresh two-event tail recover 72%; two scoped
+  regularities (evidence converts to accuracy only through joint encoding; write-time conditioning must
+  match what is served, in content and position); six fresh-budget selectors, including a KEEP-style
+  one, leave recency tied or ahead; harvesting the agent's own rollout cache replaces the ~5× store-write
+  cost at parity (8B/32B, Qwen/Llama, AMA-Bench/LOCOMO); a mixed deployment policy ties the routed-text
+  carrier baseline on the full official harness (.397 vs .397).
+- **The system.** The memory stack alone (harness default reader) scores 0.5954 against the purpose-built
+  AMA-Agent's published 0.5722; with the disclosed structured answer instruction it reaches the verified
+  0.6478.
+  The one domain it does not lead, SOFTWARE, is not a retrieval or reasoning gap: its residual is temporal-scan
+  questions ("which step first/last"), where every configuration scores low and many gold labels do not match the trajectory.
+
+## Layout
+
+```
+paper/      kvmemory.tex + .bib + style files + compiled PDF (30 pp; tectonic or pdflatex)
+kvmemory/   the memory package (core, components, routers, HF backend with KV sub-selection) and one
+            module per experiment, each runnable as `python -m kvmemory.<name>` (usage in its docstring)
+ama/        AMA-Bench integration: harness/ (2 patched files), configs/, agentic_reader.py (reader-mode
+            ablations), answer instructions, maxutil_run.sh (vLLM launch + sharding + merge),
+            br_judge.py / bg_judge.py (official judge for the KV-bridge answers),
+            paired/ (the paired re-run against AMA-Agent; how to run it in paired/README.md)
+docs/       AMA_AGENT_PAIRED.md: the paired re-run against AMA-Agent; MODEL_PICK_FIX.md: the model-pick
+            call fixed and re-run
+analysis/   scripts that turn run outputs into the paper's numbers (see the table below)
+results/    raw per-question predictions + judge scores (mu_merged_<TAG>.json, run manifests mu_<TAG>_done),
+            results/oow/ (KV-serving and out-of-window runs), results/probes/ (synthetic probes),
+            results/ama_paired/ (the paired re-run against AMA-Agent), results/modelpick_fix/ (the
+            model-pick fix re-run), smaller outputs; index in
+            results/MANIFEST.md
+scripts/    run_ama.sh — end-to-end official-harness run on one 8×A100 node
+figures/    make_figures.py — draws the README figures in assets/ (light and dark) from the files above;
+            make_demo.py and make_context.py — the one-question demo GIF and the figure of what each reader
+            sees, from demo_case.json (built by build_demo_case.py); time_index_build.py — times VeraKV's
+            memory build for one episode
+submissions/ the leaderboard submission file
+data/       where the benchmark files go (not shipped; see data/README.md)
+```
+
+## Setup
+
+Two environments were used (exact versions in [ENVIRONMENT.md](ENVIRONMENT.md)):
+
+- **Official AMA-Bench harness** (text pipeline, every leaderboard-style number): vLLM serving
+  Qwen3-32B as reader and judge.
+- **KV experiments** (`kvmemory/kv_*.py`): HuggingFace transformers, one model copy per GPU; Qwen3-8B,
+  Qwen3-32B (shard with `SPRAG_DEVICE_MAP=auto`), Llama-3.1-8B-Instruct.
+
+Environment variables used by the modules: `SPRAG_MODEL_PATH` (local model directory; required),
+`SPRAG_EMBED_PATH` (Qwen3-Embedding-0.6B, for the embedding / hybrid routers), `SPRAG_ATTN_IMPL=sdpa`
+(required for the block-diagonal masks of the store experiments; `eager` for attention probes),
+`SPRAG_ROPE_FACTOR=4.0` + `SPRAG_MAX_CTX=131072` (YaRN for over-window runs). Outputs default to `./out/`.
+
+## Reproducing
+
+**Official-harness runs (AMA-Bench, Qwen3-32B reader + judge).** Requirements: one 8×A100-80GB node,
+[AMA-Bench](https://github.com/AMA-Bench/AMA-Bench), vLLM, Qwen3-32B weights.
+
+```bash
+git clone https://github.com/AMA-Bench/AMA-Bench
+cp ama/harness/method_kvmemory.py  AMA-Bench/src/method/kvmemory.py      # + register "kvmemory" in src/method_register.py
+cp ama/harness/memory_interface.py AMA-Bench/src/memory_interface.py     # env-gated answer-instruction + reader hooks
+export AMA_BENCH=$PWD/AMA-Bench MODEL=/path/to/Qwen3-32B VENV=/path/to/vllm_env
+bash scripts/run_ama.sh cfg_kvmem_causal.json MYTAG structured   # lexical+pin memory, structured reader -> results/mu_merged_MYTAG.json
+bash scripts/run_ama.sh cfg_kvmem_causal.json MYTAG_DEF plain     # the default-reader (memory-only) cell
+python analysis/cluster_ci.py                                     # QA-level + episode-cluster CIs
+```
+
+`ama/maxutil_run.sh` documents the reader-mode switches (`AMA_AGENTIC_READER`, `AMA_AGENTIC_MODE`) and
+the pin-corruption ablation (`SPRAG_PIN_SHUFFLE`). The submitted 0.6478 entry used `cfg_flagship.json`
+(lexical + model-pick fusion + pin); App. "The deployed router" shows the fusion is score-neutral, and
+`cfg_kvmem_causal.json` (lexical + step-pin) is the released default. In the official harness the
+model-pick call runs in Qwen3's thinking mode and returns only the start of its reasoning;
+`cfg_flagship_nothink.json` (`"pick_thinking": false`) fixes the call, and the fixed signal is
+score-neutral as well ([docs/MODEL_PICK_FIX.md](docs/MODEL_PICK_FIX.md)).
+
+**KV and out-of-window experiments (HF transformers).** The AMA-Bench test file goes to
+`data/ama_test.jsonl` (see [data/README.md](data/README.md)). Each module's docstring carries its run
+line, e.g.
+
+```bash
+SPRAG_MODEL_PATH=/path/to/Qwen3-8B SPRAG_ATTN_IMPL=sdpa PYTHONPATH=. CUDA_VISIBLE_DEVICES=0 \
+    python -m kvmemory.kv_globhot --shard 0 --queue_dir ./out/gh_q
+```
+
+The mechanism-subset runs use 103 within-window episodes (≤24k tokens, drawn round-robin across domains;
+n=824 QA) and an 8-way
+work queue (`--queue_dir`, one process per GPU). The official-harness bridge generates answers with
+`kvmemory.kv_ama_bridge` (Qwen3-32B, YaRN 4×) and scores them with AMA-Bench's own judge via
+`ama/br_judge.py` (tx / iso / b_hot) or `ama/bg_judge.py` (deployment map).
+
+**Paired statistics from the released outputs.**
+
+```bash
+python analysis/oow_paired.py results/oow/official_k12.jsonl.gz iso-tx b_hot-tx     # Table "oow", K=12
+python analysis/oow_paired.py results/oow/gh.jsonl.gz glob_hotR-bh glob_R-glob     # harvest cell
+python analysis/oow_paired.py results/oow/rv.jsonl.gz --arms                        # list arms
+```
+
+`oow_paired.py` reproduces accuracies, discordant counts and exact McNemar p-values exactly; its
+episode-clustered bootstrap (10,000 draws, seed 0) can differ from a paper CI in the last digit.
+
+## Experiments → scripts (results added in this release)
+
+| Paper | What | Script(s) | Output / analysis |
+|---|---|---|---|
+| §3.4, Tab. "family" | appendix → original lines / facts; full trajectory recency-truncated | `ama/agentic_reader.py` (`extlines`, `facts`), `ama/configs/cfg_full22.json` | `results/mu_merged_{EXTLW,FACTSW,FULLTR}.json` |
+| §3.4, Fig. "payload" | oracle-evidence payload ablation (verbatim / summary / facts, 910 QA) + Llama-3.1-8B re-judge | `kvmemory/kv_payload.py` (vLLM client), `kvmemory/kv_payload_hf.py`, `kvmemory/cross_judge.py` | — |
+| App. D | memory-assembly 2×2 (selection × gist overview), per-domain split | `ama/configs/cfg_arm_{recent,gist,retrieval}.json`, `cfg_kvmem_lex.json` | `results/mu_merged_ASM_*.json`, `analysis/assembly_2x2.py` |
+| §3.1, App. E | SOFTWARE temporal-scan: low for every configuration, noisy gold labels (8B and 32B readers) | `kvmemory/sw_mechanism.py` | `results/sw_mechanism/` |
+| App. F | deployed-router audit: same-batch replication, lexical+pin 0.6466 vs model-pick hybrid+pin 0.6538, paired −0.8pp [−2.3, +0.8]; a later model-pick run on the upgraded serving stack, 0.6410 (not paired) | `ama/configs/cfg_kvmem_causal.json`, `cfg_flagship.json` | `results/mu_merged_RESTRLEXF.json` (lexical+pin), `mu_merged_RESTRF2.json` (model-pick+pin, same batch), `mu_merged_RESTRF4.json` (model-pick+pin, later run); flagship replicates `RESTRF`, `RESTRF2`, `RESTRF3` |
+| App. G | step-number deletion / pin-only robustness (+ Llama-3.1-8B re-judge) | `kvmemory/kv_stepablate.py`, `kvmemory/cross_judge.py` | — |
+| §3.5, App. H | mask-oracle gate (synthetic), 0.7 vs 13.5-logit gap, TTFT vs evidence size | `kvmemory/kv_select_smoke.py` | — |
+| §3.5, App. H | sequence-level faithfulness, logit-KL, eager/SDPA, YaRN 4× | `kvmemory/kv_faithful.py` | — |
+| §3.5, App. H | KV-vs-text end-to-end parity: 144 QA and 896 QA (17.3% vs 17.4%) | `kvmemory/kv_equiv.py` | `results/kv_equiv_144/`, `results/kv_equiv_896/` |
+| §3.5 | unselected-upstream perturbation (gathered KV changes 111/168, text 0) | `kvmemory/kv_sidechannel.py` | `results/kv_sidechannel/` |
+| §3.7 | storage cost and TTFT to 64k selected tokens; prefill saved over a run | `kvmemory/kv_efficiency.py`, `kvmemory/bench_kv.py` | — |
+| §3.7 | resident full-trajectory prefix-cache baseline | `kvmemory/kv_pfx.py` | `results/kv_cost/pfx_8b.json`, `analysis/pfx_ttft.py` |
+| §3.6 | answering protocol as a rotated skill-KV block | `kvmemory/kv_skill.py` | `results/oow/sk.jsonl.gz` |
+| §3.6 | query-routed skill library (replacement vs additive; text vs KV) | `kvmemory/kv_skillib.py` | `results/oow/sl.jsonl.gz` |
+| §4, Tab. "oow" | official harness: tx / iso / anchored+tail at K=12 and K=5 | `kvmemory/kv_ama_bridge.py`, `ama/br_judge.py` | `results/oow/official_k{12,5}.jsonl.gz` |
+| §4 | over-window cell (30–100k, YaRN) at 8B and 32B | `kvmemory/kv_owfloor.py` | `results/oow/owf{8,32}.jsonl.gz` |
+| §4 | stage-resolved query cost, write cost | `kvmemory/kv_ttft.py` | `results/kv_cost/ttft_{8b,32b}.jsonl`, `analysis/ttft_stages.py` |
+| §4 | evidence matching (tx_plus), conditioner content, full-reading ceiling, tail dial (8B, 32B) | `kvmemory/kv_review.py` | `results/oow/rv{,32}.jsonl.gz` |
+| §4 | generated-digest conditioner and other floor arms | `kvmemory/kv_floor.py` | `results/oow/fl.jsonl.gz` |
+| §4 | harvest 2×2 (gathered rows, opening rows, fresh tail); Llama-3.1-8B replication | `kvmemory/kv_globhot.py` | `results/oow/gh{,_llama}.jsonl.gz` |
+| §4 | agent-style cache header; 32B harvest vs store vs full reading | `kvmemory/kv_hxfer.py` | `results/oow/hx{,32}.jsonl.gz` |
+| §4 | LOCOMO, sessions as events (8B, 32B; harvest and skill arms) | `kvmemory/kv_locomo.py` | `results/oow/loc{8,32}.jsonl.gz` |
+| §4 | distributional autopsy (first-token KL) | `kvmemory/kv_klprobe.py` | `results/oow/kl.jsonl.gz`, `analysis/kl_probe.py` |
+| §4 | fallback triggers (mode gate, self-verification, attention landing, voting) | `kvmemory/kv_gate.py`, `kv_verify.py`, `kv_attn.py`, `kv_matrix.py` | `results/oow/mx.jsonl.gz`, `analysis/{vote_analysis,cascade_ceiling}.py` |
+| §4 Reg. I | K=5 vs K=12 per carrier; same extra events to both paths | `kvmemory/kv_ama_bridge.py`, `kvmemory/kv_evext.py` | `results/oow/official_k*.jsonl.gz`, `results/oow/ev.jsonl.gz` |
+| §4 Reg. II | note-transplant test (delimiter vs random anchor rows) | `kvmemory/kv_notesel.py` | `results/oow/nt.jsonl.gz` |
+| §4 Reg. II | frozen global conditioner / conditioner geometry | `kvmemory/kv_fixanchor.py`, `kvmemory/kv_distanchor.py` | `results/oow/{fx,dx}.jsonl.gz` |
+| §4 Reg. II | EPIC-style boundary recompute; dependency-graph conditioner | `kvmemory/kv_epic.py`, `kvmemory/kv_depanchor.py` | `results/oow/{ep,da}.jsonl.gz` |
+| §4 | six fresh-budget selectors (recency, graph, attention, query, random; KEEP-style) | `kvmemory/kv_frontier.py`, `kvmemory/kv_keepsel.py` | `results/oow/{fr,kp}.jsonl.gz` |
+| §4 | deployment map on the official harness (gsk vs anchored stores vs text) | `kvmemory/kv_ama_bridge.py --arms gsk,g_txt`, `ama/bg_judge.py` | `results/oow/official_deploymap.jsonl.gz` |
+| §4 probe 1–3 | phantom conclusions, erasure boundary, sink vs dependency | `kvmemory/kv_phantom.py` (+ `kv_vartrack.py`) | `results/probes/phvt/`, `analysis/probes/phvt_analyze.py` |
+| §4 probe 4 | four-arm decomposition; incomplete routing | `kvmemory/kv_vardecomp.py`, `kv_predigest.py`, `kv_predigest_sweep.py` | `results/probes/{vd,pd,pds}/`, `analysis/probes/` |
+| §4 probe 4 | independent decoys, menu readout, entropy | `kvmemory/kv_decoyctl.py`, `kv_decoyctl2.py`, `kv_sweepmenu.py` | `results/probes/{dc,d2,sm}/` |
+| §4 probe 4 | computed verdicts, predicate binding, write-time notes | `kvmemory/kv_mater.py`, `kv_refcarrier.py`, `kv_noteknob2.py` | `results/probes/{mt,rc,nk2}/`, `analysis/probes/nk2_analyze.py` |
+| §3.2 | LOCOMO, Qwen3-32B reader/judge; public gpt-4o-mini protocol | `kvmemory/locomo_eval.py`, `kvmemory/locomo_gpt4omini.py` | — |
+| §3.3 | LongMemEval-S (128k YaRN full vs routed at 28k) | `kvmemory/longmemeval_eval.py` | — |
+| App. I | Llama-3.1-70B re-judge of a full official run | `analysis/rejudge_llama70b.py`, `ama/configs/judge_llama70b.yaml` | `results/judge_llama70b/ama_rejudged.json` |
+| not in the paper | paired re-run against AMA-Agent: as released (A1), token-counted context cap (A2), no early answer (A3); VeraKV V1 / V2 ([write-up](docs/AMA_AGENT_PAIRED.md)) | `ama/paired/run.py`, `make_tokcap.py`, `make_nofast.py` | `results/ama_paired/`, `ama/paired/analyze.py`, `a3_analyze.py` |
+| not in the paper | model-pick call fixed and re-run: V1 / V1f / V2 under two readers, 2,496 QA ([write-up](docs/MODEL_PICK_FIX.md)) | `ama/paired/run.py` (arm V1f), `ama/configs/cfg_flagship_nothink.json` | `results/modelpick_fix/`, `ama/paired/modelpick_analyze.py` |
+
+The shared modules `kv_scope`, `kv_replay`, `kv_write`, `kv_matrix`, `kv_ow`, `kv_floor`, `kv_globhot`,
+`kv_distanchor` and `kv_orphan` hold the store-encoding, assembly and gather primitives the
+out-of-window runs import; each is also runnable as the experiment it was written for. The four synthetic
+probes are the starting point of the companion paper
+[Compute Globally, Materialize Locally](https://github.com/oklen/Compute-Globally-Materialize-Locally),
+which carries the extended versions. `gpt-4o-mini` runs need an OpenAI-compatible endpoint
+(`LOCOMO_API_BASE_URL`, `LOCOMO_API_KEY`); LOCOMO/LongMemEval runs with a local reader need a vLLM server.
+
+## Honest-measurement notes
+
+- AMA-Bench ships only a public test split; the leaderboard configuration was developed on it, so the
+  paper labels 0.6478 an exploratory engineering result. The out-of-window recipes were developed on a
+  103-episode mechanism subset before one evaluation on the full official set.
+- Same-day replicate noise is ~0.5pp, cross-day ~2pp, SOFTWARE batch noise ±4pp; every reported paired delta is
+  same-batch; the one cross-batch reading (App. F: 0.6466 vs 0.6410) is labeled as such.
+- The serving-cell protocol of §4 (fixed-K retrieval, no overview, official default answer prompt) is
+  not the deployed pipeline; its text arm (.397) is a routed-text carrier baseline about 25pp below the
+  headline system. Never compare the two across protocols (paper App. "Protocol ledger").
+- KV gather is exact only within the positional window; every headline accuracy comes from the text
+  pipeline. Claims for the cache path are about first-token latency, not answering faster.
+- The AMA-Agent comparisons in the table and in the first two bullets use its published scores. Our
+  re-run of the released AMA-Agent comes out 4.9 points below them on the five domains it covers, and 26
+  below on SOFTWARE, for reasons we could not find. The paired comparison uses our re-run for both
+  systems ([reproduction checks](docs/AMA_AGENT_PAIRED.md#reproduction-checks)).
+- The deployed router's model-pick call (32 output tokens) never worked as designed in the official
+  harness: the harness leaves Qwen3-32B's thinking mode on, and in our two re-runs every call stopped
+  inside the model's reasoning. The paper's router audit saw these truncated calls and found the signal
+  score-neutral. A same-batch re-run with the call fixed, on all 2,496 questions, finds the working signal
+  score-neutral too: +0.2 [−1.5, +2.1] with the default reader, +1.4 [−0.2, +3.2] with the structured
+  reader ([details](docs/MODEL_PICK_FIX.md)).
+
+## License
+
+Code is released under the MIT License (see `LICENSE`). Benchmarks and datasets keep their own
+licenses: dataset files are not included (see `data/README.md`), and the per-question result files quote
+AMA-Bench questions and reference answers only so the scores can be audited.
+
+## Contact
+
+Zefeng Cai — see the paper title page.
